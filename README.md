@@ -68,6 +68,9 @@ Then run:
 flutter run -d windows   # for Windows
 flutter run -d linux     # for Linux
 ```
+
+---
+
 ### Project Structure
 ```bash
 petpal/
@@ -82,10 +85,15 @@ petpal/
 │-- web/                # Web support
 │-- test/               # Unit & widget tests
 ```
+
+---
+
 ### Contribution Guidelines
 Work on feature branches, not directly on main.
 Use clear commit messages.
 Submit pull requests for review before merging.
+
+---
 
 ### Helpful Resources
 - [Flutter Documentation](https://docs.flutter.dev/)
