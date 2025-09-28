@@ -76,7 +76,7 @@ flutter run -d linux     # for Linux
 petpal/
 │-- lib/                # Main Dart source files
 │   │-- main.dart       # App entry point
-│   │-- backend/        # Backend services & SQLite setup
+│   │-- services/        # Backend services & SQLite setup
 │   │-- ui/             # Frontend UI code
 │
 │-- pubspec.yaml        # Project configuration & dependencies
