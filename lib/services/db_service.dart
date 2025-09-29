@@ -35,7 +35,9 @@ class DBService {
       CREATE TABLE pets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        gender TEXT NOT NULL,
         species TEXT NOT NULL,
+        breed TEXT NOT NULL,
         age INTEGER NOT NULL
       );
     ''');
