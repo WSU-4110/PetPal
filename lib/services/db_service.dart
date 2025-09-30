@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
 class DBService {
   static final DBService _instance = DBService._internal();

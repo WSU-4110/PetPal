@@ -8,7 +8,7 @@ import 'add_reminder_dialog.dart';
 import 'edit_reminder_dialog.dart'; // <-- import edit dialog
 
 class ReminderListScreen extends StatelessWidget {
-  const ReminderListScreen({Key? key}) : super(key: key);
+  const ReminderListScreen({super.key});
 
   String _fmt(DateTime dt) => DateFormat('yyyy-MM-dd – HH:mm').format(dt);
 
