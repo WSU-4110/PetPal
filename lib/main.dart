@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'state/app_state.dart';
-import 'ui/home_screen.dart';
+//import 'ui/home_screen.dart';
+import 'ui/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,7 @@ class PetPalApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.teal,
         ),
-        home: const HomeScreen(),
+        home: const LoginPage(),
       ),
     );
   }
