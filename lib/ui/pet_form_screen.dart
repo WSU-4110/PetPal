@@ -4,7 +4,7 @@ import '../state/app_state.dart';
 import '../models/pet.dart';
 
 class PetFormScreen extends StatefulWidget {
-  const PetFormScreen({Key? key}) : super(key: key);
+  const PetFormScreen({super.key});
 
   @override
   State<PetFormScreen> createState() => _PetFormScreenState();
