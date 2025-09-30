@@ -13,7 +13,7 @@ void main() async {
 
 class PetPalApp extends StatelessWidget {
   final AppState appState;
-  const PetPalApp({Key? key, required this.appState}) : super(key: key);
+  const PetPalApp({super.key, required this.appState});
 
   @override
   Widget build(BuildContext context) {

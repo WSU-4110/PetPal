@@ -5,7 +5,7 @@ import 'pet_form_screen.dart';
 import '../models/pet.dart';
 
 class PetListScreen extends StatelessWidget {
-  const PetListScreen({Key? key}) : super(key: key);
+  const PetListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

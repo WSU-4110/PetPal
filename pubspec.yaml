@@ -44,7 +44,7 @@ dependencies:
   path: ^1.8.3
 
 #local notifications (don't worry about this right now)
-  flutter_local_notifications: ^13.0.0
+  flutter_local_notifications: ^17.2.1
   intl: ^0.20.2
 
 
