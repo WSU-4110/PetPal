@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:crypto/crypto.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
-import 'package:path_provider/path_provider.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -24,8 +26,15 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // bump version to recreate if needed
       onCreate: _onCreate,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        // Drop all tables for demo purposes
+        await db.execute("DROP TABLE IF EXISTS users;");
+        await db.execute("DROP TABLE IF EXISTS pets;");
+        await db.execute("DROP TABLE IF EXISTS reminders;");
+        await _onCreate(db, newVersion);
+      },
     );
   }
 
@@ -52,9 +61,84 @@ class DBService {
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
       );
     ''');
+
+    await db.execute('''
+      CREATE TABLE users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        firstName TEXT NOT NULL,
+        lastName TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        preference TEXT
+      );
+    ''');
   }
 
-  // PET CRUD
+  // --- Password Utilities ---
+  String hashPassword(String password) {
+    return sha256.convert(utf8.encode(password)).toString();
+  }
+
+  bool isPasswordStrong(String password) {
+    final regexUpper = RegExp(r'[A-Z]');
+    final regexLower = RegExp(r'[a-z]');
+    final regexDigit = RegExp(r'\d');
+    final regexSymbol = RegExp(r'[!@#$%^&*(),.?":{}|<>]');
+    return password.length >= 8 &&
+        regexUpper.hasMatch(password) &&
+        regexLower.hasMatch(password) &&
+        regexDigit.hasMatch(password) &&
+        regexSymbol.hasMatch(password);
+  }
+
+  int passwordStrengthScore(String password) {
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'\d').hasMatch(password)) score++;
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
+    return score;
+  }
+
+  // --- Users ---
+  Future<int> registerUser(
+      String firstName, String lastName, String email, String password, String preference) async {
+    final db = await database;
+    return await db.insert('users', {
+      'firstName': firstName,
+      'lastName': lastName,
+      'email': email,
+      'password': hashPassword(password), // store hashed password
+      'preference': preference,
+    });
+  }
+
+  // Get user by email only
+  Future<Map<String, dynamic>?> getUserByEmail(String email) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+    );
+    if (result.isNotEmpty) return result.first;
+    return null;
+  }
+
+  // Login: only succeeds if both email exists and password matches
+  Future<Map<String, dynamic>?> loginUser(String email, String password) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, hashPassword(password)],
+    );
+    if (result.isNotEmpty) return result.first;
+    return null;
+  }
+
+  // --- Pets ---
   Future<int> insertPet(Pet pet) async {
     final db = await database;
     return await db.insert('pets', pet.toMap());
@@ -76,7 +160,7 @@ class DBService {
     return await db.delete('pets', where: 'id = ?', whereArgs: [id]);
   }
 
-  // REMINDERS
+  // --- Reminders ---
   Future<int> insertReminder(Reminder reminder) async {
     final db = await database;
     return await db.insert('reminders', reminder.toMap());

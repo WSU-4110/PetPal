@@ -42,9 +42,10 @@ dependencies:
   sqflite: ^2.2.8+4
   path_provider: ^2.0.14
   path: ^1.8.3
+  crypto: ^3.0.6
 
 #local notifications (don't worry about this right now)
-  flutter_local_notifications: ^17.2.1
+  flutter_local_notifications: ^19.4.2
   intl: ^0.20.2
 
 
@@ -57,7 +58,10 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+
+  # Add dev tools for app icons
+  flutter_launcher_icons: ^0.14.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -74,6 +78,9 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+
+  assets:
+    - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -100,3 +107,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Config for launcher icons (keeps logo only)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/petlogo.png"
