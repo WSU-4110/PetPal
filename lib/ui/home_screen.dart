@@ -1,22 +1,71 @@
 // lib/ui/home_screen.dart
 import 'package:flutter/material.dart';
+import 'pet_list_screen.dart';
+import 'reminder_list_screen.dart';
+import 'package:provider/provider.dart';
+import '../state/app_state.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Text(
-            'Welcome to PetPal!',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 16),
-          Text('Love. Care. Track'),
-        ],
+    final appState = Provider.of<AppState>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('PetPal'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'Welcome to PetPal!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text('Love. Care. Track'),
+            const SizedBox(height: 32),
+
+            ElevatedButton.icon(
+              icon: const Icon(Icons.pets),
+              label: const Text('Pet Profiles'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PetListScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.alarm),
+              label: const Text('Reminders'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReminderListScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.calendar_today),
+              label: const Text('Calendar'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+            Text('Pets in system: ${appState.pets.length}'),
+            Text('Reminders total: ${appState.reminders.length}'),
+          ],
+        ),
       ),
     );
   }
