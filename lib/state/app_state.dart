@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../services/db_service.dart';
+import '../models/medical_record.dart';
+
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -134,4 +136,32 @@ class AppState extends ChangeNotifier {
       RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
     ];
   }
+
+
+  // ---------------- Medical Records ----------------
+  List<MedicalRecord> medicalRecords = [];
+
+Future<void> addMedicalRecord(MedicalRecord record) async {
+  await _db.insertMedicalRecord(record);
+  medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
+  notifyListeners();
+}
+
+Future<void> loadMedicalRecords(int petId) async {
+  medicalRecords = await _db.getMedicalRecordsForPet(petId);
+  notifyListeners();
+}
+
+Future<void> updateMedicalRecord(MedicalRecord record) async {
+  await _db.updateMedicalRecord(record);
+  medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
+  notifyListeners();
+}
+
+Future<void> deleteMedicalRecord(int id, int petId) async {
+  await _db.deleteMedicalRecord(id);
+  medicalRecords = await _db.getMedicalRecordsForPet(petId);
+  notifyListeners();
+}
+
 }
