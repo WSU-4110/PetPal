@@ -1,10 +1,7 @@
 // lib/ui/home_screen.dart
 import 'package:flutter/material.dart';
-import 'pet_list_screen.dart';
-import 'reminder_list_screen.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import 'calendar_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,9 +11,6 @@ class HomeScreen extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PetPal'),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -27,40 +21,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text('Love. Care. Track'),
-            const SizedBox(height: 32),
-
-            ElevatedButton.icon(
-              icon: const Icon(Icons.pets),
-              label: const Text('Pet Profiles'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PetListScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.alarm),
-              label: const Text('Reminders'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ReminderListScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Calendar'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
-                );
-              },
-            ),
             const SizedBox(height: 32),
             Text('Pets in system: ${appState.pets.length}'),
             Text('Reminders total: ${appState.reminders.length}'),
