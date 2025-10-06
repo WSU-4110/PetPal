@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
+import '../models/medical_record.dart';
+
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -72,7 +74,53 @@ class DBService {
         preference TEXT
       );
     ''');
+
+    await db.execute('''
+      CREATE TABLE medical_records(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        petId INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        date TEXT NOT NULL,
+        vetName TEXT,
+        FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
+      );
+    ''');
+
   }
+
+  // --- Medical Records ---
+Future<int> insertMedicalRecord(MedicalRecord record) async {
+  final db = await database;
+  return await db.insert('medical_records', record.toMap());
+}
+
+Future<List<MedicalRecord>> getMedicalRecordsForPet(int petId) async {
+  final db = await database;
+  final maps = await db.query(
+    'medical_records',
+    where: 'petId = ?',
+    whereArgs: [petId],
+    orderBy: 'date DESC',
+  );
+  return maps.map((m) => MedicalRecord.fromMap(m)).toList();
+}
+
+Future<int> updateMedicalRecord(MedicalRecord record) async {
+  final db = await database;
+  return await db.update(
+    'medical_records',
+    record.toMap(),
+    where: 'id = ?',
+    whereArgs: [record.id],
+  );
+}
+
+Future<int> deleteMedicalRecord(int id) async {
+  final db = await database;
+  return await db.delete('medical_records', where: 'id = ?', whereArgs: [id]);
+}
+
 
   // --- Password Utilities ---
   String hashPassword(String password) {
