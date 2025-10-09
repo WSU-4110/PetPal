@@ -36,6 +36,26 @@ class _LoginPageState extends State<LoginPage> {
   final List<String> _petImages = [
     "assets/images/daisy.png",
     "assets/images/black_cat.png",
+    "assets/images/dog1.png",
+    "assets/images/dog2.png",
+    "assets/images/cat1.png",
+    "assets/images/cat2.png",
+    "assets/images/cat3.png",
+    "assets/images/dog3.png",
+    "assets/images/cat4.png",
+    "assets/images/dog4.png",
+    "assets/images/cat5.png",
+    "assets/images/cat6.png",
+    "assets/images/cat7.png",
+    "assets/images/cat8.png",
+    "assets/images/cat9.png",
+    "assets/images/cat10.png",
+    "assets/images/dog5.png",
+    "assets/images/dog6.png",
+    "assets/images/dog7.png",
+    "assets/images/dog8.png",
+    "assets/images/dog9.png",
+    "assets/images/dog10.png",
   ];
 
   bool _isPasswordVisible = false;
