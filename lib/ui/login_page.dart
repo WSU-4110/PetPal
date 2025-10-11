@@ -124,8 +124,8 @@ class _LoginPageState extends State<LoginPage> {
                 Center(
                   child: Image.asset(
                       "assets/images/petlogo.png",
-                      height: 120,
-                      width: 120,
+                      height: 200,
+                      width: 200,
                       fit: BoxFit.contain,
                     )
                   ),
