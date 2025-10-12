@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
 import '../state/app_state.dart';
+import 'dart:math'; // For random pet picture
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -31,6 +32,39 @@ class _LoginPageState extends State<LoginPage> {
     "Pet whisperer",
     "Custom",
   ];
+
+  final List<String> _petImages = [
+    "assets/images/daisy.png",
+    "assets/images/black_cat.png",
+    "assets/images/dog1.png",
+    "assets/images/dog2.png",
+    "assets/images/cat1.png",
+    "assets/images/cat2.png",
+    "assets/images/cat3.png",
+    "assets/images/dog3.png",
+    "assets/images/cat4.png",
+    "assets/images/dog4.png",
+    "assets/images/cat5.png",
+    "assets/images/cat6.png",
+    "assets/images/cat7.png",
+    "assets/images/cat8.png",
+    "assets/images/cat9.png",
+    "assets/images/cat10.png",
+    "assets/images/dog5.png",
+    "assets/images/dog6.png",
+    "assets/images/dog7.png",
+    "assets/images/dog8.png",
+    "assets/images/dog9.png",
+    "assets/images/dog10.png",
+  ];
+
+    late String randomImage;
+
+    @override
+    void initState() {
+      super.initState();
+      randomImage = _petImages[Random().nextInt(_petImages.length)];
+    }
 
   bool _isPasswordVisible = false;
   bool _isRegisterMode = false;
@@ -74,9 +108,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
+    final random = Random();
+    final randomImage = _petImages[random.nextInt(_petImages.length)];
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -86,12 +122,24 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: Text(
-                    _isRegisterMode ? "Create Account 🐾" : "Welcome to PetPal 🐾",
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple[800]),
+                  child: Image.asset(
+                      "assets/images/petlogo.png",
+                      height: 120,
+                      width: 120,
+                      fit: BoxFit.contain,
+                    )
+                  ),
+                const SizedBox(height: 20),
+
+                // --- Random Pet Picture ---
+                Center(
+                  child: ClipOval(
+                    child: Image.asset(
+                      randomImage,
+                      fit: BoxFit.cover,
+                      height: 200,
+                      width: 200,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),
