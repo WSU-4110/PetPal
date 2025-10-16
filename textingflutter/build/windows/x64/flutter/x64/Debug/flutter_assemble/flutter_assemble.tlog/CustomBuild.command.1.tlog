@@ -1,0 +1,28 @@
+^C:\USERS\MISRI\DOWNLOADS\TEXTINGFLUTTER\BUILD\WINDOWS\X64\CMAKEFILES\72EDE0D5306AFA474B69308DBFAD4D9F\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\Users\misri\Downloads\flutter PROJECT_DIR=C:\Users\misri\Downloads\textingflutter FLUTTER_ROOT=C:\Users\misri\Downloads\flutter FLUTTER_EPHEMERAL_DIR=C:\Users\misri\Downloads\textingflutter\windows\flutter\ephemeral PROJECT_DIR=C:\Users\misri\Downloads\textingflutter FLUTTER_TARGET=C:\Users\misri\Downloads\textingflutter\lib\main.dart DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuMzUuNQ==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049YWM0ZTc5OWQyMw==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049ZDNkNDVkY2YyNQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My45LjI= DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=C:\Users\misri\Downloads\textingflutter\.dart_tool\package_config.json C:/Users/misri/Downloads/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\MISRI\DOWNLOADS\TEXTINGFLUTTER\BUILD\WINDOWS\X64\CMAKEFILES\3B6BF8E95418513E1B739E54801866E1\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\MISRI\DOWNLOADS\TEXTINGFLUTTER\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/misri/Downloads/textingflutter/windows -BC:/Users/misri/Downloads/textingflutter/build/windows/x64 --check-stamp-file C:/Users/misri/Downloads/textingflutter/build/windows/x64/flutter/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
