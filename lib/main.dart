@@ -19,7 +19,11 @@ class PetPalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AppState(),
+      create: (_) {
+      final appState = AppState();
+      appState.loadPet();
+      return appState;
+  },
       child: MaterialApp(
         title: 'PetPal',
         theme: ThemeData(primarySwatch: Colors.teal),

@@ -91,6 +91,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadPet() async {
+    pets = await _db.getPets();
+    notifyListeners();
+  }
+
   Future<void> deletePet(int id) async {
     await _db.deletePet(id);
     pets = await _db.getPets();
