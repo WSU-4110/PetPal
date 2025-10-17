@@ -58,13 +58,13 @@ class _LoginPageState extends State<LoginPage> {
     "assets/images/dog10.png",
   ];
 
-    late String randomImage;
+  late String randomImage;
 
-    @override
-    void initState() {
-      super.initState();
-      randomImage = _petImages[Random().nextInt(_petImages.length)];
-    }
+  @override
+  void initState() {
+    super.initState();
+    randomImage = _petImages[Random().nextInt(_petImages.length)];
+  }
 
   bool _isPasswordVisible = false;
   bool _isRegisterMode = false;
@@ -91,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _resetErrorsAndFields() {
-    // Reset all form fields, password checks, and errors
     _formKey.currentState?.reset();
     _firstNameController.clear();
     _lastNameController.clear();
@@ -112,328 +111,351 @@ class _LoginPageState extends State<LoginPage> {
     final randomImage = _petImages[random.nextInt(_petImages.length)];
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Image.asset(
-                      "assets/images/petlogo.png",
-                      height: 120,
-                      width: 120,
-                      fit: BoxFit.contain,
-                    )
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Logo
+                  Image.asset(
+                    "assets/images/petlogo.png",
+                    height: 120,
+                    width: 120,
                   ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // --- Random Pet Picture ---
-                Center(
-                  child: ClipOval(
-                    child: Image.asset(
-                      randomImage,
-                      fit: BoxFit.cover,
-                      height: 200,
-                      width: 200,
+                  // Pet Image with subtle glow
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink.withOpacity(0.3),
+                          blurRadius: 15,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // --- Registration Fields ---
-                if (_isRegisterMode)
-                  TextFormField(
-                    controller: _firstNameController,
-                    decoration: const InputDecoration(
-                        labelText: "First Name", prefixIcon: Icon(Icons.person)),
-                    validator: (value) =>
-                        value!.isEmpty ? "Enter your first name" : null,
-                  ),
-                if (_isRegisterMode) const SizedBox(height: 16),
-
-                if (_isRegisterMode)
-                  TextFormField(
-                    controller: _lastNameController,
-                    decoration: const InputDecoration(
-                        labelText: "Last Name", prefixIcon: Icon(Icons.person_outline)),
-                    validator: (value) =>
-                        value!.isEmpty ? "Enter your last name" : null,
-                  ),
-                if (_isRegisterMode) const SizedBox(height: 16),
-
-                if (_isRegisterMode)
-                  DropdownButtonFormField<String>(
-                    value: _selectedPreference,
-                    decoration: const InputDecoration(
-                        labelText: "Tail Tag", prefixIcon: Icon(Icons.pets)),
-                    items: _preferences
-                        .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPreference = value;
-                        if (value != "Custom") _customCaptionController.clear();
-                      });
-                    },
-                    validator: (value) =>
-                        value == null || value.isEmpty ? "Select a preference" : null,
-                  ),
-
-                if (_isRegisterMode && _selectedPreference == "Custom")
-                  const SizedBox(height: 12),
-                if (_isRegisterMode && _selectedPreference == "Custom")
-                  TextFormField(
-                    controller: _customCaptionController,
-                    decoration: const InputDecoration(
-                      labelText: "Enter your own caption",
-                      prefixIcon: Icon(Icons.edit),
-                    ),
-                    maxLength: 50,
-                  ),
-
-                if (_isRegisterMode) const SizedBox(height: 16),
-
-                // --- Email Field ---
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                      labelText: "Email", prefixIcon: Icon(Icons.email)),
-                  validator: (value) =>
-                      value!.isEmpty ? "Enter your email" : null,
-                ),
-                if (loginErrorEmail != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4.0, left: 8.0),
-                      child: Text(
-                        loginErrorEmail!,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                    child: ClipOval(
+                      child: Image.asset(
+                        randomImage,
+                        height: 200,
+                        width: 200,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                if (_isRegisterMode && _isEmailTaken)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 4.0, left: 8.0),
-                      child: Text("This email is already registered",
-                          style: TextStyle(color: Colors.red, fontSize: 12)),
-                    ),
-                  ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 28),
 
-                // --- Password Field ---
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  onChanged: (value) {
-                    if (_isRegisterMode) {
-                      _passwordChecksNotifier.value = appState.passwordChecks(value);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off),
+                  // Registration Fields
+                  if (_isRegisterMode)
+                    _roundedTextField(
+                        controller: _firstNameController,
+                        label: "First Name",
+                        icon: Icons.person),
+                  if (_isRegisterMode) const SizedBox(height: 16),
+                  if (_isRegisterMode)
+                    _roundedTextField(
+                        controller: _lastNameController,
+                        label: "Last Name",
+                        icon: Icons.person_outline),
+                  if (_isRegisterMode) const SizedBox(height: 16),
+                  if (_isRegisterMode)
+                    DropdownButtonFormField<String>(
+                      value: _selectedPreference,
+                      decoration: _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
+                      dropdownColor: Colors.purple[100],
+                      items: _preferences
+                          .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedPreference = value;
+                          if (value != "Custom") _customCaptionController.clear();
+                        });
+                      },
+                      validator: (value) =>
+                          value == null || value.isEmpty ? "Select a preference" : null,
+                    ),
+                  if (_isRegisterMode && _selectedPreference == "Custom")
+                    const SizedBox(height: 12),
+                  if (_isRegisterMode && _selectedPreference == "Custom")
+                    _roundedTextField(
+                        controller: _customCaptionController,
+                        label: "Enter your own caption",
+                        icon: Icons.edit,
+                        maxLength: 50),
+                  if (_isRegisterMode) const SizedBox(height: 16),
+
+                  // Email Field
+                  _roundedTextField(
+                      controller: _emailController,
+                      label: "Email",
+                      icon: Icons.email),
+                  const SizedBox(height: 16),
+
+                  // Password Field
+                  _roundedTextField(
+                    controller: _passwordController,
+                    label: "Password",
+                    icon: Icons.lock,
+                    obscureText: !_isPasswordVisible,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.purple[900],
+                      ),
                       onPressed: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
                     ),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? "Enter your password" : null,
-                ),
-                if (loginErrorPassword != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4.0, left: 8.0),
-                      child: Text(
-                        loginErrorPassword!,
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ),
-                  ),
-
-                const SizedBox(height: 12),
-
-                // --- Password Strength Checks ---
-                if (_isRegisterMode)
-                  ValueListenableBuilder<List<bool>>(
-                    valueListenable: _passwordChecksNotifier,
-                    builder: (context, checks, _) {
-                      if (_passwordController.text.isEmpty) return const SizedBox();
-                      double progressValue = checks.where((c) => c).length / checks.length;
-                      Color progressColor;
-                      if (checks.where((c) => c).length <= 2) {
-                        progressColor = Colors.red;
-                      } else if (checks.where((c) => c).length <= 4) {
-                        progressColor = Colors.orange;
-                      } else {
-                        progressColor = Colors.green;
+                    onChanged: (value) {
+                      if (_isRegisterMode) {
+                        _passwordChecksNotifier.value =
+                            appState.passwordChecks(value);
                       }
+                    },
+                  ),
+                  const SizedBox(height: 12),
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          LinearProgressIndicator(
-                            value: progressValue,
-                            color: progressColor,
-                            backgroundColor: Colors.grey[300],
-                            minHeight: 5,
-                          ),
-                          const SizedBox(height: 4),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: List.generate(checks.length, (i) {
-                              final labels = [
-                                "• At least 8 characters",
-                                "• Contains uppercase letter",
-                                "• Contains lowercase letter",
-                                "• Contains a digit",
-                                "• Contains a symbol (!@#\$%^&*)",
-                              ];
-                              return AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: TextStyle(
-                                  color: checks[i] ? Colors.green : Colors.red,
-                                  fontSize: 12,
-                                ),
-                                child: Text(labels[i]),
+                  // Password Strength
+                  if (_isRegisterMode)
+                    ValueListenableBuilder<List<bool>>(
+                      valueListenable: _passwordChecksNotifier,
+                      builder: (context, checks, _) {
+                        if (_passwordController.text.isEmpty) return const SizedBox();
+                        double progressValue =
+                            checks.where((c) => c).length / checks.length;
+                        Color progressColor;
+                        if (checks.where((c) => c).length <= 2) {
+                          progressColor = Colors.redAccent;
+                        } else if (checks.where((c) => c).length <= 4) {
+                          progressColor = Colors.orangeAccent;
+                        } else {
+                          progressColor = Colors.greenAccent;
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LinearProgressIndicator(
+                              value: progressValue,
+                              color: progressColor,
+                              backgroundColor: Colors.white30,
+                              minHeight: 5,
+                            ),
+                            const SizedBox(height: 4),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: List.generate(checks.length, (i) {
+                                final labels = [
+                                  "• At least 8 characters",
+                                  "• Contains uppercase letter",
+                                  "• Contains lowercase letter",
+                                  "• Contains a digit",
+                                  "• Contains a symbol (!@#\$%^&*)",
+                                ];
+                                return AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 200),
+                                  style: TextStyle(
+                                    color: checks[i]
+                                        ? Colors.greenAccent
+                                        : Colors.redAccent,
+                                    fontSize: 12,
+                                  ),
+                                  child: Text(labels[i]),
+                                );
+                              }),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 24),
+
+                  // Login/Register Button
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _buttonPressedNotifier,
+                    builder: (context, pressed, _) {
+                      return GestureDetector(
+                        onTapDown: (_) => _buttonPressedNotifier.value = true,
+                        onTapUp: (_) => _buttonPressedNotifier.value = false,
+                        onTapCancel: () => _buttonPressedNotifier.value = false,
+                        onTap: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isEmailTaken = false;
+                              loginErrorEmail = null;
+                              loginErrorPassword = null;
+                            });
+                            try {
+                              if (_isRegisterMode) {
+                                await appState.register(
+                                  _firstNameController.text,
+                                  _lastNameController.text,
+                                  _emailController.text,
+                                  _passwordController.text,
+                                  _selectedPreference == "Custom"
+                                      ? _customCaptionController.text
+                                      : _selectedPreference ?? "Pet lover",
+                                );
+                                await appState.login(
+                                    _emailController.text,
+                                    _passwordController.text);
+                              } else {
+                                await appState.login(
+                                    _emailController.text,
+                                    _passwordController.text);
+                              }
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const MainNavigation()),
                               );
-                            }),
-                          )
-                        ],
+                            } catch (e) {
+                              String err = e.toString().toLowerCase();
+                              setState(() {
+                                if (err.contains("invalid email")) {
+                                  loginErrorEmail = "Please enter a valid email";
+                                }
+                                if (err.contains("invalid password")) {
+                                  loginErrorPassword = "Incorrect password";
+                                }
+                                if (err.contains("email is already registered")) {
+                                  _isEmailTaken = true;
+                                }
+                              });
+                            }
+                          }
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          curve: Curves.easeInOut,
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 24),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.pink.withOpacity(0.3),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              )
+                            ],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            _isRegisterMode ? "Register" : "Login",
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                        ),
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 25),
-
-                // --- Login / Register Button ---
-                ValueListenableBuilder<bool>(
-                  valueListenable: _buttonPressedNotifier,
-                  builder: (context, pressed, _) {
-                    return GestureDetector(
-                      onTapDown: (_) => _buttonPressedNotifier.value = true,
-                      onTapUp: (_) => _buttonPressedNotifier.value = false,
-                      onTapCancel: () => _buttonPressedNotifier.value = false,
-                      onTap: () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() {
-                            _isEmailTaken = false;
-                            loginErrorEmail = null;
-                            loginErrorPassword = null;
-                          });
-                          try {
-                            if (_isRegisterMode) {
-                              await appState.register(
-                                _firstNameController.text,
-                                _lastNameController.text,
-                                _emailController.text,
-                                _passwordController.text,
-                                _selectedPreference == "Custom"
-                                    ? _customCaptionController.text
-                                    : _selectedPreference ?? "Pet lover",
-                              );
-
-                              // Auto-login after register
-                              await appState.login(
-                                  _emailController.text, _passwordController.text);
-                            } else {
-                              await appState.login(
-                                  _emailController.text, _passwordController.text);
-                            }
-
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const MainNavigation()),
-                            );
-                          } catch (e) {
-                            String err = e.toString().toLowerCase();
-                            setState(() {
-                              if (err.contains("invalid email")) {
-                                loginErrorEmail = "Please enter a valid email";
-                              }
-                              if (err.contains("invalid password")) {
-                                loginErrorPassword = "Incorrect password";
-                              }
-                              if (err.contains("email is already registered")) {
-                                _isEmailTaken = true;
-                              }
-                            });
-                          }
-                        }
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        curve: Curves.easeInOut,
-                        width: double.infinity,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: pressed
-                              ? Colors.deepPurple.shade700
-                              : Colors.deepPurple,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Text(
-                          _isRegisterMode ? "Register" : "Login",
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
+                  // Toggle Login/Register
+                  Center(
+                    child: RichText(
+                      text: TextSpan(
+                        text: _isRegisterMode
+                            ? "Already have an account? "
+                            : "Don't have an account? ",
+                        style: const TextStyle(color: Colors.purpleAccent),
+                        children: [
+                          TextSpan(
+                            text: _isRegisterMode ? "Login" : "Register",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                setState(() {
+                                  _isRegisterMode = !_isRegisterMode;
+                                  _resetErrorsAndFields();
+                                });
+                              },
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                // --- Toggle Login / Register ---
-                Center(
-                  child: RichText(
-                    text: TextSpan(
-                      text: _isRegisterMode
-                          ? "Already have an account? "
-                          : "Don't have an account? ",
-                      style: TextStyle(color: Colors.deepPurple[800]),
-                      children: [
-                        TextSpan(
-                          text: _isRegisterMode ? "Login" : "Register",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              setState(() {
-                                _isRegisterMode = !_isRegisterMode;
-                                _resetErrorsAndFields();
-                              });
-                            },
-                        ),
-                      ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _dropdownDecoration({required String label, required IconData icon}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.15),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      labelStyle: const TextStyle(color: Colors.white),
+    );
+  }
+
+  Widget _roundedTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    Widget? suffix,
+    void Function(String)? onChanged,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      onChanged: onChanged,
+      maxLength: maxLength,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
+        ),
+        labelStyle: const TextStyle(color: Colors.white),
+      ),
+      style: const TextStyle(color: Colors.white),
     );
   }
 }
