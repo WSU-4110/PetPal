@@ -65,7 +65,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
             ),
             DropdownButton<String>(
               value: category,
-              items: ['Feeding', 'Medication', 'Vet']
+              items: ['Feeding','Walking','Medication','Vet']
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                   .toList(),
               onChanged: (c) => setState(() => category = c!),

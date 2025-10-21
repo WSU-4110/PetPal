@@ -146,7 +146,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     if (items.isEmpty) {
                       return const Center(
                         child: Text(
-                          'No reminders',
+                          'Nothing planned for today',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.deepPurple,

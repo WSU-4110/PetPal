@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'login_page.dart';
 import '../state/app_state.dart';
+import '../ui/calendar_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -60,6 +61,17 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.search),
             title: const Text("Search"),
             onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Calendar'),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.notifications),

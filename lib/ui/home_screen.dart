@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import 'pet_list_screen.dart';
+import 'reminder_list_screen.dart';
+import 'calendar_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -28,7 +31,6 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                // Header
                 const Text(
                   'Welcome to PetPal!',
                   style: TextStyle(
@@ -55,25 +57,58 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // Stats cards
+                // Stats cards as buttons
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     children: [
                       _statCard(
+                        context: context,
                         title: 'Pets in System',
                         value: '${appState.pets.length}',
                         icon: Icons.pets,
                         color1: Colors.purpleAccent,
                         color2: Colors.pinkAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PetListScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
                       _statCard(
+                        context: context,
                         title: 'Reminders Total',
                         value: '${appState.reminders.length}',
                         icon: Icons.alarm,
                         color1: Colors.pinkAccent,
                         color2: Colors.purpleAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ReminderListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _statCard(
+                        context: context,
+                        title: "Calendar",
+                        value: "See Tasks",
+                        icon: Icons.today,
+                        color1: Colors.pinkAccent,
+                        color2: Colors.purpleAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -81,7 +116,7 @@ class HomeScreen extends StatelessWidget {
 
                 // Footer
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   'Keep loving your furry friends!',
                   style: TextStyle(
                     fontSize: 16,
@@ -97,69 +132,77 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _statCard({
+    required BuildContext context,
     required String title,
     required String value,
     required IconData icon,
     required Color color1,
     required Color color2,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [color1.withOpacity(0.8), color2.withOpacity(0.8)]),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color2.withOpacity(0.4),
-            blurRadius: 15,
-            spreadRadius: 3,
-            offset: const Offset(0, 8),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [color1.withOpacity(0.8), color2.withOpacity(0.8)],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.3),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color2.withOpacity(0.4),
+              blurRadius: 15,
+              spreadRadius: 3,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, size: 36, color: Colors.white),
+              ),
+              const SizedBox(width: 24),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
-              child: Icon(icon, size: 36, color: Colors.white),
-            ),
-            const SizedBox(width: 24),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
