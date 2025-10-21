@@ -117,6 +117,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadReminder() async {
+    reminders = await _db.getAllReminders();
+    notifyListeners();
+  }
+
   Future<void> deleteReminder(int id) async {
     await _db.deleteReminder(id);
     reminders = await _db.getAllReminders();

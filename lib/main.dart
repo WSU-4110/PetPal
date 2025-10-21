@@ -22,6 +22,7 @@ class PetPalApp extends StatelessWidget {
       create: (_) {
       final appState = AppState();
       appState.loadPet();
+      appState.loadReminder();
       return appState;
   },
       child: MaterialApp(
