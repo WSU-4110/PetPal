@@ -29,12 +29,12 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: "Title"),
+                decoration: const InputDecoration(labelText: "Appointment"),
                 validator: (v) => v == null || v.isEmpty ? "Required" : null,
               ),
               TextFormField(
                 controller: _descController,
-                decoration: const InputDecoration(labelText: "Description"),
+                decoration: const InputDecoration(labelText: "Description of appointment"),
               ),
               TextFormField(
                 controller: _dateController,
@@ -43,7 +43,7 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
               ),
               TextFormField(
                 controller: _vetController,
-                decoration: const InputDecoration(labelText: "Vet/Clinic"),
+                decoration: const InputDecoration(labelText: "Vet/Clinic Name"),
               ),
             ],
           ),
