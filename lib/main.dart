@@ -35,7 +35,8 @@ class PetPalApp extends StatelessWidget {
 }
 
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
+  final String role;
+  const MainNavigation({super.key, required this.role});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -44,12 +45,23 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _pages = <Widget>[
-    const HomeScreen(),
-    const PetListScreen(),
-    const ReminderListScreen(),
-    const HealthScreen(),
-  ];
+  List<Widget> get _pages {
+    if (widget.role == 'owner') {
+      return [
+        const HomeScreen(),
+        const PetListScreen(),
+        const ReminderListScreen(),
+        const HealthScreen(),
+      ];
+    } else if (widget.role == 'vet') {
+      return [
+        const HomeScreen(),
+        const HealthScreen(),
+      ];
+    } else {
+      return [const Center(child: Text("Unknown role"))];
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -67,7 +79,7 @@ class _MainNavigationState extends State<MainNavigation> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Text('PetPal'),
+        title: Text(widget.role == 'owner' ? 'Owner Dashboard' : 'Vet Dashboard'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -81,25 +93,25 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
       drawer: const AppDrawer(),
       body: _pages[_selectedIndex],
-      bottomNavigationBar: Theme(
-        data: Theme.of(context).copyWith(
-          splashFactory: NoSplash.splashFactory,
-          highlightColor: Colors.transparent,
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.deepPurple,
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
-            BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
-            BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        items: widget.role == 'owner'
+            ? const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
+                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
+                BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
+              ]
+            : const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Appointments'),
+                BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
+              ],
       ),
     );
   }

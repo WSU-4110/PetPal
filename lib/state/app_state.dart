@@ -4,6 +4,7 @@ import '../models/reminder.dart';
 import '../services/db_service.dart';
 import '../models/medical_record.dart';
 import 'dart:math';
+import 'package:flutter/material.dart';
 
 
 class AppState extends ChangeNotifier {
@@ -29,7 +30,7 @@ class AppState extends ChangeNotifier {
 
   /// Logs in user with email + password
   /// Throws Exception with "invalid email" or "invalid password"
-  Future<void> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     final userByEmail = await getUserByEmail(email);
 
     if (userByEmail == null) {
@@ -43,12 +44,14 @@ class AppState extends ChangeNotifier {
 
     currentUser = userByEmail;
     notifyListeners();
+    return userByEmail;
+
   }
 
   /// Registers a new user
   /// Throws Exception if email exists or password is weak
   Future<void> register(
-      String firstName, String lastName, String email, String password, String preference) async {
+      String firstName, String lastName, String email, String password, String preference, String role) async {
     if (await isEmailRegistered(email)) {
       throw Exception("email is already registered");
     }
@@ -57,7 +60,7 @@ class AppState extends ChangeNotifier {
     }
 
     // Save user to database
-    await _db.registerUser(firstName, lastName, email, password, preference);
+    await _db.registerUser(firstName, lastName, email, password, preference, role);
   }
 
   /// Returns true if email is already registered

@@ -70,6 +70,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isRegisterMode = false;
   bool _isEmailTaken = false;
   String? _selectedPreference;
+  String? _selectedRole = "owner";
 
   final ValueNotifier<List<bool>> _passwordChecksNotifier =
       ValueNotifier(List.filled(5, false));
@@ -173,6 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                         label: "Last Name",
                         icon: Icons.person_outline),
                   if (_isRegisterMode) const SizedBox(height: 16),
+
                   if (_isRegisterMode)
                     DropdownButtonFormField<String>(
                       value: _selectedPreference,
@@ -199,6 +201,24 @@ class _LoginPageState extends State<LoginPage> {
                         icon: Icons.edit,
                         maxLength: 50),
                   if (_isRegisterMode) const SizedBox(height: 16),
+                  if (_isRegisterMode)
+                    DropdownButtonFormField<String>(
+                      value: _selectedRole,
+                      decoration: _dropdownDecoration(label: "Role", icon: Icons.badge),
+                      dropdownColor: Colors.purple[100],
+                      items: const [
+                        DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
+                        DropdownMenuItem(value: "vet", child: Text("Veterinarian")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedRole = value;
+                        });
+                      },
+                      validator: (value) =>
+                              value == null || value.isEmpty ? "Select a role": null,
+                    ),
+                    if (_isRegisterMode) const SizedBox(height: 16),
 
                   // Email Field
                   _roundedTextField(
@@ -299,39 +319,43 @@ class _LoginPageState extends State<LoginPage> {
                         onTapUp: (_) => _buttonPressedNotifier.value = false,
                         onTapCancel: () => _buttonPressedNotifier.value = false,
                         onTap: () async {
-                          if (_formKey.currentState!.validate()) {
-                            setState(() {
-                              _isEmailTaken = false;
-                              loginErrorEmail = null;
-                              loginErrorPassword = null;
-                            });
-                            try {
-                              if (_isRegisterMode) {
-                                await appState.register(
-                                  _firstNameController.text,
-                                  _lastNameController.text,
-                                  _emailController.text,
-                                  _passwordController.text,
-                                  _selectedPreference == "Custom"
-                                      ? _customCaptionController.text
-                                      : _selectedPreference ?? "Pet lover",
+                            if (_formKey.currentState!.validate()) {
+                              if (_isRegisterMode && _selectedRole == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please select a role")),
                                 );
-                                await appState.login(
-                                    _emailController.text,
-                                    _passwordController.text);
-                              } else {
-                                await appState.login(
-                                    _emailController.text,
-                                    _passwordController.text);
+                                return;
                               }
 
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const MainNavigation()),
-                              );
-                            } catch (e) {
+                              try {
+                                Map<String, dynamic>? user;
+                                if (_isRegisterMode) {
+                                  await appState.register(
+                                    _firstNameController.text,
+                                    _lastNameController.text,
+                                    _emailController.text,
+                                    _passwordController.text,
+                                    _selectedPreference == "Custom"
+                                        ? _customCaptionController.text
+                                        : _selectedPreference ?? "Pet lover",
+                                    _selectedRole ?? "owner", // Ensure role is always defined
+                                  );
+                                  user = await appState.login(
+                                    _emailController.text,
+                                    _passwordController.text,
+                                  );
+                                } else {
+                                  user = await appState.login(
+                                    _emailController.text,
+                                    _passwordController.text,
+                                  );
+                                }
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => MainNavigation(role: user!['role'])),
+                                );
+                              } catch (e) {
                               String err = e.toString().toLowerCase();
                               setState(() {
                                 if (err.contains("invalid email")) {
