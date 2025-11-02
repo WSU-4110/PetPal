@@ -44,7 +44,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     final date = await showDatePicker(
         context: context,
         initialDate: selectedDate,
-        firstDate: DateTime.now(),
+        firstDate: DateTime(2000),
         lastDate: DateTime(2100));
     if (date != null) setState(() => selectedDate = date);
     dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
