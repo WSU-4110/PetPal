@@ -92,7 +92,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: _pages[_selectedIndex],
+      body: _pages[_selectedIndex.clamp(0, _pages.length)],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -109,7 +109,6 @@ class _MainNavigationState extends State<MainNavigation> {
               ]
             : const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Appointments'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
               ],
       ),

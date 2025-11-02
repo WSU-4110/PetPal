@@ -6,7 +6,6 @@ class HealthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For now, hardcode a petId (e.g. 1). Later, you can pass it dynamically.
     final int petId = 1;
 
     return Scaffold(
@@ -21,7 +20,6 @@ class HealthScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: Container(
-        // Match the purple-pink gradient style from ReminderListScreen
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
@@ -71,7 +69,6 @@ class HealthScreen extends StatelessWidget {
                     const SizedBox(height: 40),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        // Keep purple tones but match Reminder aesthetic
                         backgroundColor: const Color(0xFFB892F7),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(

@@ -4,7 +4,7 @@ class MedicalRecord {
   final String title;        // e.g. "Vaccination", "Checkup"
   final String description;  // details of the record
   final String date;         // ISO string or yyyy-MM-dd
-  final String vetName;      // optional: which vet/clinic
+  final String vetName;
 
   MedicalRecord({
     this.id,
