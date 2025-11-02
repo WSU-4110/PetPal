@@ -1,4 +1,3 @@
-// screens/edit_MedicalRecord_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/pet.dart';
@@ -34,7 +33,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     try {
         selectedDate = DateFormat('yyyy-MM-dd').parse(widget.medicalrecord.date);
     } catch (e) {
-      selectedDate = DateTime.now();
+        selectedDate = DateTime.now();
     }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
     selectedPet = widget.pets.firstWhere((p) => p.id == widget.medicalrecord.petId);
