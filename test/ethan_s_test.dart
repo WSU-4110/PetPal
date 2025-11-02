@@ -56,8 +56,6 @@ void main() {
       vetName: 'Vet Clinic 101',
   );
 
-  final Future<DateTime?> Function(BuildContext, DateTime, DateTime, DateTime) datePicker;
-
 });
 
   tearDown(() {
