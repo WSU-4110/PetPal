@@ -28,13 +28,14 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 2, // bump version to recreate if needed
+      version: 4, // bump version to recreate if needed
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) async {
         // Drop all tables for demo purposes
         await db.execute("DROP TABLE IF EXISTS users;");
         await db.execute("DROP TABLE IF EXISTS pets;");
         await db.execute("DROP TABLE IF EXISTS reminders;");
+        await db.execute("DROP TABLE IF EXISTS medical_records;");
         await _onCreate(db, newVersion);
       },
     );
@@ -71,7 +72,8 @@ class DBService {
         lastName TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        preference TEXT
+        preference TEXT,
+        role TEXT
       );
     ''');
 
@@ -151,7 +153,7 @@ Future<int> deleteMedicalRecord(int id) async {
 
   // --- Users ---
   Future<int> registerUser(
-      String firstName, String lastName, String email, String password, String preference) async {
+      String firstName, String lastName, String email, String password, String preference, String role,) async {
     final db = await database;
     return await db.insert('users', {
       'firstName': firstName,
@@ -159,6 +161,7 @@ Future<int> deleteMedicalRecord(int id) async {
       'email': email,
       'password': hashPassword(password), // store hashed password
       'preference': preference,
+      'role': role,
     });
   }
 
@@ -167,6 +170,7 @@ Future<int> deleteMedicalRecord(int id) async {
     final db = await database;
     final result = await db.query(
       'users',
+      columns: ['id', 'email', 'password', 'role'], //role update
       where: 'email = ?',
       whereArgs: [email],
     );
@@ -174,11 +178,12 @@ Future<int> deleteMedicalRecord(int id) async {
     return null;
   }
 
-  // Login: only succeeds if both email exists and password matches
+  // Login: only succeeds if both email exists and password matches and fetches role
   Future<Map<String, dynamic>?> loginUser(String email, String password) async {
     final db = await database;
     final result = await db.query(
       'users',
+      columns: ['id', 'email', 'role'],
       where: 'email = ? AND password = ?',
       whereArgs: [email, hashPassword(password)],
     );

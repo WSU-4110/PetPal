@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'add_medical_record_dialog.dart';
+import 'edit_medical_record_dialog.dart';
+import '../models/medical_record.dart';
+import '../models/pet.dart';
 
 class MedicalRecordsPage extends StatefulWidget {
   final int petId;
@@ -12,10 +15,14 @@ class MedicalRecordsPage extends StatefulWidget {
 }
 
 class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
+  late Pet selectedPet;
+
   @override
   void initState() {
     super.initState();
     // Load medical records for this pet
+    final pets = context.read<AppState>().pets;
+    selectedPet = pets.firstWhere((p) => p.id == widget.petId);
     Future.microtask(() =>
         context.read<AppState>().loadMedicalRecords(widget.petId));
   }
@@ -49,56 +56,89 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
           ),
         ),
         child: SafeArea(
-          child: records.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No medical records yet.",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: records.length,
-                  itemBuilder: (context, i) {
-                    final record = records[i];
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purpleAccent.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          record.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        subtitle: Text(
-                          "${record.date} — ${record.vetName}",
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    );
+          child: Column(
+            children: [
+              DropdownButton<Pet>(
+                value: selectedPet,
+                items: appState.pets
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
+                    .toList(),
+                onChanged: (p) {
+                  if (p != null) {
+                    setState(() => selectedPet = p);
+                    context.read<AppState>().loadMedicalRecords(p.id!);
+                    }
                   },
                 ),
+              Expanded(
+                child: records.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No medical records yet.",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: records.length,
+                        itemBuilder: (context, i) {
+                          final record = records[i];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.purpleAccent.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                record.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "${record.date} — ${record.vetName}",
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white70),
+                                onPressed: () async {
+                                  final result = await showDialog<MedicalRecord>(
+                                    context: context,
+                                    builder: (_) => EditMedicalRecordDialog(
+                                      medicalrecord: record,
+                                      pets: appState.pets,
+                                    ),
+                                  );
+                                  if (result != null) {
+                                    await context.read<AppState>().updateMedicalRecord(result);
+                                  }
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: Container(
@@ -121,7 +161,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
           onPressed: () {
             showDialog(
               context: context,
-              builder: (_) => AddMedicalRecordDialog(petId: widget.petId),
+              builder: (_) => AddMedicalRecordDialog(petId: selectedPet.id!),
             );
           },
           child: const Icon(Icons.add, size: 30, color: Colors.white),
