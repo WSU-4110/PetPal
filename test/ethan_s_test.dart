@@ -87,7 +87,7 @@ testWidgets('3. Correct date picked', (tester) async {
   
 });
 
-testWidgets('4. ElevatedButton Expansion', (tester) async {
+testWidgets('4. ElevatedButton Expansion and Save Check', (tester) async {
 
   //test variable
   MedicalRecord? returned;
@@ -151,7 +151,7 @@ testWidgets('5. Cancel Button Test', (tester) async {
     expect(returned, isNull);
 });
 
-testWidgets('6. Date Error Catch in initState', (tester) async {
+testWidgets('6. Replaces Invalid Date with Todays date', (tester) async {
 
   await tester.pumpWidget(MaterialApp(
     home: EditMedicalRecordDialog(medicalrecord: original2, pets: [pet])
