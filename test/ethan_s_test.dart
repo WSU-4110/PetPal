@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:petpal/ui/add_medical_record_dialog.dart';
 import 'package:petpal/ui/edit_medical_record_dialog.dart';
+import 'package:petpal/ui/medical_records.dart';
 import 'package:petpal/models/medical_record.dart';
 import 'package:petpal/models/pet.dart';
 
@@ -162,5 +164,28 @@ testWidgets('6. Replaces Invalid Date with Todays date', (tester) async {
   final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
   expect(find.text(now), findsOneWidget);
 });
+
+testWidgets('7. Floating Action Button (FAB) opens AddMedicalRecordDialog', (tester) async {
+  await tester.pumpWidget(MaterialApp(
+    home: Scaffold(
+      body: Container(),
+      floatingActionButton: FloatingActionButton(onPressed:() {
+        showDialog(
+          context: tester.element(find.byType(FloatingActionButton)),
+          builder: (_) => AddMedicalRecordDialog(petId: 1),
+        );
+      },
+    ),
+    ),
+  ));
+
+  // Tap the FAB
+  await tester.tap(find.byType(FloatingActionButton));
+  await tester.pumpAndSettle();
+
+  // Verify dialog opens
+  expect(find.byType(AddMedicalRecordDialog), findsOneWidget);
+});
+
 
 }
