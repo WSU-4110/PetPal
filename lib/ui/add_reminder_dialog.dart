@@ -31,7 +31,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     final date = await showDatePicker(
         context: context,
         initialDate: selectedDate!,
-        firstDate: DateTime.now(),
+        firstDate: DateTime(2000),
         lastDate: DateTime(2100));
     if (date != null) setState(() => selectedDate = date);
   }

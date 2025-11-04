@@ -9,6 +9,7 @@ import 'package:bcrypt/bcrypt.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
+import '../models/exercise_log.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -16,7 +17,7 @@ class DBService {
   DBService._internal();
 
   Database? _db;
-  static const int _dbVersion = 5; // bump to 5 for safe upgrade
+  static const int _dbVersion = 6; // bump to 6 for safe upgrade
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -127,6 +128,19 @@ class DBService {
         description TEXT,
         date TEXT NOT NULL,
         vetName TEXT,
+        FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
+      );
+    ''');
+
+    // --- Medical Records table ---
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS exercise_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        petId INTEGER NOT NULL,
+        length TEXT NOT NULL,
+        activity TEXT NOT NULL,
+        observations TEXT,
+        date TEXT NOT NULL,
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
       );
     ''');
@@ -262,6 +276,12 @@ class DBService {
   Future<List<MedicalRecord>> getMedicalRecordsForPet(int petId) async => (await database).query('medical_records', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(MedicalRecord.fromMap).toList());
   Future<int> updateMedicalRecord(MedicalRecord r) async => (await database).update('medical_records', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteMedicalRecord(int id) async => (await database).delete('medical_records', where: 'id = ?', whereArgs: [id]);
+
+  // ---------------- Exercise Logs ----------------
+  Future<int> insertExerciseLog(ExerciseLog r) async => (await database).insert('exercise_logs', r.toMap());
+  Future<List<ExerciseLog>> getExerciseLog(int petId) async => (await database).query('exercise_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(ExerciseLog.fromMap).toList());
+  Future<int> updateExerciseLog(ExerciseLog r) async => (await database).update('exercise_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
+  Future<int> deleteExerciseLog(int id) async => (await database).delete('exercise_logs', where: 'id = ?', whereArgs: [id]);
 
   Future<void> close() async {
     if (_db != null) {

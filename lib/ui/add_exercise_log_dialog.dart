@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../state/app_state.dart';
-import '../models/medical_record.dart';
+import '../models/exercise_log.dart';
 
-class AddMedicalRecordDialog extends StatefulWidget {
+class AddExerciseLogDialog extends StatefulWidget {
   final int petId;
-  const AddMedicalRecordDialog({super.key, required this.petId});
+  const AddExerciseLogDialog({super.key, required this.petId});
 
   @override
-  State<AddMedicalRecordDialog> createState() => _AddMedicalRecordDialogState();
+  State<AddExerciseLogDialog> createState() => _AddExerciseLogDialogState();
 }
 
-class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
+class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descController = TextEditingController();
+  final _lengthController = TextEditingController();
+  final _activityController = TextEditingController();
   final _dateController = TextEditingController();
-  final _vetController = TextEditingController();
+  final _observationController = TextEditingController();
 
   DateTime? _selectedDate;
 
@@ -43,23 +43,24 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
      });
   }
 }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Add Medical Record"),
+      title: const Text("Add Exercise Log"),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             children: [
               TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: "Appointment"),
+                controller: _lengthController,
+                decoration: const InputDecoration(labelText: "Length of activity"),
                 validator: (v) => v == null || v.isEmpty ? "Required" : null,
               ),
               TextFormField(
-                controller: _descController,
-                decoration: const InputDecoration(labelText: "Description of appointment"),
+                controller: _activityController,
+                decoration: const InputDecoration(labelText: "Activity Completed"),
               ),
               GestureDetector(
                 onTap: pickDate,
@@ -72,8 +73,8 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                 ),
               ),
               TextFormField(
-                controller: _vetController,
-                decoration: const InputDecoration(labelText: "Vet/Clinic Name"),
+                controller: _observationController,
+                decoration: const InputDecoration(labelText: "Observations"),
               ),
             ],
           ),
@@ -87,14 +88,14 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
         ElevatedButton(
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              final record = MedicalRecord(
+              final record = ExerciseLog(
                 petId: widget.petId,
-                title: _titleController.text,
-                description: _descController.text,
+                length: _lengthController.text,
+                activity: _activityController.text,
                 date: _dateController.text,
-                vetName: _vetController.text,
+                observations: _observationController.text,
               );
-              await context.read<AppState>().addMedicalRecord(record);
+              await context.read<AppState>().addExerciseLog(record);
               Navigator.pop(context);
             }
           },

@@ -8,6 +8,7 @@ import 'ui/health_screen.dart';
 import 'ui/app_drawer.dart';
 import 'ui/login_page.dart';
 import 'state/app_state.dart';
+import 'ui/exercise_screen.dart';
 
 void main() {
   runApp(const PetPalApp());
@@ -52,6 +53,7 @@ class _MainNavigationState extends State<MainNavigation> {
         const PetListScreen(),
         const ReminderListScreen(),
         const HealthScreen(),
+        const ExerciseScreen(),
       ];
     } else if (widget.role == 'vet') {
       return [
@@ -106,10 +108,10 @@ class _MainNavigationState extends State<MainNavigation> {
                 BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
                 BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
+                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise')
               ]
             : const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Appointments'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
               ],
       ),

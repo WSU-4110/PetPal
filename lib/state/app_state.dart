@@ -7,6 +7,7 @@ import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
 import '../services/db_service.dart';
+import '../models/exercise_log.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -14,6 +15,7 @@ class AppState extends ChangeNotifier {
   List<Pet> pets = [];
   List<Reminder> reminders = [];
   List<MedicalRecord> medicalRecords = [];
+  List<ExerciseLog> exerciseLogs = [];
 
   Map<String, dynamic>? currentUser; // logged-in user
 
@@ -182,6 +184,31 @@ class AppState extends ChangeNotifier {
   Future<void> deleteMedicalRecord(int id, int petId) async {
     await _db.deleteMedicalRecord(id);
     medicalRecords = await _db.getMedicalRecordsForPet(petId);
+    notifyListeners();
+  }
+
+  // ---------------- Exercise Logs ----------------
+
+  Future<void> addExerciseLog(ExerciseLog record) async {
+    await _db.insertExerciseLog(record);
+    exerciseLogs = await _db.getExerciseLog(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> loadExerciseLog(int petId) async {
+    exerciseLogs = await _db.getExerciseLog(petId);
+    notifyListeners();
+  }
+
+  Future<void> updateExerciseLog(ExerciseLog record) async {
+    await _db.updateExerciseLog(record);
+    exerciseLogs = await _db.getExerciseLog(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> deleteExerciseLog(int id, int petId) async {
+    await _db.deleteExerciseLog(id);
+    exerciseLogs = await _db.getExerciseLog(petId);
     notifyListeners();
   }
 }
