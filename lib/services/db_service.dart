@@ -16,8 +16,6 @@ class DBService {
   DBService._internal();
 
   Database? _db;
-
-  /// bump this when you add migrations
   static const int _dbVersion = 4;
 
   Future<Database> get database async {
@@ -32,17 +30,6 @@ class DBService {
 
     return await openDatabase(
       path,
-<<<<<<< HEAD
-      version: 4, // bump version to recreate if needed
-      onCreate: _onCreate,
-      onUpgrade: (db, oldVersion, newVersion) async {
-        // Drop all tables for demo purposes
-        await db.execute("DROP TABLE IF EXISTS users;");
-        await db.execute("DROP TABLE IF EXISTS pets;");
-        await db.execute("DROP TABLE IF EXISTS reminders;");
-        await db.execute("DROP TABLE IF EXISTS medical_records;");
-        await _onCreate(db, newVersion);
-=======
       version: _dbVersion,
       onConfigure: (db) async {
         // enable foreign key support
@@ -52,9 +39,14 @@ class DBService {
         await _createAllTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // non-destructive migrations - add missing structures
+        // your local destructive upgrade (demo purposes)
+        await db.execute("CREATE TABLE IF NOT EXISTS pets(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, gender TEXT, species TEXT, breed TEXT, age INTEGER);");
+        await db.execute("CREATE TABLE IF NOT EXISTS reminders(id INTEGER PRIMARY KEY AUTOINCREMENT, petId INTEGER, title TEXT, category TEXT, scheduledAt TEXT, done INTEGER DEFAULT 0, FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE);");
+        await db.execute("CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, firstName TEXT, lastName TEXT, email TEXT UNIQUE, password TEXT, preference TEXT, role TEXT);");
+        await db.execute("CREATE TABLE IF NOT EXISTS medical_records(id INTEGER PRIMARY KEY AUTOINCREMENT, petId INTEGER, title TEXT, description TEXT, date TEXT, vetName TEXT, FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE);");
+
+        // teammate's non-destructive migrations
         if (oldVersion < 2 && newVersion >= 2) {
-          // medical_records added in v2
           await db.execute('''
             CREATE TABLE IF NOT EXISTS medical_records(
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,22 +59,15 @@ class DBService {
             );
           ''');
         }
-
         if (oldVersion < 3 && newVersion >= 3) {
-          // Example migration v3 (reserved)
           try {
             await db.execute("ALTER TABLE users ADD COLUMN salt TEXT;");
-          } catch (_) {
-            // ignoring if column exists / unsupported
-          }
+          } catch (_) {}
         }
-
         if (oldVersion < 4 && newVersion >= 4) {
-          // v4: ensure indexes for performance
           await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
         }
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
       },
     );
   }
@@ -118,17 +103,11 @@ class DBService {
         lastName TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-<<<<<<< HEAD
         preference TEXT,
         role TEXT
-=======
-        preference TEXT
-        -- bcrypt hash stored in `password` column (starts with \$2)
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
       );
     ''');
 
-    // medical_records (v2)
     await db.execute('''
       CREATE TABLE IF NOT EXISTS medical_records(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,32 +120,24 @@ class DBService {
       );
     ''');
 
-    // indices for performance
     await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
   }
 
-  // ---------------- Helpers for legacy hashing ----------------
-  // legacy used sha256(password) (older code). We support it and upgrade to bcrypt.
+  // ---------------- Helpers ----------------
+
   String _legacyHash(String password) {
     return sha256.convert(utf8.encode(password)).toString();
   }
 
-  // ---------------- Compatibility helper methods (kept for app_state) ----------------
-
-  /// Hash password (preferred bcrypt). This is provided so existing code that calls
-  /// _db.hashPassword(...) keeps compiling. Use registerUser for new registrations.
   String hashPassword(String password) {
     try {
-      // bcrypt hash; BCrypt.gensalt() uses default cost
       return BCrypt.hashpw(password, BCrypt.gensalt());
     } catch (e) {
-      // fallback to legacy sha256 if bcrypt not available for any reason
       return _legacyHash(password);
     }
   }
 
-  /// Verify password against a stored hash (bcrypt or legacy sha256).
   bool verifyPassword(String password, String storedHash) {
     try {
       if (storedHash.startsWith(r'$2')) {
@@ -175,12 +146,10 @@ class DBService {
         return _legacyHash(password) == storedHash;
       }
     } catch (e) {
-      // In unlikely failure, do legacy compare
       return _legacyHash(password) == storedHash;
     }
   }
 
-  /// Password strength rules (same as before). Kept for backward compatibility.
   bool isPasswordStrong(String password) {
     final regexUpper = RegExp(r'[A-Z]');
     final regexLower = RegExp(r'[a-z]');
@@ -193,7 +162,6 @@ class DBService {
         regexSymbol.hasMatch(password);
   }
 
-  /// Returns 0..5 score representing which rules are satisfied.
   int passwordStrengthScore(String password) {
     int score = 0;
     if (password.length >= 8) score++;
@@ -206,33 +174,16 @@ class DBService {
 
   // ---------------- Users ----------------
 
-  /// Register a new user using bcrypt. Throws Exception('email already registered') on duplicate.
   Future<int> registerUser(
-<<<<<<< HEAD
-      String firstName, String lastName, String email, String password, String preference, String role,) async {
-    final db = await database;
-    return await db.insert('users', {
-      'firstName': firstName,
-      'lastName': lastName,
-      'email': email,
-      'password': hashPassword(password), // store hashed password
-      'preference': preference,
-      'role': role,
-=======
     String firstName,
     String lastName,
     String email,
     String password,
     String preference,
+    String role,
   ) async {
     final db = await database;
-    String hashed;
-    try {
-      hashed = BCrypt.hashpw(password, BCrypt.gensalt());
-    } catch (e) {
-      // fallback (shouldn't normally occur if bcrypt dependency is present)
-      hashed = _legacyHash(password);
-    }
+    String hashed = hashPassword(password);
 
     return await db.transaction<int>((txn) async {
       try {
@@ -242,6 +193,7 @@ class DBService {
           'email': email,
           'password': hashed,
           'preference': preference,
+          'role': role,
         });
         return id;
       } on DatabaseException catch (err) {
@@ -251,45 +203,20 @@ class DBService {
         }
         rethrow;
       }
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
     });
   }
 
-  /// Returns user row if found, otherwise null.
   Future<Map<String, dynamic>?> getUserByEmail(String email) async {
     final db = await database;
-<<<<<<< HEAD
     final result = await db.query(
       'users',
-      columns: ['id', 'email', 'password', 'role'], //role update
+      columns: ['id', 'email', 'password', 'role', 'preference', 'firstName', 'lastName'],
       where: 'email = ?',
       whereArgs: [email],
     );
-    if (result.isNotEmpty) return result.first;
-    return null;
+    return result.isNotEmpty ? result.first : null;
   }
 
-  // Login: only succeeds if both email exists and password matches and fetches role
-  Future<Map<String, dynamic>?> loginUser(String email, String password) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      columns: ['id', 'email', 'role'],
-      where: 'email = ? AND password = ?',
-      whereArgs: [email, hashPassword(password)],
-    );
-    if (result.isNotEmpty) return result.first;
-    return null;
-=======
-    final rows = await db.query('users', where: 'email = ?', whereArgs: [email], limit: 1);
-    if (rows.isEmpty) return null;
-    return rows.first;
-  }
-
-  /// Login flow:
-  /// - If stored password string looks like bcrypt (starts with $2), verify with bcrypt.
-  /// - Else assume legacy sha256; if it matches, upgrade to bcrypt (rehash and update DB) and return user.
-  /// - Returns user map on success, null on failure.
   Future<Map<String, dynamic>?> loginUser(String email, String password) async {
     final db = await database;
     final user = await getUserByEmail(email);
@@ -302,10 +229,9 @@ class DBService {
         final ok = BCrypt.checkpw(password, storedPwd);
         return ok ? user : null;
       } else {
-        // legacy sha256 comparison
         final legacy = _legacyHash(password);
         if (legacy == storedPwd) {
-          // upgrade to bcrypt (best-effort)
+          // upgrade to bcrypt
           try {
             final newHash = BCrypt.hashpw(password, BCrypt.gensalt());
             await db.update('users', {'password': newHash}, where: 'id = ?', whereArgs: [user['id']]);
@@ -313,18 +239,15 @@ class DBService {
             upgraded['password'] = newHash;
             return upgraded;
           } catch (e) {
-            // if upgrade fails, still return success (password matched)
             return user;
           }
         }
         return null;
       }
     } catch (e) {
-      // fallback: if bcrypt operations fail for some reason, check legacy sha256 as last resort
       if (_legacyHash(password) == storedPwd) return user;
       return null;
     }
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
   }
 
   // ---------------- Pets ----------------

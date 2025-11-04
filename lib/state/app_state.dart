@@ -31,19 +31,13 @@ class AppState extends ChangeNotifier {
   // ---------------- LOGIN / REGISTER ----------------
 
   /// Logs in user with email + password
-<<<<<<< HEAD
-  /// Throws Exception with "invalid email" or "invalid password"
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    final userByEmail = await getUserByEmail(email);
-=======
   /// Throws Exception("invalid email") or Exception("invalid password")
-  Future<void> login(String email, String password) async {
-    // Use DBService.loginUser which handles bcrypt/legacy upgrade
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    // Try using DBService loginUser (your teammates may have updated this)
     final user = await _db.loginUser(email, password);
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
 
     if (user == null) {
-      // determine whether the email doesn't exist or password is wrong
+      // fallback check: see if email exists
       final byEmail = await _db.getUserByEmail(email);
       if (byEmail == null) {
         throw Exception("invalid email");
@@ -52,26 +46,20 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // success
     currentUser = user;
     notifyListeners();
-    return userByEmail;
-
+    return user;
   }
 
   /// Registers a new user
   /// Throws Exception if email exists or password is weak
   Future<void> register(
-<<<<<<< HEAD
-      String firstName, String lastName, String email, String password, String preference, String role) async {
-=======
-    String firstName,
-    String lastName,
-    String email,
-    String password,
-    String preference,
-  ) async {
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
+      String firstName,
+      String lastName,
+      String email,
+      String password,
+      String preference,
+      String role) async {
     if (await isEmailRegistered(email)) {
       throw Exception("email is already registered");
     }
@@ -79,13 +67,8 @@ class AppState extends ChangeNotifier {
       throw Exception("password is not strong enough");
     }
 
-<<<<<<< HEAD
-    // Save user to database
+    // Store with DBService.registerUser
     await _db.registerUser(firstName, lastName, email, password, preference, role);
-=======
-    // Store with DBService.registerUser (DBService uses bcrypt)
-    await _db.registerUser(firstName, lastName, email, password, preference);
->>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
   }
 
   /// Returns true if email is already registered
@@ -157,20 +140,16 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------- PASSWORD HELPERS ----------------
-  // Keep these locally so UI components can call AppState.passwordChecks etc.
   bool isPasswordStrong(String password) {
     final checks = passwordChecks(password);
     return checks.every((c) => c);
   }
 
-  /// Return strength score 0-5
   int passwordStrengthScore(String password) {
     final checks = passwordChecks(password);
     return checks.where((c) => c).length;
   }
 
-  /// Returns a list of bools for each requirement:
-  /// [minLength, hasUpper, hasLower, hasDigit, hasSymbol]
   List<bool> passwordChecks(String password) {
     return [
       password.length >= 8,
