@@ -1,17 +1,19 @@
+// lib/state/app_state.dart
 import 'package:flutter/foundation.dart';
-import '../models/pet.dart';
-import '../models/reminder.dart';
-import '../services/db_service.dart';
-import '../models/medical_record.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import '../models/pet.dart';
+import '../models/reminder.dart';
+import '../models/medical_record.dart';
+import '../services/db_service.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
 
   List<Pet> pets = [];
   List<Reminder> reminders = [];
+  List<MedicalRecord> medicalRecords = [];
 
   Map<String, dynamic>? currentUser; // logged-in user
 
@@ -29,20 +31,29 @@ class AppState extends ChangeNotifier {
   // ---------------- LOGIN / REGISTER ----------------
 
   /// Logs in user with email + password
+<<<<<<< HEAD
   /// Throws Exception with "invalid email" or "invalid password"
   Future<Map<String, dynamic>> login(String email, String password) async {
     final userByEmail = await getUserByEmail(email);
+=======
+  /// Throws Exception("invalid email") or Exception("invalid password")
+  Future<void> login(String email, String password) async {
+    // Use DBService.loginUser which handles bcrypt/legacy upgrade
+    final user = await _db.loginUser(email, password);
+>>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
 
-    if (userByEmail == null) {
-      throw Exception("invalid email");
+    if (user == null) {
+      // determine whether the email doesn't exist or password is wrong
+      final byEmail = await _db.getUserByEmail(email);
+      if (byEmail == null) {
+        throw Exception("invalid email");
+      } else {
+        throw Exception("invalid password");
+      }
     }
 
-    final hashedInput = _db.hashPassword(password);
-    if (userByEmail['password'] != hashedInput) {
-      throw Exception("invalid password");
-    }
-
-    currentUser = userByEmail;
+    // success
+    currentUser = user;
     notifyListeners();
     return userByEmail;
 
@@ -51,16 +62,30 @@ class AppState extends ChangeNotifier {
   /// Registers a new user
   /// Throws Exception if email exists or password is weak
   Future<void> register(
+<<<<<<< HEAD
       String firstName, String lastName, String email, String password, String preference, String role) async {
+=======
+    String firstName,
+    String lastName,
+    String email,
+    String password,
+    String preference,
+  ) async {
+>>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
     if (await isEmailRegistered(email)) {
       throw Exception("email is already registered");
     }
-    if (!_db.isPasswordStrong(password)) {
+    if (!isPasswordStrong(password)) {
       throw Exception("password is not strong enough");
     }
 
+<<<<<<< HEAD
     // Save user to database
     await _db.registerUser(firstName, lastName, email, password, preference, role);
+=======
+    // Store with DBService.registerUser (DBService uses bcrypt)
+    await _db.registerUser(firstName, lastName, email, password, preference);
+>>>>>>> 1e1a4f0 (Still WIP: saved local changes before pulling)
   }
 
   /// Returns true if email is already registered
@@ -132,12 +157,17 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------- PASSWORD HELPERS ----------------
-
-  /// Check if password meets strength requirements
-  bool isPasswordStrong(String password) => _db.isPasswordStrong(password);
+  // Keep these locally so UI components can call AppState.passwordChecks etc.
+  bool isPasswordStrong(String password) {
+    final checks = passwordChecks(password);
+    return checks.every((c) => c);
+  }
 
   /// Return strength score 0-5
-  int passwordStrengthScore(String password) => _db.passwordStrengthScore(password);
+  int passwordStrengthScore(String password) {
+    final checks = passwordChecks(password);
+    return checks.where((c) => c).length;
+  }
 
   /// Returns a list of bools for each requirement:
   /// [minLength, hasUpper, hasLower, hasDigit, hasSymbol]
@@ -151,32 +181,28 @@ class AppState extends ChangeNotifier {
     ];
   }
 
-
   // ---------------- Medical Records ----------------
-  List<MedicalRecord> medicalRecords = [];
 
-Future<void> addMedicalRecord(MedicalRecord record) async {
-  await _db.insertMedicalRecord(record);
-  medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
-  notifyListeners();
+  Future<void> addMedicalRecord(MedicalRecord record) async {
+    await _db.insertMedicalRecord(record);
+    medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> loadMedicalRecords(int petId) async {
+    medicalRecords = await _db.getMedicalRecordsForPet(petId);
+    notifyListeners();
+  }
+
+  Future<void> updateMedicalRecord(MedicalRecord record) async {
+    await _db.updateMedicalRecord(record);
+    medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> deleteMedicalRecord(int id, int petId) async {
+    await _db.deleteMedicalRecord(id);
+    medicalRecords = await _db.getMedicalRecordsForPet(petId);
+    notifyListeners();
+  }
 }
-
-Future<void> loadMedicalRecords(int petId) async {
-  medicalRecords = await _db.getMedicalRecordsForPet(petId);
-  notifyListeners();
-}
-
-Future<void> updateMedicalRecord(MedicalRecord record) async {
-  await _db.updateMedicalRecord(record);
-  medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
-  notifyListeners();
-}
-
-Future<void> deleteMedicalRecord(int id, int petId) async {
-  await _db.deleteMedicalRecord(id);
-  medicalRecords = await _db.getMedicalRecordsForPet(petId);
-  notifyListeners();
-}
-
-}
-

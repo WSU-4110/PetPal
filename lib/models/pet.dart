@@ -1,3 +1,4 @@
+// lib/models/pet.dart
 class Pet {
   final int? id;
   final String name;
@@ -5,6 +6,7 @@ class Pet {
   final String species;
   final String breed;
   final int age;
+  final String? image; // asset path or remote URL
 
   Pet({
     this.id,
@@ -13,6 +15,7 @@ class Pet {
     required this.species,
     required this.breed,
     required this.age,
+    this.image,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +26,7 @@ class Pet {
       'species': species,
       'breed': breed,
       'age': age,
+      'image': image,
     };
   }
 
@@ -33,7 +37,8 @@ class Pet {
       gender: map['gender'] as String,
       species: map['species'] as String,
       breed: map['breed'] as String,
-      age: map['age'] as int,
+      age: map['age'] is int ? map['age'] as int : int.tryParse('${map['age']}') ?? 0,
+      image: map['image'] as String?,
     );
   }
 }

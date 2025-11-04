@@ -14,7 +14,7 @@ class PetListScreen extends StatelessWidget {
     final pets = appState.pets;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      appBar: AppBar(title: const Text('Pets')),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -28,11 +28,7 @@ class PetListScreen extends StatelessWidget {
               ? const Center(
                   child: Text(
                     'No pets yet',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white70),
                   ),
                 )
               : ListView.builder(
@@ -42,52 +38,43 @@ class PetListScreen extends StatelessWidget {
                     final Pet pet = pets[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purpleAccent.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                        color: Colors.white.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          _buildAvatar(pet),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(pet.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                const SizedBox(height: 4),
+                                Text('${pet.breed} • ${pet.species} • Age: ${pet.age}', style: const TextStyle(color: Colors.white70)),
+                              ],
+                            ),
+                          ),
                           Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                pet.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white70),
+                                onPressed: () {
+                                  // TODO: implement edit flow
+                                },
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${pet.species} • Age: ${pet.age}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                onPressed: () async {
+                                  await appState.deletePet(pet.id!);
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pet deleted')));
+                                },
                               ),
                             ],
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              await appState.deletePet(pet.id!);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Pet deleted')),
-                              );
-                            },
-                          ),
+                          )
                         ],
                       ),
                     );
@@ -95,31 +82,34 @@ class PetListScreen extends StatelessWidget {
                 ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          onPressed: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PetFormScreen()));
-          },
-          child: const Icon(Icons.add, size: 30),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PetFormScreen()));
+        },
+        child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _buildAvatar(Pet pet) {
+    final image = pet.image;
+    if (image == null) {
+      return CircleAvatar(radius: 30, backgroundColor: Colors.white24, child: const Icon(Icons.pets, color: Colors.white70));
+    }
+
+    if (image.startsWith('http')) {
+      return CircleAvatar(
+        radius: 30,
+        backgroundColor: Colors.white24,
+        backgroundImage: NetworkImage(image),
+      );
+    }
+
+    // treat as asset path
+    return CircleAvatar(
+      radius: 30,
+      backgroundColor: Colors.white24,
+      backgroundImage: AssetImage(image),
     );
   }
 }
