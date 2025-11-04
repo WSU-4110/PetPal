@@ -41,4 +41,15 @@ class Pet {
       image: map['image'] as String?,
     );
   }
+
+  /// Helper: returns the expected asset image path for this pet
+  static String imageFor(String species, String breed) {
+    if (species.isEmpty || breed.isEmpty) return 'assets/breeds/petlogo.png';
+
+    String s = species.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+    String b = breed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+
+    if (b.isEmpty) b = 'petlogo';
+    return 'assets/breeds/${s}_${b}.png';
+  }
 }

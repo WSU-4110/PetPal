@@ -130,15 +130,12 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo
                   Image.asset(
                     "assets/images/petlogo.png",
                     height: 120,
                     width: 120,
                   ),
                   const SizedBox(height: 20),
-
-                  // Pet Image with subtle glow
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
@@ -161,7 +158,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Registration Fields
                   if (_isRegisterMode)
                     _roundedTextField(
                         controller: _firstNameController,
@@ -178,7 +174,8 @@ class _LoginPageState extends State<LoginPage> {
                   if (_isRegisterMode)
                     DropdownButtonFormField<String>(
                       value: _selectedPreference,
-                      decoration: _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
+                      decoration:
+                          _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
                       dropdownColor: Colors.purple[100],
                       items: _preferences
                           .map((p) => DropdownMenuItem(value: p, child: Text(p)))
@@ -204,7 +201,8 @@ class _LoginPageState extends State<LoginPage> {
                   if (_isRegisterMode)
                     DropdownButtonFormField<String>(
                       value: _selectedRole,
-                      decoration: _dropdownDecoration(label: "Role", icon: Icons.badge),
+                      decoration:
+                          _dropdownDecoration(label: "Role", icon: Icons.badge),
                       dropdownColor: Colors.purple[100],
                       items: const [
                         DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
@@ -216,18 +214,19 @@ class _LoginPageState extends State<LoginPage> {
                         });
                       },
                       validator: (value) =>
-                              value == null || value.isEmpty ? "Select a role": null,
+                          value == null || value.isEmpty ? "Select a role" : null,
                     ),
-                    if (_isRegisterMode) const SizedBox(height: 16),
+                  if (_isRegisterMode) const SizedBox(height: 16),
 
-                  // Email Field
                   _roundedTextField(
                       controller: _emailController,
                       label: "Email",
                       icon: Icons.email),
+                  if (loginErrorEmail != null)
+                    Text(loginErrorEmail!,
+                        style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 16),
 
-                  // Password Field
                   _roundedTextField(
                     controller: _passwordController,
                     label: "Password",
@@ -253,9 +252,11 @@ class _LoginPageState extends State<LoginPage> {
                       }
                     },
                   ),
+                  if (loginErrorPassword != null)
+                    Text(loginErrorPassword!,
+                        style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 12),
 
-                  // Password Strength
                   if (_isRegisterMode)
                     ValueListenableBuilder<List<bool>>(
                       valueListenable: _passwordChecksNotifier,
@@ -310,7 +311,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   const SizedBox(height: 24),
 
-                  // Login/Register Button
                   ValueListenableBuilder<bool>(
                     valueListenable: _buttonPressedNotifier,
                     builder: (context, pressed, _) {
@@ -319,43 +319,55 @@ class _LoginPageState extends State<LoginPage> {
                         onTapUp: (_) => _buttonPressedNotifier.value = false,
                         onTapCancel: () => _buttonPressedNotifier.value = false,
                         onTap: () async {
-                            if (_formKey.currentState!.validate()) {
-                              if (_isRegisterMode && _selectedRole == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Please select a role")),
+                          if (_formKey.currentState!.validate()) {
+                            if (_isRegisterMode && _selectedRole == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("Please select a role")),
+                              );
+                              return;
+                            }
+
+                            setState(() {
+                              loginErrorEmail = null;
+                              loginErrorPassword = null;
+                              _isEmailTaken = false;
+                            });
+
+                            try {
+                              Map<String, dynamic>? user;
+                              if (_isRegisterMode) {
+                                await appState.register(
+                                  _firstNameController.text.trim(),
+                                  _lastNameController.text.trim(),
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                  _selectedPreference == "Custom"
+                                      ? _customCaptionController.text.trim()
+                                      : _selectedPreference ?? "Pet lover",
+                                  _selectedRole ?? "owner",
                                 );
-                                return;
+                                user = await appState.login(
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                );
+                              } else {
+                                user = await appState.login(
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                );
                               }
 
-                              try {
-                                Map<String, dynamic>? user;
-                                if (_isRegisterMode) {
-                                  await appState.register(
-                                    _firstNameController.text,
-                                    _lastNameController.text,
-                                    _emailController.text,
-                                    _passwordController.text,
-                                    _selectedPreference == "Custom"
-                                        ? _customCaptionController.text
-                                        : _selectedPreference ?? "Pet lover",
-                                    _selectedRole ?? "owner", // Ensure role is always defined
-                                  );
-                                  user = await appState.login(
-                                    _emailController.text,
-                                    _passwordController.text,
-                                  );
-                                } else {
-                                  user = await appState.login(
-                                    _emailController.text,
-                                    _passwordController.text,
-                                  );
-                                }
-
+                              if (user != null) {
+                                if (!mounted) return;
                                 Navigator.pushReplacement(
                                   context,
-                                  MaterialPageRoute(builder: (_) => MainNavigation(role: user!['role'])),
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          MainNavigation(role: user!['role'])),
                                 );
-                              } catch (e) {
+                              }
+                            } catch (e) {
                               String err = e.toString().toLowerCase();
                               setState(() {
                                 if (err.contains("invalid email")) {
@@ -404,7 +416,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Toggle Login/Register
                   Center(
                     child: RichText(
                       text: TextSpan(
@@ -439,7 +450,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _dropdownDecoration({required String label, required IconData icon}) {
+  InputDecoration _dropdownDecoration(
+      {required String label, required IconData icon}) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon),
@@ -480,6 +492,12 @@ class _LoginPageState extends State<LoginPage> {
         labelStyle: const TextStyle(color: Colors.white),
       ),
       style: const TextStyle(color: Colors.white),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return "Please enter $label";
+        }
+        return null;
+      },
     );
   }
 }

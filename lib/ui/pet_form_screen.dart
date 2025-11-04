@@ -24,39 +24,15 @@ class _PetFormScreenState extends State<PetFormScreen> {
 
   // Breed lists per species
   static const Map<String, List<String>> _breedOptions = {
-    'Cat': [
-      'Bombay',
-      'Siamese',
-      'Maine Coon',
-      'Domestic Shorthair',
-      'Other'
-    ],
-    'Dog': [
-      'German Shepherd',
-      'Labrador Retriever',
-      'Golden Retriever',
-      'Beagle',
-      'Other'
-    ],
-    'Bird': [
-      'Parakeet',
-      'Cockatiel',
-      'Canary',
-      'Other'
-    ],
-    'Rabbit': [
-      'Lionhead',
-      'Dutch',
-      'Mini Lop',
-      'Other'
-    ],
+    'Cat': ['Bombay', 'Siamese', 'Maine Coon', 'Domestic Shorthair', 'Other'],
+    'Dog': ['German Shepherd', 'Labrador Retriever', 'Golden Retriever', 'Beagle', 'Other'],
+    'Bird': ['Parakeet', 'Cockatiel', 'Canary', 'Other'],
+    'Rabbit': ['Lionhead', 'Dutch', 'Mini Lop', 'Other'],
     'Other': ['Other'],
   };
 
-  // species dropdown options (keep this short & friendly)
   static final List<String> _speciesOptions = _breedOptions.keys.toList();
 
-  // helpers
   List<String> get _currentBreedList {
     if (_species == null) return [];
     return _breedOptions[_species!] ?? ['Other'];
@@ -66,31 +42,12 @@ class _PetFormScreenState extends State<PetFormScreen> {
     return _breed == 'Other' || (_breed != null && _breed!.trim().isEmpty && _species == 'Other');
   }
 
-  // Build asset path for preview image. Convention:
-  // assets/images/breeds/{species_lower}_{breed_lower_underscored}.png
-  // e.g. assets/images/breeds/cat_bombay.png
-  // If file missing, fallback to placeholder.
   String _imageFor(String? species, String? breed) {
-    if (species == null || breed == null) {
-      return 'assets/images/breeds/placeholder.png';
-    }
-
-    // use custom breed when provided
+    if (species == null || breed == null) return 'assets/breeds/petlogo.png';
     final usedBreed = (breed == 'Other' && _customBreed.isNotEmpty) ? _customBreed : breed;
-
-    String s = species.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
-    String b = usedBreed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
-
-    // guard: if the user typed a weird custom breed, keep only letters/numbers/underscores
-    if (b.isEmpty) b = 'placeholder';
-
-    return 'assets/images/breeds/${s}_${b}.png';
+    return Pet.imageFor(species, usedBreed);
   }
 
-  // Local helper to check if an asset exists at runtime isn't trivial without package support,
-  // so we try to load the expected asset and show Image.asset. If asset is missing the framework
-  // will show a little error placeholder in debug — that's why we recommend dropping a
-  // fallback placeholder at assets/images/breeds/placeholder.png
   Widget _buildPreviewImage() {
     final imgPath = _imageFor(_species, _breed);
     return ClipRRect(
@@ -103,8 +60,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
           imgPath,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) {
-            // fallback UI if asset not found at runtime
-            return Image.asset('assets/images/breeds/placeholder.png', fit: BoxFit.cover);
+            return Image.asset('assets/breeds/petlogo.png', fit: BoxFit.cover);
           },
         ),
       ),
@@ -140,8 +96,6 @@ class _PetFormScreenState extends State<PetFormScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-
-                  // preview + name row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -156,29 +110,23 @@ class _PetFormScreenState extends State<PetFormScreen> {
                             prefixIcon: const Icon(Icons.pets, color: Colors.white70),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
-                              borderSide:
-                                  BorderSide(color: Colors.white.withOpacity(0.3)),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(18),
-                              borderSide:
-                                  BorderSide(color: Colors.white.withOpacity(0.7)),
+                              borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
                             ),
                             labelStyle: const TextStyle(color: Colors.white70),
                           ),
                           style: const TextStyle(color: Colors.white),
                           initialValue: '',
                           onSaved: (v) => _name = v?.trim() ?? '',
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
                         ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
-                  // Gender (still text for now but you can change to dropdown)
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: 'Gender',
@@ -197,13 +145,9 @@ class _PetFormScreenState extends State<PetFormScreen> {
                     ),
                     style: const TextStyle(color: Colors.white),
                     onSaved: (v) => _gender = v?.trim() ?? 'Unknown',
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Enter the gender' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter the gender' : null,
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Species dropdown
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Species',
@@ -222,15 +166,11 @@ class _PetFormScreenState extends State<PetFormScreen> {
                         isExpanded: true,
                         dropdownColor: Colors.white,
                         items: _speciesOptions.map((s) {
-                          return DropdownMenuItem<String>(
-                            value: s,
-                            child: Text(s),
-                          );
+                          return DropdownMenuItem<String>(value: s, child: Text(s));
                         }).toList(),
                         onChanged: (val) {
                           setState(() {
                             _species = val;
-                            // reset breed whenever species changes
                             _breed = null;
                             _customBreed = '';
                           });
@@ -238,10 +178,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Breed dropdown (depends on species)
                   InputDecorator(
                     decoration: InputDecoration(
                       labelText: 'Breed',
@@ -265,15 +202,12 @@ class _PetFormScreenState extends State<PetFormScreen> {
                         onChanged: (val) {
                           setState(() {
                             _breed = val;
-                            // if breed changed and not Other, clear custom breed
                             if (val != 'Other') _customBreed = '';
                           });
                         },
                       ),
                     ),
                   ),
-
-                  // Custom breed input only when user picks "Other"
                   if (_showCustomBreedField) const SizedBox(height: 12),
                   if (_showCustomBreedField)
                     TextFormField(
@@ -285,8 +219,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                         prefixIcon: const Icon(Icons.edit, color: Colors.white70),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(18),
-                          borderSide:
-                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                         ),
                       ),
                       style: const TextStyle(color: Colors.white),
@@ -294,17 +227,12 @@ class _PetFormScreenState extends State<PetFormScreen> {
                       onChanged: (v) => setState(() => _customBreed = v.trim()),
                       validator: (v) {
                         if (_showCustomBreedField) {
-                          return (v == null || v.trim().isEmpty)
-                              ? 'Please enter the custom breed'
-                              : null;
+                          return (v == null || v.trim().isEmpty) ? 'Please enter the custom breed' : null;
                         }
                         return null;
                       },
                     ),
-
                   const SizedBox(height: 16),
-
-                  // Age
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: 'Age',
@@ -325,20 +253,14 @@ class _PetFormScreenState extends State<PetFormScreen> {
                     keyboardType: TextInputType.number,
                     onSaved: (v) => _age = int.tryParse(v ?? '0') ?? 0,
                   ),
-
                   const SizedBox(height: 28),
-
-                  // Save button
                   GestureDetector(
                     onTap: () async {
-                      // validate
                       if (!_formKey.currentState!.validate()) return;
-
-                      // save form values
                       _formKey.currentState!.save();
 
-                      // final selected breed text (custom if used)
                       final finalBreed = (_breed == 'Other' ? (_customBreed.isNotEmpty ? _customBreed : 'Other') : (_breed ?? 'Other'));
+                      final imgPath = _imageFor(_species, finalBreed);
 
                       final pet = Pet(
                         name: _name,
@@ -346,6 +268,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                         species: _species ?? 'Other',
                         breed: finalBreed,
                         age: _age,
+                        image: imgPath, // <-- auto-set image path
                       );
 
                       await appState.addPet(pet);
@@ -375,22 +298,16 @@ class _PetFormScreenState extends State<PetFormScreen> {
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
-                            Shadow(
-                              blurRadius: 5,
-                              color: Colors.black26,
-                              offset: Offset(1, 2),
-                            ),
+                            Shadow(blurRadius: 5, color: Colors.black26, offset: Offset(1, 2)),
                           ],
                         ),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-                  // Small instructions + asset naming reminder for devs
                   const Text(
-                    'Tip for devs: place breed images in assets/images/breeds/ named like "cat_bombay.png". '
-                    'If missing, placeholder.png will be used.',
+                    'Tip for devs: place breed images in assets/breeds/ named like "cat_bombay.png". '
+                    'If missing, petlogo.png will be used.',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
