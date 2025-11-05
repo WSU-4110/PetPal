@@ -1,13 +1,15 @@
 name: Flutter CI
 
 on:
-  workflow_dispatch:        # manual run button
+  workflow_dispatch:        # allows manual trigger from Actions UI
   push:
     branches:
       - dev_with_tests
+      - dev
   pull_request:
     branches:
       - dev_with_tests
+      - dev
 
 jobs:
   build-and-test:
@@ -21,13 +23,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Flutter (pinned version matching project Dart SDK)
+      - name: Setup Flutter (use version that includes Dart 3.9)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.6'   # <<-- pin an exact release known to include Dart 3.9.x
+          flutter-version: '3.35.0'    # <-- matches Dart 3.9.x
 
-      - name: Validate flutter
-        run: flutter --version
+      - name: Show flutter & dart versions
+        run: |
+          flutter --version
+          dart --version
 
       - name: Get dependencies
         run: flutter pub get
@@ -35,7 +39,7 @@ jobs:
       - name: Static Analysis
         run: flutter analyze
 
-      - name: Run unit tests (with coverage)
+      - name: Run unit tests
         run: flutter test --coverage
 
       - name: Format coverage (optional)
