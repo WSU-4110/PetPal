@@ -1,24 +1,23 @@
-// screens/edit_MedicalRecord_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/pet.dart';
-import '../models/medical_record.dart';
+import '../models/exercise_log.dart';
 
-class EditMedicalRecordDialog extends StatefulWidget {
-  final MedicalRecord medicalrecord;
+class EditExerciseLogDialog extends StatefulWidget {
+  final ExerciseLog exerciseLog;
   final List<Pet> pets;
 
-  const EditMedicalRecordDialog({super.key, required this.medicalrecord, required this.pets});
+  const EditExerciseLogDialog({super.key, required this.exerciseLog, required this.pets});
 
   @override
-  _EditMedicalRecordDialogState createState() => _EditMedicalRecordDialogState();
+  _EditExerciseLogDialogState createState() => _EditExerciseLogDialogState();
 }
 
-class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
-    late TextEditingController titleController;
-    late TextEditingController descController;
+class _EditExerciseLogDialogState extends State<EditExerciseLogDialog> {
+    late TextEditingController lengthController;
+    late TextEditingController activityController;
     late TextEditingController dateController;
-    late TextEditingController vetController;
+    late TextEditingController observationsController;
     late Pet selectedPet;
     late TimeOfDay selectedTime;
     late DateTime selectedDate;
@@ -27,17 +26,17 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
   @override
   void initState() {
     super.initState();
-    titleController = TextEditingController(text: widget.medicalrecord.title);
-    descController = TextEditingController(text: widget.medicalrecord.description);
-    dateController = TextEditingController(text: widget.medicalrecord.date);
-    vetController = TextEditingController(text: widget.medicalrecord.vetName);
+    lengthController = TextEditingController(text: widget.exerciseLog.length);
+    activityController = TextEditingController(text: widget.exerciseLog.activity);
+    dateController = TextEditingController(text: widget.exerciseLog.date);
+    observationsController = TextEditingController(text: widget.exerciseLog.observations);
     try {
-        selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.medicalrecord.date);
+        selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.exerciseLog.date);
     } catch (err) {
       selectedDate = DateTime.now();
     }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
-    selectedPet = widget.pets.firstWhere((p) => p.id == widget.medicalrecord.petId);
+    selectedPet = widget.pets.firstWhere((p) => p.id == widget.exerciseLog.petId);
   }
 
   Future<void> pickDate() async {
@@ -61,22 +60,22 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Medical Record'),
+      title: const Text('Edit Exercise Log'),
       content: SingleChildScrollView(
         child: Column(
           children: [
             TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
+              controller: lengthController,
+              decoration: const InputDecoration(labelText: 'Length of activity'),
             ),
             TextField(
-              controller: descController,
-              decoration: const InputDecoration(labelText: 'Description'),
+              controller: activityController,
+              decoration: const InputDecoration(labelText: 'Activity'),
               maxLines: 2,
             ),
             TextField(
-              controller: vetController,
-              decoration: const InputDecoration(labelText: 'Vet/Clinic'),
+              controller: observationsController,
+              decoration: const InputDecoration(labelText: 'Observations'),
             ),
             Row(
               children: [
@@ -100,13 +99,13 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
               final dt = DateTime(selectedDate.year, selectedDate.month,
                   selectedDate.day, selectedTime.hour, selectedTime.minute);
                   dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(dt);
-              final updated = MedicalRecord(
-                id: widget.medicalrecord.id,
-                petId: widget.medicalrecord.petId,
-                title: titleController.text,
-                description: descController.text,
+              final updated = ExerciseLog(
+                id: widget.exerciseLog.id,
+                petId: widget.exerciseLog.petId,
+                length: lengthController.text,
+                activity: activityController.text,
                 date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
-                vetName: vetController.text,
+                observations: observationsController.text,
               );
               Navigator.pop(context, updated);
             },

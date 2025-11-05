@@ -207,6 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                       items: const [
                         DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
                         DropdownMenuItem(value: "vet", child: Text("Veterinarian")),
+                        DropdownMenuItem(value: "trainer", child: Text("Trainer")),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -358,7 +359,6 @@ class _LoginPageState extends State<LoginPage> {
                                 );
                               }
 
-                              if (user != null) {
                                 if (!mounted) return;
                                 Navigator.pushReplacement(
                                   context,
@@ -366,7 +366,6 @@ class _LoginPageState extends State<LoginPage> {
                                       builder: (_) =>
                                           MainNavigation(role: user!['role'])),
                                 );
-                              }
                             } catch (e) {
                               String err = e.toString().toLowerCase();
                               setState(() {

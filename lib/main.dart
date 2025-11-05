@@ -8,6 +8,7 @@ import 'ui/health_screen.dart';
 import 'ui/app_drawer.dart';
 import 'ui/login_page.dart';
 import 'state/app_state.dart';
+import 'ui/exercise_screen.dart';
 
 void main() {
   runApp(const PetPalApp());
@@ -52,11 +53,17 @@ class _MainNavigationState extends State<MainNavigation> {
         const PetListScreen(),
         const ReminderListScreen(),
         const HealthScreen(),
+        const ExerciseScreen(),
       ];
     } else if (widget.role == 'vet') {
       return [
         const HomeScreen(),
         const HealthScreen(),
+      ];
+    } else if (widget.role == 'trainer') {
+      return [
+        const HomeScreen(),
+        const ExerciseScreen(),
       ];
     } else {
       return [const Center(child: Text("Unknown role"))];
@@ -79,7 +86,18 @@ class _MainNavigationState extends State<MainNavigation> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Text(widget.role == 'owner' ? 'Owner Dashboard' : 'Vet Dashboard'),
+        title: Text(() {
+          switch (widget.role){
+          case 'owner':
+            return 'Owner Dashboard';
+          case 'vet':
+            return 'Vetereinarian Dashboard';
+          case 'trainer':
+            return 'Trainer Dashboard';
+          default:
+            return 'Dash';
+    }
+  }()),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -100,18 +118,32 @@ class _MainNavigationState extends State<MainNavigation> {
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: widget.role == 'owner'
-            ? const [
+        items: () {
+          switch (widget.role) {
+            case 'owner':
+              return const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
                 BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
-              ]
-            : const [
+                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise')
+              ];
+            case 'vet':
+              return const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Appointments'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
-              ],
+              ];
+            case 'trainer':
+              return const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+              ];
+              default:
+                return const [
+                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              ];
+          }
+        }(),
       ),
     );
   }
