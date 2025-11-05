@@ -29,6 +29,10 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   
+  #for image picker
+  shared_preferences: ^2.1.0
+  image_picker: ^0.8.7+5
+
   #for bcrypt
   bcrypt: ^1.1.3
 

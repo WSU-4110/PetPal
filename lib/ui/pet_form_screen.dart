@@ -1,11 +1,15 @@
 // lib/ui/pet_form_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/pet.dart';
 
 class PetFormScreen extends StatefulWidget {
-  const PetFormScreen({super.key});
+  final Pet? pet; // <-- optional for editing
+
+  const PetFormScreen({super.key, this.pet});
 
   @override
   State<PetFormScreen> createState() => _PetFormScreenState();
@@ -22,16 +26,43 @@ class _PetFormScreenState extends State<PetFormScreen> {
   String _customBreed = '';
   int _age = 0;
 
-  // Breed lists per species
-  static const Map<String, List<String>> _breedOptions = {
-    'Cat': ['Bombay', 'Siamese', 'Maine Coon', 'Domestic Shorthair', 'Other'],
-    'Dog': ['German Shepherd', 'Labrador Retriever', 'Golden Retriever', 'Beagle', 'Other'],
-    'Bird': ['Parakeet', 'Cockatiel', 'Canary', 'Other'],
-    'Rabbit': ['Lionhead', 'Dutch', 'Mini Lop', 'Other'],
-    'Other': ['Other'],
-  };
+  Map<String, List<String>> _breedOptions = {};
+  List<String> _speciesOptions = [];
 
-  static final List<String> _speciesOptions = _breedOptions.keys.toList();
+  @override
+  void initState() {
+    super.initState();
+    _loadBreeds();
+
+    // Pre-fill values if editing
+    if (widget.pet != null) {
+      final p = widget.pet!;
+      _name = p.name;
+      _gender = p.gender;
+      _species = p.species;
+      _breed = p.breed;
+      _customBreed = (p.breed == 'Other') ? '' : '';
+      _age = p.age;
+    }
+  }
+
+  Future<void> _loadBreeds() async {
+    try {
+      final data = await rootBundle.loadString('assets/breeds.json');
+      final decoded = json.decode(data) as Map<String, dynamic>;
+
+      setState(() {
+        _breedOptions = decoded.map((key, value) => MapEntry(
+            key, (value as List<dynamic>).map((e) => e.toString()).toList()));
+        _speciesOptions = _breedOptions.keys.toList();
+      });
+    } catch (e) {
+      setState(() {
+        _breedOptions = {'Other': ['Other']};
+        _speciesOptions = ['Other'];
+      });
+    }
+  }
 
   List<String> get _currentBreedList {
     if (_species == null) return [];
@@ -39,12 +70,15 @@ class _PetFormScreenState extends State<PetFormScreen> {
   }
 
   bool get _showCustomBreedField {
-    return _breed == 'Other' || (_breed != null && _breed!.trim().isEmpty && _species == 'Other');
+    return _breed == 'Other' ||
+        (_breed != null && _breed!.trim().isEmpty && _species == 'Other');
   }
 
   String _imageFor(String? species, String? breed) {
     if (species == null || breed == null) return 'assets/breeds/petlogo.png';
-    final usedBreed = (breed == 'Other' && _customBreed.isNotEmpty) ? _customBreed : breed;
+    final usedBreed = (breed == 'Other' && _customBreed.isNotEmpty)
+        ? _customBreed
+        : breed;
     return Pet.imageFor(species, usedBreed);
   }
 
@@ -59,9 +93,147 @@ class _PetFormScreenState extends State<PetFormScreen> {
         child: Image.asset(
           imgPath,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) {
-            return Image.asset('assets/breeds/petlogo.png', fit: BoxFit.cover);
-          },
+          errorBuilder: (_, __, ___) =>
+              Image.asset('assets/breeds/petlogo.png', fit: BoxFit.cover),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.12),
+      prefixIcon: Icon(icon, color: Colors.white70),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.6)),
+      ),
+      labelStyle: const TextStyle(color: Colors.white70),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+    );
+  }
+
+  Future<void> _openSelector({
+    required String title,
+    required List<String> items,
+    required String? currentValue,
+    required ValueChanged<String?> onSelected,
+  }) async {
+    if (items.isEmpty) return;
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (c) {
+        return GestureDetector(
+          onTap: () => Navigator.of(c).pop(),
+          behavior: HitTestBehavior.opaque,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.5,
+            minChildSize: 0.25,
+            maxChildSize: 0.85,
+            builder: (_, controller) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Scrollbar(
+                        controller: controller,
+                        thumbVisibility: true,
+                        thickness: 6,
+                        radius: const Radius.circular(8),
+                        child: ListView.builder(
+                          controller: controller,
+                          itemCount: items.length,
+                          itemBuilder: (_, i) {
+                            final it = items[i];
+                            final isSelected = it == currentValue;
+                            return Material(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                title: Text(it,
+                                    style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal)),
+                                trailing: isSelected
+                                    ? const Icon(Icons.check, color: Colors.white)
+                                    : null,
+                                onTap: () => Navigator.of(context).pop(it),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+
+    if (selected != null) onSelected(selected);
+  }
+
+  Widget _selectorField({
+    required String label,
+    required IconData icon,
+    required String? value,
+    required List<String> items,
+    required VoidCallback onTap,
+  }) {
+    final displayText = (value == null || value.isEmpty) ? 'Select $label' : value;
+    return GestureDetector(
+      onTap: onTap,
+      child: InputDecorator(
+        decoration: _buildInputDecoration(label, icon),
+        child: Row(
+          children: [
+            Expanded(
+                child: Text(displayText,
+                    style: TextStyle(
+                        color: (value == null || value.isEmpty)
+                            ? Colors.white54
+                            : Colors.white))),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_drop_down, color: Colors.white70),
+          ],
         ),
       ),
     );
@@ -74,8 +246,8 @@ class _PetFormScreenState extends State<PetFormScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Add Pet'),
-        backgroundColor: Colors.purpleAccent,
+        title: Text(widget.pet != null ? 'Edit Pet' : 'Add Pet'),
+        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: Container(
@@ -95,7 +267,6 @@ class _PetFormScreenState extends State<PetFormScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 8),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -103,152 +274,91 @@ class _PetFormScreenState extends State<PetFormScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextFormField(
-                          decoration: InputDecoration(
-                            labelText: 'Name',
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.15),
-                            prefixIcon: const Icon(Icons.pets, color: Colors.white70),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
-                            ),
-                            labelStyle: const TextStyle(color: Colors.white70),
-                          ),
+                          initialValue: _name,
+                          decoration: _buildInputDecoration('Name', Icons.pets),
                           style: const TextStyle(color: Colors.white),
-                          initialValue: '',
                           onSaved: (v) => _name = v?.trim() ?? '',
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
+                          validator: (v) =>
+                              (v == null || v.trim().isEmpty)
+                                  ? 'Enter a name'
+                                  : null,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Gender',
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      prefixIcon: const Icon(Icons.male, color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
-                      ),
-                      labelStyle: const TextStyle(color: Colors.white70),
-                    ),
+                    initialValue: _gender,
+                    decoration: _buildInputDecoration('Gender', Icons.male),
                     style: const TextStyle(color: Colors.white),
                     onSaved: (v) => _gender = v?.trim() ?? 'Unknown',
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter the gender' : null,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty)
+                            ? 'Enter the gender'
+                            : null,
                   ),
                   const SizedBox(height: 16),
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Species',
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      prefixIcon: const Icon(Icons.nature, color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _species,
-                        hint: const Text('Select species', style: TextStyle(color: Colors.white70)),
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        items: _speciesOptions.map((s) {
-                          return DropdownMenuItem<String>(value: s, child: Text(s));
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _species = val;
-                            _breed = null;
-                            _customBreed = '';
-                          });
-                        },
-                      ),
+
+                  // Species selector
+                  _selectorField(
+                    label: 'Species',
+                    icon: Icons.nature,
+                    value: _species,
+                    items: _speciesOptions,
+                    onTap: () => _openSelector(
+                      title: 'Choose species',
+                      items: _speciesOptions,
+                      currentValue: _species,
+                      onSelected: (val) {
+                        setState(() {
+                          _species = val;
+                          _breed = null;
+                          _customBreed = '';
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
-                  InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Breed',
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      prefixIcon: const Icon(Icons.category, color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _breed,
-                        hint: const Text('Select breed', style: TextStyle(color: Colors.white70)),
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        items: _currentBreedList.map((b) {
-                          return DropdownMenuItem<String>(value: b, child: Text(b));
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _breed = val;
-                            if (val != 'Other') _customBreed = '';
-                          });
-                        },
-                      ),
+
+                  // Breed selector
+                  _selectorField(
+                    label: 'Breed',
+                    icon: Icons.category,
+                    value: _breed,
+                    items: _currentBreedList,
+                    onTap: () => _openSelector(
+                      title: 'Choose breed',
+                      items: _currentBreedList,
+                      currentValue: _breed,
+                      onSelected: (val) {
+                        setState(() {
+                          _breed = val;
+                          if (val != 'Other') _customBreed = '';
+                        });
+                      },
                     ),
                   ),
                   if (_showCustomBreedField) const SizedBox(height: 12),
                   if (_showCustomBreedField)
                     TextFormField(
-                      controller: TextEditingController(text: _customBreed),
-                      decoration: InputDecoration(
-                        labelText: 'Custom breed',
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.15),
-                        prefixIcon: const Icon(Icons.edit, color: Colors.white70),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                        ),
-                      ),
+                      initialValue: _customBreed,
+                      decoration: _buildInputDecoration('Custom breed', Icons.edit),
                       style: const TextStyle(color: Colors.white),
                       maxLength: 40,
                       onChanged: (v) => setState(() => _customBreed = v.trim()),
                       validator: (v) {
                         if (_showCustomBreedField) {
-                          return (v == null || v.trim().isEmpty) ? 'Please enter the custom breed' : null;
+                          return (v == null || v.trim().isEmpty)
+                              ? 'Please enter the custom breed'
+                              : null;
                         }
                         return null;
                       },
                     ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Age',
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      prefixIcon: const Icon(Icons.cake, color: Colors.white70),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
-                      ),
-                      labelStyle: const TextStyle(color: Colors.white70),
-                    ),
+                    initialValue: _age.toString(),
+                    decoration: _buildInputDecoration('Age', Icons.cake),
                     style: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType.number,
                     onSaved: (v) => _age = int.tryParse(v ?? '0') ?? 0,
@@ -259,20 +369,29 @@ class _PetFormScreenState extends State<PetFormScreen> {
                       if (!_formKey.currentState!.validate()) return;
                       _formKey.currentState!.save();
 
-                      final finalBreed = (_breed == 'Other' ? (_customBreed.isNotEmpty ? _customBreed : 'Other') : (_breed ?? 'Other'));
+                      final finalBreed = (_breed == 'Other'
+                          ? (_customBreed.isNotEmpty ? _customBreed : 'Other')
+                          : (_breed ?? 'Other'));
                       final imgPath = _imageFor(_species, finalBreed);
 
-                      final pet = Pet(
+                      final petToSave = Pet(
+                        id: widget.pet?.id, // preserve ID if editing
                         name: _name,
                         gender: _gender,
                         species: _species ?? 'Other',
                         breed: finalBreed,
                         age: _age,
-                        image: imgPath, // <-- auto-set image path
+                        image: imgPath,
                       );
 
-                      await appState.addPet(pet);
-                      Navigator.pop(context);
+                      if (widget.pet != null) {
+                        // Editing: return updated pet
+                        Navigator.pop(context, petToSave);
+                      } else {
+                        // Adding new
+                        await appState.addPet(petToSave);
+                        Navigator.pop(context);
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -298,19 +417,16 @@ class _PetFormScreenState extends State<PetFormScreen> {
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
-                            Shadow(blurRadius: 5, color: Colors.black26, offset: Offset(1, 2)),
+                            Shadow(
+                                blurRadius: 5,
+                                color: Colors.black26,
+                                offset: Offset(1, 2)),
                           ],
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Tip for devs: place breed images in assets/breeds/ named like "cat_bombay.png". '
-                    'If missing, petlogo.png will be used.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
                 ],
               ),
             ),
