@@ -56,7 +56,11 @@ class BreedService {
   // Normalize a display breed name into a key matching your filename convention:
   // e.g. "Labrador Retriever" -> "labrador_retriever"
   static String breedNameToKey(String breed) {
-    return breed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').replaceAll(RegExp(r'_+'), '_').trim();
+    return breed
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .trim();
   }
 
   // Get tips for a breed key; returns empty list if none.
@@ -82,5 +86,25 @@ class BreedService {
     // always add a couple general tips
     result.addAll(generalTips);
     return result;
+  }
+
+  // ----------------------------------------------------------
+  // Added for unit test compatibility:
+  // 1. Return a list of breed maps for a species
+  static List<Map<String, String>> getBreedsForSpecies(String species) {
+    // Use a minimal hardcoded fallback list; can be expanded
+    final speciesKey = species.toLowerCase();
+    final Map<String, List<String>> defaultBreeds = {
+      'cat': ['Bombay', 'Siamese', 'Persian', 'Maine Coon'],
+      'dog': ['Labrador Retriever', 'German Shepherd', 'Beagle', 'Poodle'],
+    };
+
+    final breeds = defaultBreeds[speciesKey] ?? ['Other'];
+    return breeds.map((b) => {'name': b}).toList();
+  }
+
+  // 2. Return a path for a breed key
+  static String getImageForBreedKey(String key) {
+    return 'assets/breeds/${key.toLowerCase()}.png';
   }
 }
