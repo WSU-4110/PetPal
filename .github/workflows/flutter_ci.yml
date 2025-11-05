@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository
+      # 1. Checkout the repository (full history to avoid Git errors)
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       # 2. Setup Flutter
       - name: Setup Flutter
