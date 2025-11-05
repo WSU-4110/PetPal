@@ -1,13 +1,14 @@
 name: Flutter CI
 
+# Trigger options
 on:
   workflow_dispatch:        # allows manual trigger
   push:
     branches:
-      - dev
+      - dev_with_tests
   pull_request:
     branches:
-      - dev
+      - dev_with_tests
 
 jobs:
   build-and-test:
@@ -15,22 +16,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.13.6'
 
+      # 3. Install dependencies
       - name: Get dependencies
         run: flutter pub get
 
+      # 4. Analyze code for issues
       - name: Static Analysis
         run: flutter analyze
 
+      # 5. Run unit tests with coverage
       - name: Run unit tests
         run: flutter test --coverage
 
-      - name: Show coverage
-        run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.packages --report-on=lib
+      # 6. Format coverage for lcov (optional, helpful if submitting reports)
+      - name: Format coverage
+        run: |
+          dart pub global activate coverage
+          dart run coverage:format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --packages=.packages \
+            --report-on=lib
