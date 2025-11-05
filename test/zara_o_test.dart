@@ -1,4 +1,3 @@
-// test/zara_o_test.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petpal/models/pet.dart';
 import 'package:petpal/state/app_state.dart';
@@ -54,13 +53,12 @@ void main() {
 
     test('passwordChecks returns booleans for a strong password', () {
       final checks = appState.passwordChecks('Str0ng!Pass');
-      // expected: length, uppercase, lowercase, digit, symbol
       expect(checks.length, 5);
-      expect(checks[0], isTrue); // length >= 8
-      expect(checks[1], isTrue); // uppercase
-      expect(checks[2], isTrue); // lowercase
-      expect(checks[3], isTrue); // digit
-      expect(checks[4], isTrue); // symbol
+      expect(checks[0], isTrue); 
+      expect(checks[1], isTrue); 
+      expect(checks[2], isTrue); 
+      expect(checks[3], isTrue); 
+      expect(checks[4], isTrue); 
     });
 
     test('isPasswordStrong returns false for weak and true for strong', () {
