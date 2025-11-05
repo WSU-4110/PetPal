@@ -32,8 +32,8 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     dateController = TextEditingController(text: widget.medicalrecord.date);
     vetController = TextEditingController(text: widget.medicalrecord.vetName);
     try {
-        selectedDate = DateFormat('yyyy-MM-dd').parse(widget.medicalrecord.date);
-    } catch (e) {
+        selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.medicalrecord.date);
+    } catch (err) {
       selectedDate = DateTime.now();
     }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
@@ -47,7 +47,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
         firstDate: DateTime(2000),
         lastDate: DateTime(2100));
     if (date != null) setState(() => selectedDate = date);
-    dateController.text = DateFormat('yyyy-MM-dd').format(selectedDate);
+    dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(selectedDate);
   }
 
   Future<void> pickTime() async {
@@ -99,13 +99,13 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
             onPressed: () {
               final dt = DateTime(selectedDate.year, selectedDate.month,
                   selectedDate.day, selectedTime.hour, selectedTime.minute);
-                  dateController.text = DateFormat('yyyy-MM-dd').format(dt);
+                  dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(dt);
               final updated = MedicalRecord(
                 id: widget.medicalrecord.id,
                 petId: widget.medicalrecord.petId,
                 title: titleController.text,
                 description: descController.text,
-                date: DateFormat('yyyy-MM-dd').format(dt),
+                date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
                 vetName: vetController.text,
               );
               Navigator.pop(context, updated);

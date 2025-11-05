@@ -18,31 +18,50 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
   final _descController = TextEditingController();
   final _dateController = TextEditingController();
   final _vetController = TextEditingController();
-
-  DateTime? _selectedDate;
+  late TimeOfDay _selectedTime;
+  late DateTime _selectedDate;
 
  @override
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
-    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
   }
 
-  Future<void> pickDate() async {
+  DateTime _combine(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+   Future<void> pickDate() async {
     final date = await showDatePicker(
         context: context,
-        initialDate: _selectedDate ?? DateTime.now(),
+        initialDate: _selectedDate,
         firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-    );
-
+        lastDate: DateTime(2100));
     if (date != null) {
       setState(() {
-      _selectedDate = date;
-     _dateController.text = DateFormat('yyyy-MM-dd').format(date);
-     });
+        _selectedDate = _combine(date, _selectedTime);
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    });
   }
 }
+
+
+    Future<void> pickTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (time != null){ 
+      setState(() {
+       _selectedTime = time;
+       _selectedDate = _combine(_selectedDate, time);
+       _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -70,6 +89,10 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                     validator: (v) => v == null || v.isEmpty ? "Required" : null,
                   ),
                 ),
+              ),
+              TextButton(
+                onPressed: pickTime,
+                child: Text(_selectedTime.format(context)),
               ),
               TextFormField(
                 controller: _vetController,

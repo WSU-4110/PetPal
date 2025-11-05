@@ -20,7 +20,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
   @override
   void initState() {
     super.initState();
-    // Load medical records for this pet
+    // Load exercise logs for this pet
     final pets = context.read<AppState>().pets;
     selectedPet = pets.firstWhere((p) => p.id == widget.petId);
     Future.microtask(() =>

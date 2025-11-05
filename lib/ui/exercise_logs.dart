@@ -3,8 +3,6 @@ import 'package:petpal/ui/add_exercise_log_dialog.dart';
 import 'package:petpal/ui/edit_exercise_log_dialog.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-//import 'add_medical_record_dialog.dart';
-//import 'edit_medical_record_dialog.dart';
 import '../models/exercise_log.dart';
 import '../models/pet.dart';
 

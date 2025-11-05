@@ -60,6 +60,11 @@ class _MainNavigationState extends State<MainNavigation> {
         const HomeScreen(),
         const HealthScreen(),
       ];
+    } else if (widget.role == 'trainer') {
+      return [
+        const HomeScreen(),
+        const ExerciseScreen(),
+      ];
     } else {
       return [const Center(child: Text("Unknown role"))];
     }
@@ -81,7 +86,18 @@ class _MainNavigationState extends State<MainNavigation> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Text(widget.role == 'owner' ? 'Owner Dashboard' : 'Vet Dashboard'),
+        title: Text(() {
+          switch (widget.role){
+          case 'owner':
+            return 'Owner Dashboard';
+          case 'vet':
+            return 'Vetereinarian Dashboard';
+          case 'trainer':
+            return 'Trainer Dashboard';
+          default:
+            return 'Dash';
+    }
+  }()),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -102,18 +118,32 @@ class _MainNavigationState extends State<MainNavigation> {
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: widget.role == 'owner'
-            ? const [
+        items: () {
+          switch (widget.role) {
+            case 'owner':
+              return const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
                 BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
                 BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise')
-              ]
-            : const [
+              ];
+            case 'vet':
+              return const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
-              ],
+              ];
+            case 'trainer':
+              return const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+              ];
+              default:
+                return const [
+                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+              ];
+          }
+        }(),
       ),
     );
   }

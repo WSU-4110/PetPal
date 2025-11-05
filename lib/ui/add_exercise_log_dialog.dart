@@ -18,31 +18,49 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
   final _activityController = TextEditingController();
   final _dateController = TextEditingController();
   final _observationController = TextEditingController();
+  late TimeOfDay _selectedTime;
+  late DateTime _selectedDate;
 
-  DateTime? _selectedDate;
 
  @override
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
-    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+  }
+
+  DateTime _combine(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   Future<void> pickDate() async {
     final date = await showDatePicker(
         context: context,
-        initialDate: _selectedDate ?? DateTime.now(),
+        initialDate: _selectedDate,
         firstDate: DateTime(2000),
-        lastDate: DateTime(2100),
-    );
-
+        lastDate: DateTime(2100));
     if (date != null) {
       setState(() {
-      _selectedDate = date;
-     _dateController.text = DateFormat('yyyy-MM-dd').format(date);
-     });
+        _selectedDate = _combine(date, _selectedTime);
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    });
   }
 }
+
+Future<void> pickTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (time != null){ 
+      setState(() {
+       _selectedTime = time;
+       _selectedDate = _combine(_selectedDate, time);
+       _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +90,10 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                   ),
                 ),
               ),
+              TextButton(
+                onPressed: pickTime,
+                child: Text(_selectedTime.format(context)),
+              ),
               TextFormField(
                 controller: _observationController,
                 decoration: const InputDecoration(labelText: "Observations"),
@@ -92,7 +114,7 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                 petId: widget.petId,
                 length: _lengthController.text,
                 activity: _activityController.text,
-                date: _dateController.text,
+                date: DateFormat('yyyy-MM-dd').format(_selectedDate),
                 observations: _observationController.text,
               );
               await context.read<AppState>().addExerciseLog(record);
