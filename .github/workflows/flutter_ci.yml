@@ -1,7 +1,7 @@
 name: Flutter CI
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:        # manual run button
   push:
     branches:
       - dev_with_tests
@@ -13,34 +13,32 @@ jobs:
   build-and-test:
     name: Build & Test Flutter App
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      # Checkout repo safely
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history, required for some git operations
+          fetch-depth: 0
 
-      # Setup Flutter
-      - name: Setup Flutter
+      - name: Setup Flutter (pinned version matching project Dart SDK)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.17.7'
+          flutter-version: '3.13.6'   # <<-- pin an exact release known to include Dart 3.9.x
 
-      # Get dependencies
+      - name: Validate flutter
+        run: flutter --version
+
       - name: Get dependencies
         run: flutter pub get
 
-      # Static analysis
-      - name: Analyze code
+      - name: Static Analysis
         run: flutter analyze
 
-      # Run tests with coverage
-      - name: Run tests
+      - name: Run unit tests (with coverage)
         run: flutter test --coverage
 
-      # Format coverage
-      - name: Format coverage
+      - name: Format coverage (optional)
         run: |
           dart pub global activate coverage
           dart run coverage:format_coverage \
@@ -49,10 +47,3 @@ jobs:
             --out=coverage/lcov.info \
             --packages=.packages \
             --report-on=lib
-
-      # Upload coverage report
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/lcov.info
