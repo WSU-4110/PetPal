@@ -16,11 +16,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository (full history to avoid Git errors)
+      # 1. Checkout the repository with full history
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: dev_with_tests
 
       # 2. Setup Flutter
       - name: Setup Flutter
@@ -40,7 +41,6 @@ jobs:
       - name: Run unit tests
         run: flutter test --coverage
 
-      # 6. Format coverage for lcov (optional, helpful if submitting reports)
       - name: Format coverage
         run: |
           dart pub global activate coverage
@@ -50,3 +50,9 @@ jobs:
             --out=coverage/lcov.info \
             --packages=.packages \
             --report-on=lib
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
