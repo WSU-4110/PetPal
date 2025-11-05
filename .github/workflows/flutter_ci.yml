@@ -1,10 +1,11 @@
 name: Flutter CI
 
-# <-- THIS IS THE TRIGGER
+# <-- THESE ARE THE TRIGGERS
 on:
+  workflow_dispatch:    # lets you manually trigger the workflow
   push:
     branches:
-      - dev      
+      - dev
   pull_request:
     branches:
       - dev
@@ -19,7 +20,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.6'  
+          flutter-version: '3.13.6'
 
       - run: flutter pub get
 
