@@ -1,7 +1,7 @@
 name: Flutter CI
 
 on:
-  workflow_dispatch:        # allows manual trigger from Actions UI
+  workflow_dispatch:
   push:
     branches:
       - dev_with_tests
@@ -23,10 +23,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Flutter (use version that includes Dart 3.9)
+      - name: Setup Flutter (use Flutter that bundles Dart 3.9.2+)
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.0'    # <-- matches Dart 3.9.x
+          flutter-version: '3.35.7'    # <-- exact version recommended by pub resolver
 
       - name: Show flutter & dart versions
         run: |
