@@ -15,31 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository with full history
+      # Checkout repo safely
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          ref: dev_with_tests
+          fetch-depth: 0  # full history, required for some git operations
 
-      # 2. Setup Flutter
+      # Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.6'
+          flutter-version: '3.17.7'
 
-      # 3. Install dependencies
+      # Get dependencies
       - name: Get dependencies
         run: flutter pub get
 
-      # 4. Analyze code for issues
-      - name: Static Analysis
+      # Static analysis
+      - name: Analyze code
         run: flutter analyze
 
-      # 5. Run unit tests with coverage
-      - name: Run unit tests
+      # Run tests with coverage
+      - name: Run tests
         run: flutter test --coverage
 
+      # Format coverage
       - name: Format coverage
         run: |
           dart pub global activate coverage
@@ -50,6 +50,7 @@ jobs:
             --packages=.packages \
             --report-on=lib
 
+      # Upload coverage report
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
