@@ -1,7 +1,8 @@
 // lib/state/app_state.dart
-import 'package:flutter/foundation.dart';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/pet.dart';
 import '../models/reminder.dart';
@@ -11,20 +12,107 @@ import '../services/db_service.dart';
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
 
+  // Primary data
   List<Pet> pets = [];
   List<Reminder> reminders = [];
   List<MedicalRecord> medicalRecords = [];
 
-  Map<String, dynamic>? currentUser; // logged-in user
+  // Logged-in user as stored in DB (keeps email/password hashed etc).
+  // currentUser contents come from DBService.getUserByEmail / loginUser
+  Map<String, dynamic>? currentUser;
 
-  /// Initialize app state by loading pets and reminders
+  // App settings (persisted)
+  bool _darkMode = false;
+  String? _profileImagePath; // local file path or asset path
+  String? _displayName; // override of first+last name for UI
+
+  // SharedPreferences key names
+  static const String _kDarkModeKey = 'petpal_dark_mode';
+  static const String _kProfileImageKey = 'petpal_profile_image';
+  static const String _kDisplayNameKey = 'petpal_display_name';
+
+  // Initialize app state by loading DB data and settings
   Future<void> init() async {
     await _loadInitialData();
+    await _loadSettings();
   }
 
   Future<void> _loadInitialData() async {
     pets = await _db.getPets();
     reminders = await _db.getAllReminders();
+    // medicalRecords will be loaded per pet when needed
+    notifyListeners();
+  }
+
+  // ---------------- Settings persistence ----------------
+
+  Future<void> _loadSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _darkMode = prefs.getBool(_kDarkModeKey) ?? false;
+      _profileImagePath = prefs.getString(_kProfileImageKey);
+      _displayName = prefs.getString(_kDisplayNameKey);
+    } catch (_) {
+      // ignore read errors (keep defaults)
+    }
+    notifyListeners();
+  }
+
+  Future<void> _saveBool(String key, bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, value);
+    } catch (_) {}
+  }
+
+  Future<void> _saveString(String key, String? value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (value == null) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(key, value);
+      }
+    } catch (_) {}
+  }
+
+  // ------------- Settings getters / setters --------------
+
+  bool get isDarkMode => _darkMode;
+  String? get profileImagePath => _profileImagePath;
+  String get displayName {
+    if (_displayName != null && _displayName!.trim().isNotEmpty) return _displayName!;
+    if (currentUser != null) {
+      final f = (currentUser!['firstName'] ?? '').toString();
+      final l = (currentUser!['lastName'] ?? '').toString();
+      final combined = ('$f $l').trim();
+      if (combined.isNotEmpty) return combined;
+    }
+    return 'PetPal User';
+  }
+
+  /// Toggle dark mode and persist
+  Future<void> setDarkMode(bool value) async {
+    _darkMode = value;
+    await _saveBool(_kDarkModeKey, value);
+    notifyListeners();
+  }
+
+  /// Set profile image path (local file path returned by image picker or an asset path)
+  Future<void> setProfileImage(String? path) async {
+    _profileImagePath = path;
+    await _saveString(_kProfileImageKey, path);
+    // mirror in currentUser for UI convenience (non-persistent in DB)
+    if (currentUser != null) {
+      currentUser!['profileImage'] = path;
+    }
+    notifyListeners();
+  }
+
+  /// Set a display name overriding DB names (persisted)
+  Future<void> setDisplayName(String? name) async {
+    _displayName = (name == null || name.trim().isEmpty) ? null : name.trim();
+    await _saveString(_kDisplayNameKey, _displayName);
     notifyListeners();
   }
 
@@ -33,20 +121,19 @@ class AppState extends ChangeNotifier {
   /// Logs in user with email + password
   /// Throws Exception("invalid email") or Exception("invalid password")
   Future<Map<String, dynamic>> login(String email, String password) async {
-    // Try using DBService loginUser (your teammates may have updated this)
     final user = await _db.loginUser(email, password);
 
     if (user == null) {
-      // fallback check: see if email exists
       final byEmail = await _db.getUserByEmail(email);
-      if (byEmail == null) {
-        throw Exception("invalid email");
-      } else {
-        throw Exception("invalid password");
-      }
+      if (byEmail == null) throw Exception("invalid email");
+      throw Exception("invalid password");
     }
 
     currentUser = user;
+    // if we saved a profile image previously in prefs, copy into currentUser for UI
+    if (_profileImagePath != null) {
+      currentUser!['profileImage'] = _profileImagePath;
+    }
     notifyListeners();
     return user;
   }
@@ -66,23 +153,18 @@ class AppState extends ChangeNotifier {
     if (!isPasswordStrong(password)) {
       throw Exception("password is not strong enough");
     }
-
-    // Store with DBService.registerUser
     await _db.registerUser(firstName, lastName, email, password, preference, role);
   }
 
-  /// Returns true if email is already registered
   Future<bool> isEmailRegistered(String email) async {
     final user = await getUserByEmail(email);
     return user != null;
   }
 
-  /// Wrapper for DBService.getUserByEmail
   Future<Map<String, dynamic>?> getUserByEmail(String email) async {
     return await _db.getUserByEmail(email);
   }
 
-  /// Logs out current user
   void logout() {
     currentUser = null;
     notifyListeners();
@@ -112,6 +194,16 @@ class AppState extends ChangeNotifier {
     pets = await _db.getPets();
     reminders = await _db.getAllReminders();
     notifyListeners();
+  }
+
+  // quick helper to return a pet by id, or null
+  Pet? getPetById(int? id) {
+    if (id == null) return null;
+    try {
+      return pets.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------- REMINDERS ----------------
@@ -183,5 +275,92 @@ class AppState extends ChangeNotifier {
     await _db.deleteMedicalRecord(id);
     medicalRecords = await _db.getMedicalRecordsForPet(petId);
     notifyListeners();
+  }
+
+  // ---------------- Search helpers ----------------
+
+  /// Search/filter pets. All parameters optional.
+  /// - query: substring to match against name/species/breed
+  /// - species/breed: exact match (case-insensitive)
+  /// - minAge/maxAge: inclusive numeric range
+  List<Pet> searchPets({
+    String? query,
+    String? species,
+    String? breed,
+    int? minAge,
+    int? maxAge,
+  }) {
+    final q = (query ?? '').trim().toLowerCase();
+    return pets.where((p) {
+      if (q.isNotEmpty) {
+        final combined = '${p.name} ${p.species} ${p.breed}'.toLowerCase();
+        if (!combined.contains(q)) return false;
+      }
+      if (species != null && species.isNotEmpty) {
+        if (p.species.toLowerCase() != species.toLowerCase()) return false;
+      }
+      if (breed != null && breed.isNotEmpty && breed != 'Other') {
+        if (p.breed.toLowerCase() != breed.toLowerCase()) return false;
+      }
+      if (minAge != null && p.age < minAge) return false;
+      if (maxAge != null && p.age > maxAge) return false;
+      return true;
+    }).toList();
+  }
+
+  // ---------------- Home visuals / tips ----------------
+
+  /// Returns an asset or image path for a random pet (or the only pet).
+  /// If a pet has `image` set it will be used; otherwise Pet.imageFor(...) is used.
+  String getRandomPetImage() {
+    if (pets.isEmpty) return Pet.imageFor('', '');
+    if (pets.length == 1) {
+      final p = pets.first;
+      final img = p.image ?? Pet.imageFor(p.species, p.breed);
+      return img;
+    }
+    final rnd = Random();
+    final p = pets[rnd.nextInt(pets.length)];
+    return p.image ?? Pet.imageFor(p.species, p.breed);
+  }
+
+  /// Simple tip cycling: returns a list of tips tailored by species present.
+  /// You can call this from the HomeScreen and rotate every X seconds or on tap.
+  List<String> getTips({int max = 6}) {
+    final List<String> tips = [];
+
+    // general tips:
+    tips.addAll([
+      'Make sure fresh water is always available.',
+      'Schedule regular vet checkups — prevention beats cure.',
+      'Use positive reinforcement during training.',
+    ]);
+
+    // species-specific tips (simple examples)
+    final speciesSet = pets.map((p) => p.species.toLowerCase()).toSet();
+    if (speciesSet.contains('cat')) {
+      tips.addAll([
+        'Cats need daily play — try short interactive sessions.',
+        'Keep the litter box clean and in a quiet place.',
+      ]);
+    }
+    if (speciesSet.contains('dog')) {
+      tips.addAll([
+        'Dogs benefit from daily walks and socialization.',
+        'Rotate toys to keep playtime interesting.',
+      ]);
+    }
+    if (speciesSet.contains('rabbit')) {
+      tips.addAll(['Rabbits need chewing toys and safe space to hop.']);
+    }
+    // trim to requested max and shuffle for variety
+    tips.shuffle();
+    return tips.take(max).toList();
+  }
+
+  // ---------------- Cleanup ----------------
+
+  Future<void> close() async {
+    await _db.close();
   }
 }

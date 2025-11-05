@@ -1,74 +1,86 @@
 // lib/services/breed_service.dart
-// Small local registry of species -> breeds, breed -> asset path and tips.
-// Extend this as you like (or load remotely).
+// A small helper used for tips and breed key normalization.
+// We keep this minimal because you already use breeds.json for dropdowns.
 
 class BreedService {
-  // species -> list of breeds (key, displayName)
-  static const Map<String, List<Map<String, String>>> speciesBreeds = {
-    'Cat': [
-      {'key': 'bombay', 'name': 'Bombay'},
-      {'key': 'siamese', 'name': 'Siamese'},
-      {'key': 'persian', 'name': 'Persian'},
-      {'key': 'tabby', 'name': 'Tabby'},
-      // add more...
-    ],
-    'Dog': [
-      {'key': 'german_shepherd', 'name': 'German Shepherd'},
-      {'key': 'labrador', 'name': 'Labrador Retriever'},
-      {'key': 'pug', 'name': 'Pug'},
-      {'key': 'beagle', 'name': 'Beagle'},
-      // add more...
-    ],
-    'Rabbit': [
-      {'key': 'lop', 'name': 'Lop'},
-      {'key': 'dutch', 'name': 'Dutch'},
-    ],
-    // add more species...
-  };
-
-  // breed key -> local asset path (store a representative image in assets/images/breeds/)
-  static const Map<String, String> breedImages = {
-    'bombay': 'assets/images/breeds/bombay.png',
-    'siamese': 'assets/images/breeds/siamese.png',
-    'persian': 'assets/images/breeds/persian.png',
-    'tabby': 'assets/images/breeds/tabby.png',
-    'german_shepherd': 'assets/images/breeds/german_shepherd.png',
-    'labrador': 'assets/images/breeds/labrador.png',
-    'pug': 'assets/images/breeds/pug.png',
-    'beagle': 'assets/images/breeds/beagle.png',
-    'lop': 'assets/images/breeds/lop.png',
-    'dutch': 'assets/images/breeds/dutch.png',
-  };
-
-  // breed key -> quick tips
-  static const Map<String, List<String>> breedTips = {
+  // breed key -> quick tips (extend this over time)
+  // Keys should match the filename-key convention: lowercased, non-alnum -> underscore
+  static const Map<String, List<String>> _breedTips = {
     'bombay': [
       'Bombays are people-oriented — schedule daily cuddle time.',
-      'They adapt well to apartments — play indoors frequently.',
+      'Great apartment cats — provide toys & vertical spaces.',
+    ],
+    'siamese': [
+      'Siamese cats are vocal and social — spend time interacting daily.',
+      'They need stimulation — puzzle feeders help.',
     ],
     'german_shepherd': [
       'German Shepherds need daily exercise and mental stimulation.',
-      'Consider training classes and long walks.',
+      'Consider obedience training and consistent routines.',
     ],
-    'labrador': [
-      'Labradors are food-motivated — watch portions to avoid weight gain.',
-      'Great swimmers — supervise near water.',
+    'labrador_retriever': [
+      'Labradors love to fetch — regular exercise prevents weight gain.',
+      'Watch food portions; they are very food-driven.',
     ],
-    // ... add for other breeds
+    // Add more specific breed tips here as you add images/entries.
   };
 
-  // Helper: get breeds for a species
-  static List<Map<String, String>> getBreedsForSpecies(String species) {
-    return speciesBreeds[species] ?? [];
+  // species-level tips (fallbacks)
+  static const Map<String, List<String>> _speciesTips = {
+    'cat': [
+      'Cats like predictable routines — keep feeding times consistent.',
+      'Provide scratching posts to protect furniture.',
+    ],
+    'dog': [
+      'Daily walks are essential for a happy dog — aim for at least 30 minutes.',
+      'Positive-reinforcement training builds a strong bond.',
+    ],
+    'rabbit': [
+      'Rabbits need chew toys and safe space to hop and explore.',
+      'Keep their living area clean and offer hay constantly.',
+    ],
+    'bird': [
+      'Birds are social — provide toys and interaction daily.',
+      'Ensure safe items — no toxic houseplants or open water containers.',
+    ],
+  };
+
+  // General owner tips (fallback)
+  static const List<String> generalTips = [
+    'Regular vet check-ups keep pets healthy — schedule yearly visits.',
+    'Microchip and register your pet in case they get lost.',
+    'Keep fresh water available at all times.',
+    'Use enrichment (toys, puzzles) to prevent boredom and bad behaviors.',
+  ];
+
+  // Normalize a display breed name into a key matching your filename convention:
+  // e.g. "Labrador Retriever" -> "labrador_retriever"
+  static String breedNameToKey(String breed) {
+    return breed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').replaceAll(RegExp(r'_+'), '_').trim();
   }
 
-  // Helper: get image path for breed key
-  static String? getImageForBreedKey(String key) {
-    return breedImages[key];
-  }
-
-  // Helper: get tips for breed key
+  // Get tips for a breed key; returns empty list if none.
   static List<String> getTipsForBreedKey(String key) {
-    return breedTips[key] ?? [];
+    return _breedTips[key] ?? [];
+  }
+
+  // Get species-level tips (case-insensitive).
+  static List<String> getTipsForSpecies(String species) {
+    if (species == null) return [];
+    final k = species.toLowerCase().trim();
+    return _speciesTips[k] ?? [];
+  }
+
+  // Combined tip list for a pet (breed tips first, then species, then general)
+  static List<String> getCombinedTipsForPet(String species, String breed) {
+    final List<String> result = [];
+    final key = breedNameToKey(breed);
+    final breedTips = getTipsForBreedKey(key);
+    if (breedTips.isNotEmpty) result.addAll(breedTips);
+    final speciesTips = getTipsForSpecies(species);
+    if (speciesTips.isNotEmpty) result.addAll(speciesTips);
+    // always add a couple general tips
+    result.addAll(generalTips);
+    return result;
   }
 }

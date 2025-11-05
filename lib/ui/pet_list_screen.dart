@@ -78,8 +78,21 @@ class PetListScreen extends StatelessWidget {
                               IconButton(
                                 icon:
                                     const Icon(Icons.edit, color: Colors.white70),
-                                onPressed: () {
-                                  // TODO: implement edit flow
+                                onPressed: () async {
+                                  // Navigate to PetFormScreen in edit mode
+                                  final updatedPet = await Navigator.push<Pet>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PetFormScreen(
+                                        pet: pet,
+                                      ),
+                                    ),
+                                  );
+
+                                  // If pet was updated, save it
+                                  if (updatedPet != null) {
+                                    await appState.updatePet(updatedPet);
+                                  }
                                 },
                               ),
                               IconButton(
@@ -136,7 +149,7 @@ class PetListScreen extends StatelessWidget {
     return CircleAvatar(
       radius: 30,
       backgroundColor: Colors.white24,
-      backgroundImage: AssetImage(image), // <-- use the image directly
+      backgroundImage: AssetImage(image),
     );
   }
 }
