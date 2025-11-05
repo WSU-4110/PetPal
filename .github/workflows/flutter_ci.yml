@@ -1,8 +1,7 @@
 name: Flutter CI
 
-# <-- THESE ARE THE TRIGGERS
 on:
-  workflow_dispatch:    # lets you manually trigger the workflow
+  workflow_dispatch:        # allows manual trigger
   push:
     branches:
       - dev
@@ -11,17 +10,27 @@ on:
       - dev
 
 jobs:
-  build:
-    name: Build & Test
+  build-and-test:
+    name: Build & Test Flutter App
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.13.6'
 
-      - run: flutter pub get
+      - name: Get dependencies
+        run: flutter pub get
 
-      - run: flutter test
+      - name: Static Analysis
+        run: flutter analyze
+
+      - name: Run unit tests
+        run: flutter test --coverage
+
+      - name: Show coverage
+        run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.packages --report-on=lib
