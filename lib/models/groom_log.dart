@@ -19,9 +19,9 @@ class GroomLog {
     return {
       'id': id,
       'petId': petId,
-      'length': type,
-      'activity': description,
-      'observations': maintenance,
+      'type': type,
+      'description': description,
+      'maintenance': maintenance,
       'date': date,
     };
   }

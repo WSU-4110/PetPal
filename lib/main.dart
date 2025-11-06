@@ -9,6 +9,7 @@ import 'ui/app_drawer.dart';
 import 'ui/login_page.dart';
 import 'state/app_state.dart';
 import 'ui/exercise_screen.dart';
+import 'ui/groom_screen.dart';
 
 void main() {
   runApp(const PetPalApp());
@@ -49,22 +50,27 @@ class _MainNavigationState extends State<MainNavigation> {
   List<Widget> get _pages {
     if (widget.role == 'owner') {
       return [
-        const HomeScreen(),
-        const PetListScreen(),
-        const ReminderListScreen(),
-        const HealthScreen(),
-        const ExerciseScreen(),
+        HomeScreen(),
+        PetListScreen(),
+        ReminderListScreen(),
+        HealthScreen(),
+        ExerciseScreen(),
+        GroomScreen(),
       ];
     } else if (widget.role == 'vet') {
       return [
-        const HealthScreen(),
+        HealthScreen(),
       ];
     } else if (widget.role == 'trainer') {
       return [
-        const ExerciseScreen(),
+        ExerciseScreen(),
+      ];
+    } else if (widget.role == 'groomer') {
+      return [
+        GroomScreen(),
       ];
     } else {
-      return [const Center(child: Text("Unknown role"))];
+      return [Center(child: Text("Unknown role"))];
     }
   }
 
@@ -92,6 +98,8 @@ class _MainNavigationState extends State<MainNavigation> {
             return 'Vetereinarian Dashboard';
           case 'trainer':
             return 'Trainer Dashboard';
+          case 'groomer':
+            return 'Grooming Dashboard';
           default:
             return 'Dash';
     }
@@ -124,7 +132,8 @@ class _MainNavigationState extends State<MainNavigation> {
                 BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
                 BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
-                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise')
+                BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+                BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Grooming'),
               ];
             case 'vet':
               return const [
@@ -133,6 +142,10 @@ class _MainNavigationState extends State<MainNavigation> {
             case 'trainer':
               return const [
                 BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+              ];
+            case 'groomer':
+              return const [
+                BottomNavigationBarItem(icon: Icon(Icons.cut), label: 'Grooming'),
               ];
               default:
                 return const [
