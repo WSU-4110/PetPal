@@ -117,7 +117,10 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                   fontSize: 14,
                                 ),
                               ),
-                              trailing: IconButton(
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                              IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
                                   final result = await showDialog<MedicalRecord>(
@@ -132,15 +135,27 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                   }
                                 },
                               ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await appState.deleteMedicalRecord(record.id!, record.petId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Medical record deleted')),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(

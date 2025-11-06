@@ -117,7 +117,10 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                                   fontSize: 14,
                                 ),
                               ),
-                              trailing: IconButton(
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
                                   final result = await showDialog<ExerciseLog>(
@@ -132,6 +135,18 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                                   }
                                 },
                               ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await appState.deleteExerciseLog(record.id!, record.petId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Exercise Log deleted')),
+                                    );
+                                  },
+                                ),
+                                ],
+                            ),
                             ),
                           );
                         },
