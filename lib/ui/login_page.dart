@@ -208,6 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                         DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
                         DropdownMenuItem(value: "vet", child: Text("Veterinarian")),
                         DropdownMenuItem(value: "trainer", child: Text("Trainer")),
+                        DropdownMenuItem(value: "groomer", child: Text("Groomer")),
                       ],
                       onChanged: (value) {
                         setState(() {

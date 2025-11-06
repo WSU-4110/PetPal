@@ -57,12 +57,10 @@ class _MainNavigationState extends State<MainNavigation> {
       ];
     } else if (widget.role == 'vet') {
       return [
-        const HomeScreen(),
         const HealthScreen(),
       ];
     } else if (widget.role == 'trainer') {
       return [
-        const HomeScreen(),
         const ExerciseScreen(),
       ];
     } else {
@@ -130,12 +128,10 @@ class _MainNavigationState extends State<MainNavigation> {
               ];
             case 'vet':
               return const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
               ];
             case 'trainer':
               return const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
               ];
               default:
