@@ -16,10 +16,10 @@ class AppDrawer extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     // Attempt to read user safely
     final dynamic maybeUser =
-        (appState as dynamic).currentUser ?? (appState as dynamic).user ?? null;
+        (appState as dynamic).currentUser ?? (appState as dynamic).user;
     final Map<String, dynamic>? user =
         (maybeUser is Map) ? Map<String, dynamic>.from(maybeUser) : null;
-    final ValueNotifier<bool> _logoutPressedNotifier = ValueNotifier(false);
+    final ValueNotifier<bool> logoutPressedNotifier = ValueNotifier(false);
 
     return Drawer(
       child: Column(
@@ -148,12 +148,12 @@ class AppDrawer extends StatelessWidget {
           const Divider(height: 1),
 
           ValueListenableBuilder<bool>(
-            valueListenable: _logoutPressedNotifier,
+            valueListenable: logoutPressedNotifier,
             builder: (context, pressed, _) {
               return GestureDetector(
-                onTapDown: (_) => _logoutPressedNotifier.value = true,
-                onTapUp: (_) => _logoutPressedNotifier.value = false,
-                onTapCancel: () => _logoutPressedNotifier.value = false,
+                onTapDown: (_) => logoutPressedNotifier.value = true,
+                onTapUp: (_) => logoutPressedNotifier.value = false,
+                onTapCancel: () => logoutPressedNotifier.value = false,
                 onTap: () async {
                   // call AppState.logout if exists
                   try {
@@ -163,10 +163,12 @@ class AppDrawer extends StatelessWidget {
                       await asDyn.logout();
                     }
                   } catch (_) {}
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()));
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()));
+                  }
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),

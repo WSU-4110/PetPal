@@ -44,11 +44,11 @@ class PetListScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 8)
                         ],
                       ),
@@ -100,9 +100,11 @@ class PetListScreen extends StatelessWidget {
                                     color: Colors.redAccent),
                                 onPressed: () async {
                                   await appState.deletePet(pet.id!);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text('Pet deleted')));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Pet deleted')));
+                                  }
                                 },
                               ),
                             ],

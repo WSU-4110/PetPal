@@ -23,8 +23,11 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
     // Load medical records for this pet
     final pets = context.read<AppState>().pets;
     selectedPet = pets.firstWhere((p) => p.id == widget.petId);
-    Future.microtask(() =>
-        context.read<AppState>().loadMedicalRecords(widget.petId));
+    Future.microtask(() {
+      if (mounted) {
+        context.read<AppState>().loadMedicalRecords(widget.petId);
+      }
+    });
   }
 
   @override
@@ -67,9 +70,9 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                   if (p != null) {
                     setState(() => selectedPet = p);
                     context.read<AppState>().loadMedicalRecords(p.id!);
-                    }
-                  },
-                ),
+                  }
+                },
+              ),
               Expanded(
                 child: records.isEmpty
                     ? const Center(
@@ -91,11 +94,11 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.purpleAccent.withOpacity(0.3),
+                                  color: Colors.purpleAccent.withValues(alpha: 0.3),
                                   blurRadius: 10,
                                   offset: const Offset(0, 6),
                                 ),
@@ -127,8 +130,10 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                       pets: appState.pets,
                                     ),
                                   );
-                                  if (result != null) {
-                                    await context.read<AppState>().updateMedicalRecord(result);
+                                  if (result != null && mounted) {
+                                    if (context.mounted) {
+                                      await context.read<AppState>().updateMedicalRecord(result);
+                                    }
                                   }
                                 },
                               ),
@@ -149,7 +154,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.5),
+              color: Colors.pinkAccent.withValues(alpha: 0.5),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),

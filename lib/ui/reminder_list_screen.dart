@@ -8,9 +8,14 @@ import 'edit_reminder_dialog.dart';
 import 'calendar_screen.dart';
 import 'package:intl/intl.dart';
 
-class ReminderListScreen extends StatelessWidget {
+class ReminderListScreen extends StatefulWidget {
   const ReminderListScreen({super.key});
 
+  @override
+  State<ReminderListScreen> createState() => _ReminderListScreenState();
+}
+
+class _ReminderListScreenState extends State<ReminderListScreen> {
   String _fmt(DateTime dt) => DateFormat('yyyy-MM-dd – HH:mm').format(dt);
 
   @override
@@ -69,11 +74,11 @@ class ReminderListScreen extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.purpleAccent.withOpacity(0.3),
+                            color: Colors.purpleAccent.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 6),
                           ),
@@ -127,6 +132,7 @@ class ReminderListScreen extends StatelessWidget {
                                 icon: const Icon(Icons.edit,
                                     color: Colors.white70),
                                 onPressed: () async {
+                                  final messenger = ScaffoldMessenger.of(context);
                                   final result = await showDialog<Reminder>(
                                     context: context,
                                     builder: (_) => EditReminderDialog(
@@ -136,7 +142,8 @@ class ReminderListScreen extends StatelessWidget {
                                   );
                                   if (result != null) {
                                     await appState.updateReminder(result);
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    if (!mounted) return;
+                                    messenger.showSnackBar(
                                       const SnackBar(
                                           content:
                                               Text('Reminder updated')),
@@ -148,8 +155,10 @@ class ReminderListScreen extends StatelessWidget {
                                 icon:
                                     const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () async {
+                                  final messenger = ScaffoldMessenger.of(context);
                                   await appState.deleteReminder(r.id!);
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  if (!mounted) return;
+                                  messenger.showSnackBar(
                                     const SnackBar(
                                         content: Text('Reminder deleted')),
                                   );
@@ -172,7 +181,7 @@ class ReminderListScreen extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.5),
+              color: Colors.pinkAccent.withValues(alpha: 0.5),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -182,8 +191,9 @@ class ReminderListScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
             if (appState.pets.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
+              messenger.showSnackBar(
                 const SnackBar(content: Text('Add a pet first')),
               );
               return;
@@ -196,7 +206,8 @@ class ReminderListScreen extends StatelessWidget {
 
             if (result != null) {
               await appState.addReminder(result);
-              ScaffoldMessenger.of(context).showSnackBar(
+              if (!mounted) return;
+              messenger.showSnackBar(
                 const SnackBar(content: Text('Reminder added')),
               );
             }

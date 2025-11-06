@@ -36,11 +36,11 @@ class HealthScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.purpleAccent.withOpacity(0.3),
+                      color: Colors.purpleAccent.withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 6),
                     ),
@@ -79,7 +79,7 @@ class HealthScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        shadowColor: const Color(0xFFE040FB).withOpacity(0.5),
+                        shadowColor: const Color(0xFFE040FB).withValues(alpha: 0.5),
                         elevation: 5,
                       ),
                       icon: const Icon(Icons.medical_services),

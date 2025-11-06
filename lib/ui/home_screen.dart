@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user == null) return '';
     final fn = (user['firstName'] ?? user['first_name'] ?? user['first'])?.toString() ?? '';
     final ln = (user['lastName'] ?? user['last_name'] ?? user['last'])?.toString() ?? '';
-    final full = '$fn ${ln}'.trim();
+    final full = '$fn $ln'.trim();
     return full.isEmpty ? '' : ', $full';
   }
 
@@ -122,8 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 160,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6))],
-          border: Border.all(color: Colors.white.withOpacity(0.12), width: 2),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 6))],
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 2),
           image: DecorationImage(image: provider, fit: BoxFit.cover),
         ),
       ),
@@ -136,8 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 160,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 6))],
+        color: Colors.white.withValues(alpha: 0.12),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 6))],
       ),
       child: const Center(child: Icon(Icons.pets, size: 64, color: Colors.white70)),
     );
@@ -195,9 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -251,9 +251,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         height: 120,
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color1.withOpacity(0.8), color2.withOpacity(0.8)]),
+          gradient: LinearGradient(colors: [color1.withValues(alpha: 0.8), color2.withValues(alpha: 0.8)]),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: color2.withOpacity(0.4), blurRadius: 15, spreadRadius: 3, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: color2.withValues(alpha: 0.4), blurRadius: 15, spreadRadius: 3, offset: const Offset(0, 8))],
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.3)),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.3)),
                 child: Icon(icon, size: 36, color: Colors.white),
               ),
               const SizedBox(width: 24),
@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _statCard(
                         context: context,
                         title: 'Reminders Total',
-                        value: '${(appState.reminders ?? []).length}',
+                        value: '${(appState.reminders).length}',
                         icon: Icons.alarm,
                         color1: Colors.pinkAccent,
                         color2: Colors.purpleAccent,

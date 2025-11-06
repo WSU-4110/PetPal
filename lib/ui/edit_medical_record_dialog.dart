@@ -11,7 +11,7 @@ class EditMedicalRecordDialog extends StatefulWidget {
   const EditMedicalRecordDialog({super.key, required this.medicalrecord, required this.pets});
 
   @override
-  _EditMedicalRecordDialogState createState() => _EditMedicalRecordDialogState();
+  State<EditMedicalRecordDialog> createState() => _EditMedicalRecordDialogState();
 }
 
 class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
@@ -38,6 +38,15 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
     selectedPet = widget.pets.firstWhere((p) => p.id == widget.medicalrecord.petId);
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descController.dispose();
+    dateController.dispose();
+    vetController.dispose();
+    super.dispose();
   }
 
   Future<void> pickDate() async {

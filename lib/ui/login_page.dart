@@ -68,7 +68,6 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isPasswordVisible = false;
   bool _isRegisterMode = false;
-  bool _isEmailTaken = false;
   String? _selectedPreference;
   String? _selectedRole = "owner";
 
@@ -102,7 +101,6 @@ class _LoginPageState extends State<LoginPage> {
     _passwordChecksNotifier.value = List.filled(5, false);
     loginErrorEmail = null;
     loginErrorPassword = null;
-    _isEmailTaken = false;
   }
 
   @override
@@ -115,9 +113,12 @@ class _LoginPageState extends State<LoginPage> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+            colors: [
+              Color.fromRGBO(184, 146, 247, 1),
+              Color.fromRGBO(250, 196, 241, 1)
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -141,9 +142,9 @@ class _LoginPageState extends State<LoginPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.pink.withOpacity(0.3),
-                          blurRadius: 15,
-                          spreadRadius: 5,
+                          color: Colors.deepPurple.withValues(alpha: 0.6),
+                          blurRadius: 20,
+                          spreadRadius: 8,
                         ),
                       ],
                     ),
@@ -172,22 +173,34 @@ class _LoginPageState extends State<LoginPage> {
                   if (_isRegisterMode) const SizedBox(height: 16),
 
                   if (_isRegisterMode)
-                    DropdownButtonFormField<String>(
-                      value: _selectedPreference,
-                      decoration:
-                          _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
-                      dropdownColor: Colors.purple[100],
-                      items: _preferences
-                          .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedPreference = value;
-                          if (value != "Custom") _customCaptionController.clear();
-                        });
-                      },
-                      validator: (value) =>
-                          value == null || value.isEmpty ? "Select a preference" : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.deepPurple.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedPreference,
+                        decoration:
+                            _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
+                        dropdownColor: Colors.purple[100],
+                        items: _preferences
+                            .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPreference = value;
+                            if (value != "Custom") _customCaptionController.clear();
+                          });
+                        },
+                        validator: (value) =>
+                            value == null || value.isEmpty ? "Select a preference" : null,
+                      ),
                     ),
                   if (_isRegisterMode && _selectedPreference == "Custom")
                     const SizedBox(height: 12),
@@ -199,22 +212,34 @@ class _LoginPageState extends State<LoginPage> {
                         maxLength: 50),
                   if (_isRegisterMode) const SizedBox(height: 16),
                   if (_isRegisterMode)
-                    DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      decoration:
-                          _dropdownDecoration(label: "Role", icon: Icons.badge),
-                      dropdownColor: Colors.purple[100],
-                      items: const [
-                        DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
-                        DropdownMenuItem(value: "vet", child: Text("Veterinarian")),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedRole = value;
-                        });
-                      },
-                      validator: (value) =>
-                          value == null || value.isEmpty ? "Select a role" : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.deepPurple.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedRole,
+                        decoration:
+                            _dropdownDecoration(label: "Role", icon: Icons.badge),
+                        dropdownColor: Colors.purple[100],
+                        items: const [
+                          DropdownMenuItem(value: "owner", child: Text("Pet Owner")),
+                          DropdownMenuItem(value: "vet", child: Text("Veterinarian")),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value;
+                          });
+                        },
+                        validator: (value) =>
+                            value == null || value.isEmpty ? "Select a role" : null,
+                      ),
                     ),
                   if (_isRegisterMode) const SizedBox(height: 16),
 
@@ -331,10 +356,12 @@ class _LoginPageState extends State<LoginPage> {
                             setState(() {
                               loginErrorEmail = null;
                               loginErrorPassword = null;
-                              _isEmailTaken = false;
                             });
 
                             try {
+                              // Capture navigator BEFORE any async operations
+                              final navigator = Navigator.of(context);
+                              
                               Map<String, dynamic>? user;
                               if (_isRegisterMode) {
                                 await appState.register(
@@ -358,15 +385,15 @@ class _LoginPageState extends State<LoginPage> {
                                 );
                               }
 
-                              if (user != null) {
-                                if (!mounted) return;
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          MainNavigation(role: user!['role'])),
-                                );
-                              }
+                              // ✅ Guard context before navigation
+                              if (!mounted) return;
+
+                              final role = user['role'] ?? 'owner';
+                              
+                              navigator.pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (_) => MainNavigation(role: role)),
+                              );
                             } catch (e) {
                               String err = e.toString().toLowerCase();
                               setState(() {
@@ -375,9 +402,6 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                                 if (err.contains("invalid password")) {
                                   loginErrorPassword = "Incorrect password";
-                                }
-                                if (err.contains("email is already registered")) {
-                                  _isEmailTaken = true;
                                 }
                               });
                             }
@@ -391,12 +415,15 @@ class _LoginPageState extends State<LoginPage> {
                               vertical: 16, horizontal: 24),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+                            gradient: LinearGradient(
+                              colors: [
+                                Color.fromRGBO(184, 146, 247, 1),
+                                Color.fromRGBO(250, 196, 241, 1)
+                              ],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.pink.withOpacity(0.3),
+                                color: Colors.deepPurple.withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 spreadRadius: 2,
                               )
@@ -456,7 +483,7 @@ class _LoginPageState extends State<LoginPage> {
       labelText: label,
       prefixIcon: Icon(icon),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.15),
+      fillColor: Color.fromRGBO(255, 255, 255, 0.15),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,
@@ -469,35 +496,46 @@ class _LoginPageState extends State<LoginPage> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    bool obscureText = false,
     Widget? suffix,
-    void Function(String)? onChanged,
-    int? maxLength,
+    bool obscureText = false,
+    int maxLength = 100,
+    Function(String)? onChanged,
   }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      onChanged: onChanged,
-      maxLength: maxLength,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.15),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
-        ),
-        labelStyle: const TextStyle(color: Colors.white),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withValues(alpha: 0.3),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      style: const TextStyle(color: Colors.white),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return "Please enter $label";
-        }
-        return null;
-      },
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        maxLength: maxLength,
+        onChanged: onChanged,
+        validator: (value) {
+          if (value == null || value.isEmpty) return "Enter $label";
+          return null;
+        },
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.white),
+          suffixIcon: suffix,
+          filled: true,
+          fillColor: Color.fromRGBO(255, 255, 255, 0.15),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          counterText: '',
+        ),
+      ),
     );
   }
 }

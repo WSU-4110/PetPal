@@ -39,9 +39,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         imageQuality: 85,
       );
       if (picked == null) return;
+      if (!mounted) return;
       await Provider.of<AppState>(context, listen: false).setProfileImage(picked.path);
+      if (!mounted) return;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile image updated')));
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image pick failed: $e')));
+      if (!mounted) return;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Image pick failed: $e')));
+      }
     }
   }
 
@@ -80,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _showPickOptions,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 padding: const EdgeInsets.all(8),
@@ -101,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -126,15 +134,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.delete_forever),
               title: const Text('Remove picture'),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(context);
-                await Provider.of<AppState>(context, listen: false).setProfileImage(null);
+                _removeProfileImage();
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _removeProfileImage() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    await appState.setProfileImage(null);
+    if (!mounted) return;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile picture removed')));
+    }
   }
 
   @override
@@ -191,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         // Display name editing
                         Card(
-                          color: Colors.white.withOpacity(0.04),
+                          color: Colors.white.withValues(alpha: 0.04),
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Column(
@@ -214,8 +231,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                               setState(() => _saving = true);
                                               await appState.setDisplayName(_nameController.text);
                                               setState(() => _saving = false);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('Display name saved')));
+                                              if (!mounted) return;
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(content: Text('Display name saved')));
+                                              }
                                             },
                                       child: _saving
                                           ? const SizedBox(
@@ -242,7 +262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         // Account actions
                         Card(
-                          color: Colors.white.withOpacity(0.04),
+                          color: Colors.white.withValues(alpha: 0.04),
                           child: Column(
                             children: [
                               ListTile(

@@ -31,25 +31,35 @@ class Pet {
   }
 
   factory Pet.fromMap(Map<String, dynamic> map) {
+    // Safely parse age from either int or string-like values
+    final dynamic rawAge = map['age'];
+    final int parsedAge = rawAge is int
+        ? rawAge
+        : int.tryParse(rawAge?.toString() ?? '') ?? 0;
+
     return Pet(
       id: map['id'] as int?,
-      name: map['name'] as String,
-      gender: map['gender'] as String,
-      species: map['species'] as String,
-      breed: map['breed'] as String,
-      age: map['age'] is int ? map['age'] as int : int.tryParse('${map['age']}') ?? 0,
+      name: (map['name'] ?? '').toString(),
+      gender: (map['gender'] ?? '').toString(),
+      species: (map['species'] ?? '').toString(),
+      breed: (map['breed'] ?? '').toString(),
+      age: parsedAge,
       image: map['image'] as String?,
     );
   }
 
   /// Helper: returns the expected asset image path for this pet
+  /// Example: species="Cat", breed="Bombay" -> assets/breeds/cat_bombay.png
   static String imageFor(String species, String breed) {
-    if (species.isEmpty || breed.isEmpty) return 'assets/breeds/petlogo.png';
+    if (species.trim().isEmpty || breed.trim().isEmpty) {
+      return 'assets/breeds/petlogo.png';
+    }
 
-    String s = species.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
-    String b = breed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final s = species.toLowerCase().replaceAll(RegExp(r'\s+'), '_').trim();
+    var b = breed.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').trim();
 
     if (b.isEmpty) b = 'petlogo';
-    return 'assets/breeds/${s}_${b}.png';
+    // use braces for `s` because it's followed immediately by an underscore
+    return 'assets/breeds/${s}_$b.png';
   }
 }

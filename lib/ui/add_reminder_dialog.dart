@@ -9,7 +9,7 @@ class AddReminderDialog extends StatefulWidget {
   const AddReminderDialog({super.key, required this.pets});
 
   @override
-  _AddReminderDialogState createState() => _AddReminderDialogState();
+  State<AddReminderDialog> createState() => _AddReminderDialogState();
 }
 
 class _AddReminderDialogState extends State<AddReminderDialog> {
@@ -25,6 +25,12 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     selectedPet = widget.pets.first;
     selectedDate = DateTime.now();
     selectedTime = TimeOfDay.now();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
   }
 
   Future<void> pickDate() async {

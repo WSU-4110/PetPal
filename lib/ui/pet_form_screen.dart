@@ -89,11 +89,11 @@ class _PetFormScreenState extends State<PetFormScreen> {
       child: Container(
         width: 140,
         height: 140,
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white.withValues(alpha: 0.06),
         child: Image.asset(
           imgPath,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
+          errorBuilder: (context, error, stackTrace) =>
               Image.asset('assets/breeds/petlogo.png', fit: BoxFit.cover),
         ),
       ),
@@ -104,15 +104,15 @@ class _PetFormScreenState extends State<PetFormScreen> {
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: Colors.white.withOpacity(0.12),
+      fillColor: Colors.white.withValues(alpha: 0.12),
       prefixIcon: Icon(icon, color: Colors.white70),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.6)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.6)),
       ),
       labelStyle: const TextStyle(color: Colors.white70),
       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -126,6 +126,8 @@ class _PetFormScreenState extends State<PetFormScreen> {
     required ValueChanged<String?> onSelected,
   }) async {
     if (items.isEmpty) return;
+    if (!mounted) return;
+    
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -143,9 +145,9 @@ class _PetFormScreenState extends State<PetFormScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: Column(
                   children: [
@@ -192,7 +194,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                                 trailing: isSelected
                                     ? const Icon(Icons.check, color: Colors.white)
                                     : null,
-                                onTap: () => Navigator.of(context).pop(it),
+                                onTap: () => Navigator.of(c).pop(it),
                               ),
                             );
                           },
@@ -208,7 +210,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
       },
     );
 
-    if (selected != null) onSelected(selected);
+    if (selected != null && mounted) onSelected(selected);
   }
 
   Widget _selectorField({
@@ -232,7 +234,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                             ? Colors.white54
                             : Colors.white))),
             const SizedBox(width: 8),
-            Icon(Icons.arrow_drop_down, color: Colors.white70),
+            const Icon(Icons.arrow_drop_down, color: Colors.white70),
           ],
         ),
       ),
@@ -386,11 +388,17 @@ class _PetFormScreenState extends State<PetFormScreen> {
 
                       if (widget.pet != null) {
                         // Editing: return updated pet
-                        Navigator.pop(context, petToSave);
+                        if (!mounted) return;
+                        if (context.mounted) {
+                          Navigator.of(context).pop(petToSave);
+                        }
                       } else {
                         // Adding new
                         await appState.addPet(petToSave);
-                        Navigator.pop(context);
+                        if (!mounted) return;
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
                       }
                     },
                     child: Container(
@@ -404,7 +412,7 @@ class _PetFormScreenState extends State<PetFormScreen> {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.pinkAccent.withOpacity(0.5),
+                            color: Colors.pinkAccent.withValues(alpha: 0.5),
                             blurRadius: 15,
                             offset: const Offset(0, 8),
                           ),

@@ -11,7 +11,7 @@ class EditReminderDialog extends StatefulWidget {
   const EditReminderDialog({super.key, required this.reminder, required this.pets});
 
   @override
-  _EditReminderDialogState createState() => _EditReminderDialogState();
+  State<EditReminderDialog> createState() => _EditReminderDialogState();
 }
 
 class _EditReminderDialogState extends State<EditReminderDialog> {
@@ -29,6 +29,12 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
     category = widget.reminder.category;
     selectedDate = widget.reminder.scheduledAt;
     selectedTime = TimeOfDay.fromDateTime(widget.reminder.scheduledAt);
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
   }
 
   Future<void> pickDate() async {

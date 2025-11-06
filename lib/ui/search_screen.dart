@@ -9,6 +9,7 @@ import '../models/medical_record.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -33,23 +34,27 @@ class _SearchScreenState extends State<SearchScreen> {
       final raw = await rootBundle.loadString('assets/breeds.json');
       final decoded = json.decode(raw) as Map<String, dynamic>;
       setState(() {
-        _breedOptions = decoded.map((k, v) =>
-            MapEntry(k, (v as List).map((e) => e.toString()).toList()));
+        _breedOptions = decoded.map(
+          (k, v) => MapEntry(k, (v as List).map((e) => e.toString()).toList()),
+        );
         _speciesOptions = _breedOptions.keys.toList();
       });
     } catch (_) {
+      // fallback if asset not present
       setState(() {
         _breedOptions = {'Other': ['Other']};
-        _speciesOptions = _breedOptions.keys.toList();
+        _speciesOptions = ['Other'];
       });
     }
   }
 
   List<dynamic> _filterAll(AppState appState) {
     final q = _query.trim().toLowerCase();
-    final pets = appState.pets ?? <Pet>[];
-    final records = appState.medicalRecords ?? <MedicalRecord>[];
-    final resources = [
+
+    final List<Pet> pets = appState.pets;
+    final List<MedicalRecord> records = appState.medicalRecords;
+
+    final resources = <String>[
       'Top 10 puppy training tips',
       'How to socialize your cat',
       'Rabbit-safe houseplants',
@@ -58,27 +63,37 @@ class _SearchScreenState extends State<SearchScreen> {
     ];
 
     final petResults = pets.where((p) {
+      // text match
       if (q.isNotEmpty &&
           !('${p.name} ${p.species} ${p.breed}'.toLowerCase().contains(q))) {
         return false;
       }
-      if (_species != null && _species!.isNotEmpty) {
-        if (p.species.toLowerCase() != _species!.toLowerCase()) return false;
+
+      // species filter (explicit check)
+      if ((_species ?? '').isNotEmpty) {
+        if (p.species.toLowerCase() != _species!.toLowerCase()) {
+          return false;
+        }
       }
-      if (_breed != null && _breed!.isNotEmpty && _breed != 'Other') {
-        if (p.breed.toLowerCase() != _breed!.toLowerCase()) return false;
+
+      // breed filter
+      if ((_breed ?? '').isNotEmpty && _breed != 'Other') {
+        if (p.breed.toLowerCase() != _breed!.toLowerCase()) {
+          return false;
+        }
       }
+
+      // age range
       if (_minAge != null && p.age < _minAge!) return false;
       if (_maxAge != null && p.age > _maxAge!) return false;
+
       return true;
     }).toList();
 
     final recordResults = records.where((r) {
-      if (q.isNotEmpty &&
-          !('${r.title} ${r.vetName} ${r.description}'.toLowerCase().contains(q))) {
-        return false;
-      }
-      return true;
+      final haystack =
+          '${r.title} ${r.vetName} ${r.description}'.toLowerCase();
+      return q.isEmpty || haystack.contains(q);
     }).toList();
 
     final resourceResults =
@@ -92,28 +107,47 @@ class _SearchScreenState extends State<SearchScreen> {
     final appState = Provider.of<AppState>(context);
     final results = _filterAll(appState);
 
+    // Build species items and breed items without risky spread/null-aware assumptions.
+    final List<DropdownMenuItem<String?>> speciesItems = <DropdownMenuItem<String?>>[
+      const DropdownMenuItem<String?>(value: null, child: Text('Any')),
+      ..._speciesOptions.map((s) => DropdownMenuItem<String?>(value: s, child: Text(s))),
+    ];
+
+    // compute breed list safely
+    List<String> breedList = <String>[];
+    if (_species != null && _breedOptions.containsKey(_species)) {
+      breedList = List<String>.from(_breedOptions[_species]!);
+    }
+
+    final List<DropdownMenuItem<String?>> breedItems = <DropdownMenuItem<String?>>[
+      const DropdownMenuItem<String?>(value: null, child: Text('Any')),
+      ...breedList.map((b) => DropdownMenuItem<String?>(value: b, child: Text(b))),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Search')),
       body: Container(
         padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-              colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight),
+            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
         child: Column(
           children: [
-            // Search box
+            // Search bar
             TextField(
               decoration: InputDecoration(
                 hintText: 'Search pets, medical records, resources...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.12),
+                fillColor: Colors.white.withValues(alpha: 0.12),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
               onChanged: (v) => setState(() => _query = v),
             ),
@@ -127,21 +161,17 @@ class _SearchScreenState extends State<SearchScreen> {
                     decoration: InputDecoration(
                       labelText: 'Species',
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.12),
+                      fillColor: Colors.white.withValues(alpha: 0.12),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    value: _species,
-                    items: <String?>[null, ..._speciesOptions].map((s) {
-                      return DropdownMenuItem<String?>(
-                        value: s,
-                        child: Text(s == null ? 'Any' : s),
-                      );
-                    }).toList(),
-                    onChanged: (String? v) {
+                    initialValue: _species,
+                    items: speciesItems,
+                    onChanged: (v) {
                       setState(() {
                         _species = v;
-                        _breed = null;
+                        _breed = null; // reset breed when species changes
                       });
                     },
                   ),
@@ -152,36 +182,33 @@ class _SearchScreenState extends State<SearchScreen> {
                     decoration: InputDecoration(
                       labelText: 'Breed',
                       filled: true,
-                      fillColor: Colors.white.withOpacity(0.12),
+                      fillColor: Colors.white.withValues(alpha: 0.12),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    value: _breed,
-                    items: <String?>[null, ...(_breedOptions[_species] ?? [])]
-                        .map((b) {
-                      return DropdownMenuItem<String?>(
-                        value: b,
-                        child: Text(b == null ? 'Any' : b),
-                      );
-                    }).toList(),
-                    onChanged: (String? v) => setState(() => _breed = v),
+                    initialValue: _breed,
+                    items: breedItems,
+                    onChanged: (v) => setState(() => _breed = v),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Age range input
+            // Age range inputs + Reset
             Row(
               children: [
                 Flexible(
                   child: TextField(
                     decoration: InputDecoration(
-                        labelText: 'Min age',
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.12),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12))),
+                      labelText: 'Min age',
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) => setState(() => _minAge = int.tryParse(v)),
                   ),
@@ -190,11 +217,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 Flexible(
                   child: TextField(
                     decoration: InputDecoration(
-                        labelText: 'Max age',
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.12),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12))),
+                      labelText: 'Max age',
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) => setState(() => _maxAge = int.tryParse(v)),
                   ),
@@ -211,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     });
                   },
                   child: const Text('Reset'),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -219,76 +248,85 @@ class _SearchScreenState extends State<SearchScreen> {
             // Results
             Expanded(
               child: results.isEmpty
-                  ? Center(
-                      child: Text('No results',
-                          style: TextStyle(color: Colors.white70)))
+                  ? const Center(
+                      child: Text(
+                        'No results',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: results.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, i) {
                         final item = results[i];
                         if (item is Pet) {
-                          final image =
-                              item.image ?? Pet.imageFor(item.species, item.breed);
-                          final imageProvider =
+                          final image = item.image ?? Pet.imageFor(item.species, item.breed);
+
+                          final ImageProvider imageProvider =
                               image.startsWith('http') ? NetworkImage(image) : AssetImage(image);
+
                           return Card(
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withValues(alpha: 0.06),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundImage: imageProvider as ImageProvider,
+                                backgroundImage: imageProvider,
                                 radius: 26,
-                                backgroundColor: Colors.white24,
+                                backgroundColor: Colors.white.withValues(alpha: 0.24),
                               ),
-                              title:
-                                  Text(item.name, style: const TextStyle(color: Colors.white)),
+                              title: Text(
+                                item.name,
+                                style: const TextStyle(color: Colors.white),
+                              ),
                               subtitle: Text(
-                                  '${item.breed} • ${item.species} • Age: ${item.age}',
-                                  style: const TextStyle(color: Colors.white70)),
+                                '${item.breed} • ${item.species} • Age: ${item.age}',
+                                style: const TextStyle(color: Colors.white70),
+                              ),
                               trailing: PopupMenuButton<String>(
                                 onSelected: (v) async {
                                   if (v == 'view') {
-                                    showModalBottomSheet(
-                                        context: context,
-                                        builder: (_) {
-                                          return Padding(
-                                            padding: const EdgeInsets.all(16),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(item.name,
-                                                    style: const TextStyle(
-                                                        fontSize: 20,
-                                                        fontWeight: FontWeight.bold)),
-                                                const SizedBox(height: 6),
-                                                Text('Breed: ${item.breed}'),
-                                                Text('Species: ${item.species}'),
-                                                Text('Age: ${item.age}'),
-                                                const SizedBox(height: 12),
-                                                ElevatedButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(context),
-                                                    child: const Text('Close'))
-                                              ],
+                                    // show sheet without awaiting to avoid using context across async gap
+                                    showModalBottomSheet<void>(
+                                      context: context,
+                                      builder: (_) => Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.name,
+                                              style: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          );
-                                        });
+                                            const SizedBox(height: 6),
+                                            Text('Breed: ${item.breed}'),
+                                            Text('Species: ${item.species}'),
+                                            Text('Age: ${item.age}'),
+                                            const SizedBox(height: 12),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text('Close'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
                                   } else if (v == 'delete') {
-                                    try {
-                                      final asDyn = Provider.of<AppState>(context,
-                                          listen: false) as dynamic;
-                                      if (asDyn.deletePet is Function) {
-                                        await asDyn.deletePet(item.id);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Pet deleted')));
-                                        setState(() {});
-                                      }
-                                    } catch (_) {}
+                                    // capture messenger before async gap
+                                    final messenger = ScaffoldMessenger.of(context);
+                                    final asDyn =
+                                        Provider.of<AppState>(context, listen: false) as dynamic;
+                                    if (asDyn.deletePet is Function) {
+                                      await asDyn.deletePet(item.id);
+                                      if (!mounted) return;
+                                      messenger.showSnackBar(const SnackBar(content: Text('Pet deleted')));
+                                      setState(() {});
+                                    }
                                   }
                                 },
-                                itemBuilder: (_) => [
+                                itemBuilder: (ctx) => <PopupMenuEntry<String>>[
                                   const PopupMenuItem(value: 'view', child: Text('View')),
                                   const PopupMenuItem(value: 'edit', child: Text('Edit (TODO)')),
                                   const PopupMenuItem(value: 'delete', child: Text('Delete')),
@@ -298,21 +336,28 @@ class _SearchScreenState extends State<SearchScreen> {
                           );
                         } else if (item is MedicalRecord) {
                           return Card(
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withValues(alpha: 0.06),
                             child: ListTile(
                               leading: const Icon(Icons.medical_services, color: Colors.white70),
-                              title: Text('${item.title} • ${item.vetName}',
-                                  style: const TextStyle(color: Colors.white)),
-                              subtitle: Text(item.description,
-                                  style: const TextStyle(color: Colors.white70)),
+                              title: Text(
+                                '${item.title} • ${item.vetName}',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              subtitle: Text(
+                                item.description,
+                                style: const TextStyle(color: Colors.white70),
+                              ),
                             ),
                           );
                         } else if (item is String) {
                           return Card(
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withValues(alpha: 0.06),
                             child: ListTile(
                               leading: const Icon(Icons.book, color: Colors.white70),
-                              title: Text(item, style: const TextStyle(color: Colors.white)),
+                              title: Text(
+                                item,
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
                           );
                         }

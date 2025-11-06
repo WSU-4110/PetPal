@@ -70,7 +70,6 @@ class BreedService {
 
   // Get species-level tips (case-insensitive).
   static List<String> getTipsForSpecies(String species) {
-    if (species == null) return [];
     final k = species.toLowerCase().trim();
     return _speciesTips[k] ?? [];
   }
@@ -89,22 +88,25 @@ class BreedService {
   }
 
   // ----------------------------------------------------------
-  // Added for unit test compatibility:
-  // 1. Return a list of breed maps for a species
+  // Added lightweight helpers for UI/unit-test compatibility:
+
+  /// Return a lightweight list of breed maps for a species.
+  /// This is a minimal fallback and doesn't replace your `breeds.json`.
   static List<Map<String, String>> getBreedsForSpecies(String species) {
-    // Use a minimal hardcoded fallback list; can be expanded
-    final speciesKey = species.toLowerCase();
+    final speciesKey = species.toLowerCase().trim();
     final Map<String, List<String>> defaultBreeds = {
       'cat': ['Bombay', 'Siamese', 'Persian', 'Maine Coon'],
       'dog': ['Labrador Retriever', 'German Shepherd', 'Beagle', 'Poodle'],
+      'rabbit': ['Lop', 'Dutch'],
     };
 
     final breeds = defaultBreeds[speciesKey] ?? ['Other'];
     return breeds.map((b) => {'name': b}).toList();
   }
 
-  // 2. Return a path for a breed key
+  /// Return a guess at the asset path for a given normalized key
   static String getImageForBreedKey(String key) {
-    return 'assets/breeds/${key.toLowerCase()}.png';
+    final k = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]+'), '_').trim();
+    return 'assets/breeds/$k.png';
   }
 }

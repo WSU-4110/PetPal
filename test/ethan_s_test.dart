@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:petpal/ui/add_medical_record_dialog.dart';
 import 'package:petpal/ui/edit_medical_record_dialog.dart';
-import 'package:petpal/ui/medical_records.dart';
 import 'package:petpal/models/medical_record.dart';
 import 'package:petpal/models/pet.dart';
 
