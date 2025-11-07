@@ -42,11 +42,3 @@ jobs:
       - name: Run unit tests
         run: flutter test --coverage
 
-      - name: Format coverage
-        run: dart pub global run coverage format_coverage \
-          --package . \
-          -i coverage.json \
-          -o lcov.info \
-          --lcov \
-          --report-on lib
-
