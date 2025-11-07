@@ -142,7 +142,7 @@ testWidgets('5. Cancel Button Test', (tester) async {
     ),
   ));
 
-    //open and cance
+    //open and cancel
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
