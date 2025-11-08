@@ -63,6 +63,15 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
   }
 
   @override
+  void dispose() {
+    _titleController.dispose();
+    _descController.dispose();
+    _dateController.dispose();
+    _vetController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text("Add Medical Record"),
@@ -117,8 +126,13 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                 date: _dateController.text,
                 vetName: _vetController.text,
               );
+              
+              // Store the navigator before the async operation
+              final navigator = Navigator.of(context);
               await context.read<AppState>().addMedicalRecord(record);
-              Navigator.pop(context);
+              if (mounted) {
+                navigator.pop();
+              }
             }
           },
           child: const Text("Save"),

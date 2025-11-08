@@ -23,8 +23,8 @@ class HelpScreen extends StatelessWidget {
 
       // Cats
       {
-        'q': 'My cat stopped eating — what should I do?',
-        'a': 'If a cat doesn’t eat for 24–48 hours, it can be dangerous. Check for other symptoms & contact a vet immediately.'
+        'q': 'My cat stopped eating - what should I do?',
+        'a': 'If a cat doesn\'t eat for 24-48 hours, it can be dangerous. Check for other symptoms & contact a vet immediately.'
       },
       {
         'q': 'How often should I groom my cat?',
@@ -37,7 +37,7 @@ class HelpScreen extends StatelessWidget {
 
       // Rabbits
       {
-        'q': 'How often should I clean my rabbit’s cage?',
+        'q': 'How often should I clean my rabbit\'s cage?',
         'a': 'Spot-clean daily and do a full cage clean once a week to maintain hygiene.'
       },
       {
@@ -82,7 +82,7 @@ class HelpScreen extends StatelessWidget {
         child: ListView(
           children: faqItems.map((it) {
             return Card(
-              color: Colors.white.withOpacity(0.06),
+              color: Colors.white.withValues(alpha: 0.06),
               child: ExpansionTile(
                 collapsedIconColor: Colors.white70,
                 iconColor: Colors.white,

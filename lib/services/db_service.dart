@@ -17,7 +17,8 @@ class DBService {
   DBService._internal();
 
   Database? _db;
-  static const int _dbVersion = 6; // bump to 6 for safe upgrade
+  // Bump when schema changes. Keep >= on devices.
+  static const int _dbVersion = 6;
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -39,41 +40,43 @@ class DBService {
         await _createAllTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // Ensure all tables exist safely
+        // Ensure tables and columns are present after upgrade
         await _createAllTables(db);
 
-        // Add missing columns safely for users
-        final columns = await db.rawQuery("PRAGMA table_info(users);");
-        final columnNames = columns.map((c) => c['name'].toString()).toList();
-
-        if (!columnNames.contains('salt')) {
-          try {
+        // safe add columns to users
+        try {
+          final columns = await db.rawQuery("PRAGMA table_info(users);");
+          final columnNames = columns.map((c) => c['name'].toString()).toList();
+          if (!columnNames.contains('salt')) {
             await db.execute("ALTER TABLE users ADD COLUMN salt TEXT;");
-          } catch (_) {}
-        }
-
-        if (!columnNames.contains('role')) {
-          try {
+          }
+          if (!columnNames.contains('role')) {
             await db.execute("ALTER TABLE users ADD COLUMN role TEXT;");
-          } catch (_) {}
-        }
+          }
+        } catch (_) {}
 
-        // Ensure indexes exist
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
-        await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
-
-        // Add 'image' column to pets if missing
-        final petColumns = await db.rawQuery("PRAGMA table_info(pets);");
-        final petColumnNames = petColumns.map((c) => c['name'].toString()).toList();
-        if (!petColumnNames.contains('image')) {
-          await db.execute("ALTER TABLE pets ADD COLUMN image TEXT;");
-        }
+        // safe add pet columns
+        try {
+          final petColumns = await db.rawQuery("PRAGMA table_info(pets);");
+          final petColumnNames = petColumns.map((c) => c['name'].toString()).toList();
+          if (!petColumnNames.contains('image')) {
+            await db.execute("ALTER TABLE pets ADD COLUMN image TEXT;");
+          }
+          if (!petColumnNames.contains('birthdate')) {
+            await db.execute("ALTER TABLE pets ADD COLUMN birthdate TEXT;");
+          }
+        } catch (_) {}
+        // indexes (idempotent)
+        try {
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
+        } catch (_) {}
       },
     );
   }
 
   Future<void> _createAllTables(Database db) async {
-    // --- Pets table ---
+    // pets table includes image and birthdate so fresh installs have full schema
     await db.execute('''
       CREATE TABLE IF NOT EXISTS pets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,18 +84,24 @@ class DBService {
         gender TEXT NOT NULL,
         species TEXT NOT NULL,
         breed TEXT NOT NULL,
-        age INTEGER NOT NULL
+        age INTEGER NOT NULL,
+        image TEXT,
+        birthdate TEXT
       );
     ''');
 
-    // Add 'image' column if missing
-    final petColumns = await db.rawQuery("PRAGMA table_info(pets);");
-    final petColumnNames = petColumns.map((c) => c['name'].toString()).toList();
-    if (!petColumnNames.contains('image')) {
-      await db.execute("ALTER TABLE pets ADD COLUMN image TEXT;");
-    }
+    // defensive additions if older table is present
+    try {
+      final petColumns = await db.rawQuery("PRAGMA table_info(pets);");
+      final petColumnNames = petColumns.map((c) => c['name'].toString()).toList();
+      if (!petColumnNames.contains('image')) {
+        await db.execute("ALTER TABLE pets ADD COLUMN image TEXT;");
+      }
+      if (!petColumnNames.contains('birthdate')) {
+        await db.execute("ALTER TABLE pets ADD COLUMN birthdate TEXT;");
+      }
+    } catch (_) {}
 
-    // --- Reminders table ---
     await db.execute('''
       CREATE TABLE IF NOT EXISTS reminders(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -105,7 +114,6 @@ class DBService {
       );
     ''');
 
-    // --- Users table ---
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,7 +127,6 @@ class DBService {
       );
     ''');
 
-    // --- Medical Records table ---
     await db.execute('''
       CREATE TABLE IF NOT EXISTS medical_records(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,7 +139,6 @@ class DBService {
       );
     ''');
 
-    // --- Medical Records table ---
     await db.execute('''
       CREATE TABLE IF NOT EXISTS exercise_logs(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,9 +151,11 @@ class DBService {
       );
     ''');
 
-    // --- Indexes ---
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
+    // indexes
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
+    } catch (_) {}
   }
 
   // ---------------- Helpers ----------------
@@ -258,28 +266,85 @@ class DBService {
     return null;
   }
 
+  Future<void> updateUserPassword(int userId, String newPassword) async {
+    final db = await database;
+    final hashed = hashPassword(newPassword);
+    await db.update(
+      'users',
+      {'password': hashed},
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  Future<void> deleteUser(int userId) async {
+    final db = await database;
+    await db.delete('users', where: 'id = ?', whereArgs: [userId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
+    final db = await database;
+    return await db.query(
+      'users',
+      where: 'role = ?',
+      whereArgs: [role],
+      orderBy: 'firstName ASC, lastName ASC',
+    );
+  }
+
   // ---------------- Pets ----------------
-  Future<int> insertPet(Pet pet) async => (await database).insert('pets', pet.toMap());
-  Future<List<Pet>> getPets() async => (await database).query('pets', orderBy: 'name ASC').then((m) => m.map(Pet.fromMap).toList());
-  Future<int> updatePet(Pet pet) async => (await database).update('pets', pet.toMap(), where: 'id = ?', whereArgs: [pet.id]);
-  Future<int> deletePet(int id) async => (await database).delete('pets', where: 'id = ?', whereArgs: [id]);
+  /// Insert pet with a safe retry if DB lacks birthdate column.
+  Future<int> insertPet(Pet pet) async {
+    final db = await database;
+    try {
+      return await db.insert('pets', pet.toMap());
+    } on DatabaseException catch (e) {
+      final msg = e.toString().toLowerCase();
+      // if missing column, attempt to add and retry once
+      if (msg.contains('no column named') && (msg.contains('birthdate') || msg.contains('image'))) {
+        try {
+          // try to add both, safe no-op if exist
+          await db.execute("ALTER TABLE pets ADD COLUMN image TEXT;");
+        } catch (_) {}
+        try {
+          await db.execute("ALTER TABLE pets ADD COLUMN birthdate TEXT;");
+        } catch (_) {}
+        // retry once
+        return await db.insert('pets', pet.toMap());
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<Pet>> getPets() async =>
+      (await database).query('pets', orderBy: 'name ASC').then((m) => m.map(Pet.fromMap).toList());
+
+  Future<int> updatePet(Pet pet) async =>
+      (await database).update('pets', pet.toMap(), where: 'id = ?', whereArgs: [pet.id]);
+
+  Future<int> deletePet(int id) async =>
+      (await database).delete('pets', where: 'id = ?', whereArgs: [id]);
 
   // ---------------- Reminders ----------------
   Future<int> insertReminder(Reminder r) async => (await database).insert('reminders', r.toMap());
-  Future<List<Reminder>> getRemindersForPet(int petId) async => (await database).query('reminders', where: 'petId = ?', whereArgs: [petId], orderBy: 'scheduledAt DESC').then((m) => m.map(Reminder.fromMap).toList());
-  Future<List<Reminder>> getAllReminders() async => (await database).query('reminders', orderBy: 'scheduledAt DESC').then((m) => m.map(Reminder.fromMap).toList());
+  Future<List<Reminder>> getRemindersForPet(int petId) async =>
+      (await database).query('reminders', where: 'petId = ?', whereArgs: [petId], orderBy: 'scheduledAt DESC').then((m) => m.map(Reminder.fromMap).toList());
+  Future<List<Reminder>> getAllReminders() async =>
+      (await database).query('reminders', orderBy: 'scheduledAt DESC').then((m) => m.map(Reminder.fromMap).toList());
   Future<int> updateReminder(Reminder r) async => (await database).update('reminders', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteReminder(int id) async => (await database).delete('reminders', where: 'id = ?', whereArgs: [id]);
 
   // ---------------- Medical Records ----------------
   Future<int> insertMedicalRecord(MedicalRecord r) async => (await database).insert('medical_records', r.toMap());
-  Future<List<MedicalRecord>> getMedicalRecordsForPet(int petId) async => (await database).query('medical_records', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(MedicalRecord.fromMap).toList());
+  Future<List<MedicalRecord>> getMedicalRecordsForPet(int petId) async =>
+      (await database).query('medical_records', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(MedicalRecord.fromMap).toList());
   Future<int> updateMedicalRecord(MedicalRecord r) async => (await database).update('medical_records', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteMedicalRecord(int id) async => (await database).delete('medical_records', where: 'id = ?', whereArgs: [id]);
 
   // ---------------- Exercise Logs ----------------
   Future<int> insertExerciseLog(ExerciseLog r) async => (await database).insert('exercise_logs', r.toMap());
-  Future<List<ExerciseLog>> getExerciseLog(int petId) async => (await database).query('exercise_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(ExerciseLog.fromMap).toList());
+  Future<List<ExerciseLog>> getExerciseLog(int petId) async =>
+      (await database).query('exercise_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(ExerciseLog.fromMap).toList());
   Future<int> updateExerciseLog(ExerciseLog r) async => (await database).update('exercise_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteExerciseLog(int id) async => (await database).delete('exercise_logs', where: 'id = ?', whereArgs: [id]);
 

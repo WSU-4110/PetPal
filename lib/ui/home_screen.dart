@@ -1,15 +1,11 @@
 // lib/ui/home_screen.dart
 import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import 'pet_list_screen.dart';
-import 'reminder_list_screen.dart';
-import 'calendar_screen.dart';
+import 'pet_details_screen.dart';
 import '../models/pet.dart';
-import '../services/breed_service.dart';
+import '../models/reminder.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,365 +15,739 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int? _selectedPetIndex;
-  final Random _random = Random();
-
-  // Tip rotation
+  int _currentTipIndex = 0;
+  List<String> _tips = [];
   Timer? _tipTimer;
-  int _tipIndex = 0;
-  List<String> _currentTips = [];
+  late AppState _appState;
+  bool _appStateListenerAttached = false;
 
   @override
   void initState() {
     super.initState();
-    // timer started after we load pets in didChangeDependencies
+
+    // It's safe to read provider with listen: false here
+    _appState = Provider.of<AppState>(context, listen: false);
+    _tips = _safeGetTips(_appState);
+    _startTipRotation();
+
+    // Attach listener once to update tips when AppState notifies
+    if (!_appStateListenerAttached) {
+      _appState.addListener(_onAppStateChanged);
+      _appStateListenerAttached = true;
+    }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _chooseRandomPet();
-    _prepareTipsAndTimer();
+  // Helper to safely read tips from AppState
+  List<String> _safeGetTips(AppState appState) {
+    try {
+      final tips = appState.getTips();
+      return tips ?? <String>[];
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
+  void _onAppStateChanged() {
+    final newTips = _safeGetTips(_appState);
+    if (!_listEquals(newTips, _tips)) {
+      setState(() {
+        _tips = newTips;
+        _currentTipIndex = 0;
+      });
+      _startTipRotation();
+    }
+  }
+
+  void _startTipRotation() {
+    _tipTimer?.cancel();
+    if (_tips.isEmpty) return;
+
+    if (_currentTipIndex >= _tips.length) _currentTipIndex = 0;
+
+    _tipTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      setState(() {
+        _currentTipIndex = (_currentTipIndex + 1) % _tips.length;
+      });
+    });
+  }
+
+  bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   @override
   void dispose() {
     _tipTimer?.cancel();
+    if (_appStateListenerAttached) {
+      try {
+        _appState.removeListener(_onAppStateChanged);
+      } catch (_) {}
+    }
     super.dispose();
   }
 
-  void _chooseRandomPet() {
-    final appState = Provider.of<AppState>(context, listen: false);
-    final pets = _safePets(appState);
-    if (pets.isEmpty) {
-      setState(() => _selectedPetIndex = null);
-    } else {
-      setState(() => _selectedPetIndex = _random.nextInt(pets.length));
-    }
-  }
-
-  List<Pet> _safePets(AppState appState) {
-    try {
-      final maybe = (appState as dynamic).pets;
-      if (maybe is List<Pet>) return maybe;
-      if (maybe is List) return maybe.whereType<Pet>().toList();
-    } catch (_) {}
-    return [];
-  }
-
-  Map<String, dynamic>? _safeUser(AppState appState) {
-    try {
-      final dyn = appState as dynamic;
-      if (dyn.currentUser != null) return Map<String, dynamic>.from(dyn.currentUser);
-    } catch (_) {}
-    try {
-      final dyn = appState as dynamic;
-      if (dyn.user != null) return Map<String, dynamic>.from(dyn.user);
-    } catch (_) {}
-    try {
-      final dyn = appState as dynamic;
-      if (dyn.loggedInUser != null) return Map<String, dynamic>.from(dyn.loggedInUser);
-    } catch (_) {}
-    try {
-      final dyn = appState as dynamic;
-      final fn = dyn.firstName;
-      final ln = dyn.lastName;
-      if (fn != null || ln != null) return {'firstName': fn ?? '', 'lastName': ln ?? ''};
-    } catch (_) {}
-    return null;
-  }
-
-  String _greetingName(AppState appState) {
-    final user = _safeUser(appState);
-    if (user == null) return '';
-    final fn = (user['firstName'] ?? user['first_name'] ?? user['first'])?.toString() ?? '';
-    final ln = (user['lastName'] ?? user['last_name'] ?? user['last'])?.toString() ?? '';
-    final full = '$fn ${ln}'.trim();
-    return full.isEmpty ? '' : ', $full';
-  }
-
-  Widget _buildHeroPet(List<Pet> pets) {
-    if (_selectedPetIndex == null || pets.isEmpty) {
-      return _placeholderHero();
-    }
-
-    final idx = (_selectedPetIndex! >= pets.length) ? 0 : _selectedPetIndex!;
-    final pet = pets[idx];
-    final imagePath = pet.image ?? Pet.imageFor(pet.species, pet.breed);
-
-    final ImageProvider provider =
-        imagePath.startsWith('http') ? NetworkImage(imagePath) : AssetImage(imagePath);
-
-    return GestureDetector(
-      onTap: () {
-        // optional: cycle manually when tapped
-        if (pets.isEmpty) return;
-        setState(() {
-          _selectedPetIndex = ((_selectedPetIndex ?? 0) + 1) % pets.length;
-          _prepareTipsAndTimer(); // update tips for new pet
-        });
+  void _showCompleteTaskDialog(Reminder reminder, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFB892F7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Complete Task?',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+            ],
+          ),
+          content: Text(
+            'Mark "${reminder.title}" as done?',
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final updated = Reminder(
+                  id: reminder.id,
+                  petId: reminder.petId,
+                  title: reminder.title,
+                  category: reminder.category,
+                  scheduledAt: reminder.scheduledAt,
+                  done: true,
+                );
+                await appState.updateReminder(updated);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFFB892F7),
+              ),
+              child: const Text('Mark as Done', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
       },
-      child: Container(
-        width: 160,
-        height: 160,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6))],
-          border: Border.all(color: Colors.white.withOpacity(0.12), width: 2),
-          image: DecorationImage(image: provider, fit: BoxFit.cover),
-        ),
-      ),
     );
   }
 
-  Widget _placeholderHero() {
-    return Container(
-      width: 160,
-      height: 160,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 6))],
-      ),
-      child: const Center(child: Icon(Icons.pets, size: 64, color: Colors.white70)),
-    );
-  }
-
-  void _prepareTipsAndTimer() {
-    _tipTimer?.cancel();
-    final appState = Provider.of<AppState>(context, listen: false);
-    final pets = _safePets(appState);
-
-    final List<String> tips = [];
-
-    if (pets.isNotEmpty) {
-      // gather tips from all pets (unique)
-      final Set<String> seen = {};
-      for (var p in pets) {
-        final combined = BreedService.getCombinedTipsForPet(p.species, p.breed);
-        for (var t in combined) {
-          if (!seen.contains(t)) {
-            seen.add(t);
-            tips.add(t);
-          }
-        }
-      }
-    }
-
-    // always add general tips if none or to supplement
-    if (tips.length < 3) {
-      for (var t in BreedService.generalTips) {
-        if (!tips.contains(t)) tips.add(t);
-      }
-    }
-
-    setState(() {
-      _currentTips = tips;
-      _tipIndex = 0;
-    });
-
-    // start rotating every 6 seconds
-    _tipTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      if (!mounted) return;
-      setState(() {
-        _tipIndex = (_tipIndex + 1) % (_currentTips.isEmpty ? 1 : _currentTips.length);
-      });
-    });
-  }
-
-  Widget _tipsCard() {
-    if (_currentTips.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final tip = _currentTips[_tipIndex % _currentTips.length];
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
-      ),
-      child: Column(
-        children: [
-          Row(
+  void _showUncompleteTaskDialog(Reminder reminder, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFB892F7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
             children: [
-              const Icon(Icons.lightbulb, color: Colors.white70),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  tip,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.3),
-                ),
+              Icon(Icons.replay, color: Colors.white, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Mark as Incomplete?',
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // small dots
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_currentTips.length, (i) {
-              final active = i == _tipIndex;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: active ? 18 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: active ? Colors.white : Colors.white24,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
+          content: Text(
+            'Unmark "${reminder.title}"?',
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statCard({
-    required BuildContext context,
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color1,
-    required Color color2,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        height: 120,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color1.withOpacity(0.8), color2.withOpacity(0.8)]),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: color2.withOpacity(0.4), blurRadius: 15, spreadRadius: 3, offset: const Offset(0, 8))],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.3)),
-                child: Icon(icon, size: 36, color: Colors.white),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
               ),
-              const SizedBox(width: 24),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 18, color: Colors.white70)),
-                  const SizedBox(height: 6),
-                  Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
-                ],
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final updated = Reminder(
+                  id: reminder.id,
+                  petId: reminder.petId,
+                  title: reminder.title,
+                  category: reminder.category,
+                  scheduledAt: reminder.scheduledAt,
+                  done: false,
+                );
+                await appState.updateReminder(updated);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFFB892F7),
               ),
-            ],
-          ),
-        ),
-      ),
+              child: const Text('Mark as Incomplete', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final pets = _safePets(appState);
-    final greetingExtra = _greetingName(appState);
+    final pets = appState.pets;
+
+    // Get user name safely
+    String userName = 'there';
+    try {
+      final dyn = appState as dynamic;
+      if (dyn.currentUser != null) {
+        final user = Map<String, dynamic>.from(dyn.currentUser);
+        userName = user['firstName'] ?? user['first_name'] ?? 'there';
+      }
+    } catch (_) {}
+
+    // Today's reminders
+    final today = DateTime.now();
+    final todayReminders = appState.reminders.where((r) {
+      return r.scheduledAt.year == today.year &&
+          r.scheduledAt.month == today.month &&
+          r.scheduledAt.day == today.day;
+    }).toList();
+
+    // Determine tip text to display (always render the box)
+    final String tipText = _tips.isNotEmpty
+        ? _tips[_currentTipIndex]
+        : 'Pet care tips will appear here.';
 
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          gradient: LinearGradient(
+            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
-
-                // Hero image + greeting row
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeroPet(pets),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Welcome$greetingExtra!',
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, shadows: [
-                                Shadow(blurRadius: 8, color: Colors.black26, offset: Offset(1, 2))
-                              ])),
-                          const SizedBox(height: 6),
-                          const Text('Love. Care. Track', style: TextStyle(fontSize: 16, color: Colors.white70)),
-                        ],
-                      ),
+                    // Row header: greeting + notification icon
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hi $userName,',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                "Let's take a good care of your cutie pets!",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.notifications,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
                   ],
                 ),
+              ),
 
-                // Tip card (polished)
-                _tipsCard(),
+              // Pet Cards or empty state - MODIFIED FOR CENTERING SINGLE PET
+              if (pets.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: const [
+                        SizedBox(height: 40),
+                        Icon(Icons.pets, size: 80, color: Colors.white70),
+                        SizedBox(height: 16),
+                        Text(
+                          'No pets yet',
+                          style: TextStyle(fontSize: 18, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (pets.length == 1)
+                // Center single pet card
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: _buildPetCard(pets[0], 0),
+                  ),
+                )
+              else
+                // Horizontal scroll for multiple pets
+                SizedBox(
+                  height: 200,
+                  child: ScrollConfiguration(
+                    behavior:
+                        ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: pets.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: EdgeInsets.only(right: index < pets.length - 1 ? 24 : 0),
+                          child: _buildPetCard(pets[index], index),
+                        );
+                      },
+                    ),
+                  ),
+                ),
 
-                const SizedBox(height: 6),
-
-                // Stats cards
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+              // Tip box — always visible (shows placeholder when no tips available)
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _statCard(
-                        context: context,
-                        title: 'Pets in System',
-                        value: '${pets.length}',
-                        icon: Icons.pets,
-                        color1: Colors.purpleAccent,
-                        color2: Colors.pinkAccent,
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PetListScreen()));
-                        },
+                      // Lightbulb icon (as in screenshot)
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.lightbulb_outline,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
-                      const SizedBox(height: 20),
-                      _statCard(
-                        context: context,
-                        title: 'Reminders Total',
-                        value: '${(appState.reminders ?? []).length}',
-                        icon: Icons.alarm,
-                        color1: Colors.pinkAccent,
-                        color2: Colors.purpleAccent,
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReminderListScreen()));
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      _statCard(
-                        context: context,
-                        title: 'Calendar',
-                        value: 'See Tasks',
-                        icon: Icons.today,
-                        color1: Colors.pinkAccent,
-                        color2: Colors.purpleAccent,
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarScreen()));
-                        },
+
+                      const SizedBox(width: 12),
+
+                      // Tip text (left aligned, can wrap) - FIXED ANIMATION
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 500),
+                          layoutBuilder: (currentChild, previousChildren) {
+                            return Stack(
+                              alignment: Alignment.centerLeft,
+                              children: <Widget>[
+                                ...previousChildren,
+                                if (currentChild != null) currentChild,
+                              ],
+                            );
+                          },
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.0, 0.3),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Text(
+                            tipText,
+                            key: ValueKey<String>(tipText),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 16),
-                const Text('Keep loving your furry friends!', style: TextStyle(fontSize: 16, color: Colors.white70)),
+              // Main area: To-dos and Upcoming events
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Today's To-Dos",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        if (todayReminders.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle_outline,
+                                    size: 40, color: Colors.white70),
+                                const SizedBox(width: 16),
+                                const Text(
+                                  'No tasks for today!',
+                                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ...todayReminders.map((r) => _buildTodoItem(r, appState)),
+
+                        const SizedBox(height: 32),
+                        const Text(
+                          "Upcoming Events",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildUpcomingEvent(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Pet card builder
+  Widget _buildPetCard(Pet pet, int index) {
+    final badgeNumber = index + 1;
+    final colors = [
+      {'bg': const Color(0xFFFFE5F1), 'badge': const Color(0xFFFF69B4)},
+      {'bg': const Color(0xFFE3F2FD), 'badge': const Color(0xFF42A5F5)},
+      {'bg': const Color(0xFFFFF3E0), 'badge': const Color(0xFFFF9800)},
+      {'bg': const Color(0xFFE8F5E9), 'badge': const Color(0xFF4CAF50)},
+    ];
+    final colorSet = colors[index % colors.length];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PetDetailsScreen(pet: pet)),
+        );
+      },
+      child: Container(
+        width: 160,
+        height: 170,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: colorSet['badge'],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '$badgeNumber',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(color: colorSet['bg'], shape: BoxShape.circle),
+              child: _buildPetAvatar(pet),
+            ),
+            Text(
+              pet.name,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPetAvatar(Pet pet) {
+    final image = pet.image;
+    if (image == null || image.isEmpty) {
+      return const Icon(Icons.pets, size: 40, color: Colors.white70);
+    }
+    if (image.startsWith('http')) {
+      return ClipOval(
+        child: Image.network(
+          image,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
+        ),
+      );
+    }
+    return ClipOval(
+      child: Image.asset(
+        image,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
+      ),
+    );
+  }
+
+  Widget _buildTodoItem(Reminder reminder, AppState appState) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(
+          vertical: 12, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildReminderIcon(reminder),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  reminder.title,
+                  style: TextStyle(
+                    fontSize: 16, 
+                    fontWeight: FontWeight.w600, 
+                    color: Colors.white,
+                    decoration: reminder.done ? TextDecoration.lineThrough : null,
+                    decorationColor: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getPetNameForReminder(reminder, appState),
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: reminder.done ? Colors.white54 : Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${reminder.scheduledAt.hour.toString().padLeft(2, '0')}:${reminder.scheduledAt.minute.toString().padLeft(2, '0')}',
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: reminder.done ? Colors.white54 : Colors.white70,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+          // Custom circle checkbox with confirmation dialog
+          GestureDetector(
+            onTap: () {
+              if (reminder.done) {
+                _showUncompleteTaskDialog(reminder, appState);
+              } else {
+                _showCompleteTaskDialog(reminder, appState);
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: reminder.done ? Colors.white : Colors.white70,
+                  width: 2,
+                ),
+                color: reminder.done ? Colors.white : Colors.transparent,
+              ),
+              child: reminder.done
+                  ? const Icon(
+                      Icons.check,
+                      size: 16,
+                      color: Color(0xFFB892F7),
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderIcon(Reminder reminder) {
+    final categoryIcons = {
+      'Feeding': Icons.restaurant,
+      'Walking': Icons.directions_walk,
+      'Medication': Icons.medication,
+      'Vet': Icons.local_hospital,
+    };
+    
+    // Default icon
+    IconData icon = Icons.alarm;
+    
+    // Check if category matches
+    for (var key in categoryIcons.keys) {
+      if (reminder.category.toLowerCase().contains(key.toLowerCase()) || 
+          reminder.title.toLowerCase().contains(key.toLowerCase())) {
+        icon = categoryIcons[key]!;
+        break;
+      }
+    }
+    
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE5D9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: const Color(0xFFFF6B6B), size: 24),
+    );
+  }
+
+  // Helper method to get pet name for reminder
+  String _getPetNameForReminder(Reminder reminder, AppState appState) {
+    try {
+      final pet = appState.pets.firstWhere((p) => p.id == reminder.petId);
+      return pet.name;
+    } catch (e) {
+      return 'Unknown Pet';
+    }
+  }
+
+  Widget _buildUpcomingEvent() {
+    // Return an empty state container instead of the preloaded vet appointment
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_available, size: 40, color: Colors.white70),
+          const SizedBox(width: 16),
+          const Text(
+            'No upcoming events',
+            style: TextStyle(fontSize: 16, color: Colors.white70),
+          ),
+        ],
       ),
     );
   }

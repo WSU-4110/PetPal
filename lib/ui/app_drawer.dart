@@ -1,4 +1,5 @@
 // lib/ui/app_drawer.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -13,19 +14,13 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    // Attempt to read user safely
-    final dynamic maybeUser =
-        (appState as dynamic).currentUser ?? (appState as dynamic).user ?? null;
-    final Map<String, dynamic>? user =
-        (maybeUser is Map) ? Map<String, dynamic>.from(maybeUser) : null;
-    final ValueNotifier<bool> _logoutPressedNotifier = ValueNotifier(false);
+    final logoutPressedNotifier = ValueNotifier(false);
 
     return Drawer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Gradient banner
+          // Gradient banner with profile info
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: const BoxDecoration(
@@ -36,64 +31,71 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
             child: SafeArea(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white24,
-                    backgroundImage: user != null &&
-                            (user['avatar'] ?? '').toString().isNotEmpty
-                        ? (user['avatar'].toString().startsWith('http')
-                            ? NetworkImage(user['avatar'])
-                            : AssetImage(user['avatar']) as ImageProvider)
-                        : null,
-                    child: user == null ||
-                            (user['avatar'] ?? '').toString().isEmpty
-                        ? const Icon(Icons.person,
-                            size: 40, color: Colors.white70)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user != null
-                              ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
-                                      .trim()
-                                      .isEmpty
-                                  ? "Your Name"
-                                  : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
-                              : "Your Name",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
+              child: Consumer<AppState>(
+                builder: (context, appState, _) {
+                  final user = appState.currentUser;
+                  ImageProvider? avatarImage;
+
+                  if (appState.profileImagePath?.isNotEmpty ?? false) {
+                    final path = appState.profileImagePath!;
+                    if (path.startsWith('http')) {
+                      avatarImage = NetworkImage(path);
+                    } else {
+                      avatarImage = FileImage(File(path));
+                    }
+                  } else if (user != null && (user['avatar'] ?? '').toString().isNotEmpty) {
+                    final path = user['avatar'].toString();
+                    avatarImage = path.startsWith('http')
+                        ? NetworkImage(path)
+                        : AssetImage(path) as ImageProvider;
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white24,
+                        backgroundImage: avatarImage,
+                        child: avatarImage == null
+                            ? const Icon(Icons.person, size: 40, color: Colors.white70)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user != null
+                                  ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim().isEmpty
+                                      ? "Your Name"
+                                      : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
+                                  : "Your Name",
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (user != null && (user['preference'] ?? "").toString().isNotEmpty)
+                              Text(
+                                user['preference'],
+                                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user != null ? (user['email'] ?? "youremail@example.com") : "youremail@example.com",
+                              style: const TextStyle(color: Colors.white70, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        if (user != null &&
-                            (user['preference'] ?? "").toString().isNotEmpty)
-                          Text(
-                            user['preference'],
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 14),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user != null
-                              ? (user['email'] ?? "youremail@example.com")
-                              : "youremail@example.com",
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -148,25 +150,25 @@ class AppDrawer extends StatelessWidget {
           const Divider(height: 1),
 
           ValueListenableBuilder<bool>(
-            valueListenable: _logoutPressedNotifier,
+            valueListenable: logoutPressedNotifier,
             builder: (context, pressed, _) {
               return GestureDetector(
-                onTapDown: (_) => _logoutPressedNotifier.value = true,
-                onTapUp: (_) => _logoutPressedNotifier.value = false,
-                onTapCancel: () => _logoutPressedNotifier.value = false,
+                onTapDown: (_) => logoutPressedNotifier.value = true,
+                onTapUp: (_) => logoutPressedNotifier.value = false,
+                onTapCancel: () => logoutPressedNotifier.value = false,
                 onTap: () async {
-                  // call AppState.logout if exists
                   try {
-                    final asDyn =
-                        Provider.of<AppState>(context, listen: false) as dynamic;
+                    final asDyn = Provider.of<AppState>(context, listen: false) as dynamic;
                     if (asDyn.logout is Function) {
                       await asDyn.logout();
                     }
                   } catch (_) {}
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()));
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()));
+                  }
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
