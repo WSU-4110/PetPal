@@ -277,6 +277,23 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------- Veterinarians ----------------
+
+  /// Get all registered veterinarians
+  Future<List<Map<String, dynamic>>> getVeterinarians() async {
+    return await _db.getUsersByRole('vet');
+  }
+
+  /// Get veterinarian by ID
+  Future<Map<String, dynamic>?> getVeterinarianById(int vetId) async {
+    final vets = await getVeterinarians();
+    try {
+      return vets.firstWhere((v) => v['id'] == vetId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ---------------- Search helpers ----------------
 
   /// Search/filter pets. All parameters optional.

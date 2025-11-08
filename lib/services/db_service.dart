@@ -244,6 +244,17 @@ class DBService {
     return null;
   }
 
+  /// Get all users by role (e.g., 'vet', 'owner', 'groomer')
+  Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
+    final db = await database;
+    return await db.query(
+      'users',
+      where: 'role = ?',
+      whereArgs: [role.toLowerCase()],
+      orderBy: 'firstName ASC, lastName ASC',
+    );
+  }
+
   // ---------------- Pets ----------------
   Future<int> insertPet(Pet pet) async => (await database).insert('pets', pet.toMap());
   Future<List<Pet>> getPets() async => (await database).query('pets', orderBy: 'name ASC').then((m) => m.map(Pet.fromMap).toList());

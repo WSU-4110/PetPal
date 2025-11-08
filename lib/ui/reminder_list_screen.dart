@@ -1,4 +1,3 @@
-// lib/ui/reminder_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -31,18 +30,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_today, color: Colors.white),
-            tooltip: "Open Calendar",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              );
-            },
-          ),
-        ],
+        // removed calendar button from actions
       ),
       backgroundColor: Colors.transparent,
       body: Container(
@@ -113,21 +101,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Checkbox(
-                                value: r.done,
-                                activeColor: Colors.purpleAccent,
-                                onChanged: (val) async {
-                                  final updated = Reminder(
-                                    id: r.id,
-                                    petId: r.petId,
-                                    title: r.title,
-                                    category: r.category,
-                                    scheduledAt: r.scheduledAt,
-                                    done: val ?? false,
-                                  );
-                                  await appState.updateReminder(updated);
-                                },
-                              ),
+                              // Removed the checkbox that doesn't do anything
                               IconButton(
                                 icon: const Icon(Icons.edit,
                                     color: Colors.white70),

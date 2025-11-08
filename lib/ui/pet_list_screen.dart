@@ -1,4 +1,3 @@
-// lib/ui/pet_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -116,12 +115,30 @@ class PetListScreen extends StatelessWidget {
                 ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const PetFormScreen()));
-        },
-        child: const Icon(Icons.add),
+      // Match the styled plus button from reminder_list_screen
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+          ),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.pinkAccent.withValues(alpha: 0.5),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const PetFormScreen()));
+          },
+          child: const Icon(Icons.add, size: 30),
+        ),
       ),
     );
   }
