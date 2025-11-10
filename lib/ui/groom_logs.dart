@@ -1,42 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:petpal/ui/add_groom_log_dialog.dart';
+import 'package:petpal/ui/edit_groom_log_dialog.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import 'add_medical_record_dialog.dart';
-import 'edit_medical_record_dialog.dart';
-import '../models/medical_record.dart';
+import '../models/groom_log.dart';
 import '../models/pet.dart';
 
-class MedicalRecordsPage extends StatefulWidget {
+class GroomLogs extends StatefulWidget {
   final int petId;
-  const MedicalRecordsPage({super.key, required this.petId});
+  const GroomLogs({super.key, required this.petId});
 
   @override
-  State<MedicalRecordsPage> createState() => _MedicalRecordsPageState();
+  State<GroomLogs> createState() => _GroomLogsPageState();
 }
 
-class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
+class _GroomLogsPageState extends State<GroomLogs> {
   late Pet selectedPet;
 
   @override
   void initState() {
     super.initState();
-    // Load exercise logs for this pet
+    // Load groom logs for pet
     final pets = context.read<AppState>().pets;
     selectedPet = pets.firstWhere((p) => p.id == widget.petId);
     Future.microtask(() =>
-        context.read<AppState>().loadMedicalRecords(widget.petId));
+        context.read<AppState>().loadGroomLog(widget.petId));
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final records = appState.medicalRecords;
+    final records = appState.groomLogs;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
-          "Medical Records",
+          "Grooming Logs",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -66,7 +66,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                 onChanged: (p) {
                   if (p != null) {
                     setState(() => selectedPet = p);
-                    context.read<AppState>().loadMedicalRecords(p.id!);
+                    context.read<AppState>().loadGroomLog(p.id!);
                     }
                   },
                 ),
@@ -74,7 +74,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                 child: records.isEmpty
                     ? const Center(
                         child: Text(
-                          "No medical records yet.",
+                          "No Grooming Logs.",
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 20,
@@ -103,7 +103,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                             ),
                             child: ListTile(
                               title: Text(
-                                record.title,
+                                record.type,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -111,27 +111,42 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                 ),
                               ),
                               subtitle: Text(
-                                "${record.date} — ${record.vetName}",
+                                "${record.date} — ${record.maintenance}",
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
                                 ),
                               ),
-                              trailing: IconButton(
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
-                                  final result = await showDialog<MedicalRecord>(
+                                  final result = await showDialog<GroomLog>(
                                     context: context,
-                                    builder: (_) => EditMedicalRecordDialog(
-                                      medicalrecord: record,
+                                    builder: (_) => EditGroomLogDialog(
+                                      groomLog: record,
                                       pets: appState.pets,
                                     ),
                                   );
                                   if (result != null) {
-                                    await context.read<AppState>().updateMedicalRecord(result);
+                                    await context.read<AppState>().updateGroomLog(result);
                                   }
                                 },
                               ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await appState.deleteGroomLog(record.id!, record.petId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Grooming Log deleted')),
+                                    );
+                                  },
+                                ),
+                                ],
+                            ),
                             ),
                           );
                         },
@@ -161,7 +176,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
           onPressed: () {
             showDialog(
               context: context,
-              builder: (_) => AddMedicalRecordDialog(petId: selectedPet.id!),
+              builder: (_) => AddGroomLogDialog(petId: selectedPet.id!),
             );
           },
           child: const Icon(Icons.add, size: 30, color: Colors.white),

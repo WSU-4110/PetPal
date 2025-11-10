@@ -10,6 +10,8 @@ import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
 import '../models/exercise_log.dart';
+import '../models/groom_log.dart';
+
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -17,6 +19,7 @@ class DBService {
   DBService._internal();
 
   Database? _db;
+  static const int _dbVersion = 9; // bump to 10 for safe upgrade
   // Bump when schema changes. Keep >= on devices.
   static const int _dbVersion = 6;
 
@@ -139,6 +142,7 @@ class DBService {
       );
     ''');
 
+    // --- Exercise logs table ---
     await db.execute('''
       CREATE TABLE IF NOT EXISTS exercise_logs(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,6 +155,22 @@ class DBService {
       );
     ''');
 
+    // --- Groomer logs table ---
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS groom_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        petId INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        description TEXT NOT NULL,
+        maintenance TEXT,
+        date TEXT NOT NULL,
+        FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
+      );
+    ''');
+
+    // --- Indexes ---
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
     // indexes
     try {
       await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
@@ -347,6 +367,12 @@ class DBService {
       (await database).query('exercise_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(ExerciseLog.fromMap).toList());
   Future<int> updateExerciseLog(ExerciseLog r) async => (await database).update('exercise_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteExerciseLog(int id) async => (await database).delete('exercise_logs', where: 'id = ?', whereArgs: [id]);
+
+  // ---------------- Groom Logs ----------------
+  Future<int> insertGroomLog(GroomLog r) async => (await database).insert('groom_logs', r.toMap());
+  Future<List<GroomLog>> getGroomLog(int petId) async => (await database).query('groom_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(GroomLog.fromMap).toList());
+  Future<int> updateGroomLog(GroomLog r) async => (await database).update('groom_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
+  Future<int> deleteGroomLog(int id) async => (await database).delete('groom_logs', where: 'id = ?', whereArgs: [id]);
 
   Future<void> close() async {
     if (_db != null) {

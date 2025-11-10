@@ -9,6 +9,7 @@ import '../models/reminder.dart';
 import '../models/medical_record.dart';
 import '../services/db_service.dart';
 import '../models/exercise_log.dart';
+import '../models/groom_log.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -21,6 +22,7 @@ class AppState extends ChangeNotifier {
   List<Reminder> reminders = [];
   List<MedicalRecord> medicalRecords = [];
   List<ExerciseLog> exerciseLogs = [];
+  List<GroomLog> groomLogs = [];
 
   Map<String, dynamic>? currentUser;
 
@@ -271,6 +273,31 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------- Groom Logs ----------------
+
+  Future<void> addGroomLog(GroomLog record) async {
+    await _db.insertGroomLog(record);
+    groomLogs = await _db.getGroomLog(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> loadGroomLog(int petId) async {
+    groomLogs = await _db.getGroomLog(petId);
+    notifyListeners();
+  }
+
+  Future<void> updateGroomLog(GroomLog record) async {
+    await _db.updateGroomLog(record);
+    groomLogs = await _db.getGroomLog(record.petId);
+    notifyListeners();
+  }
+
+  Future<void> deleteGroomLog(int id, int petId) async {
+    await _db.deleteGroomLog(id);
+    groomLogs = await _db.getGroomLog(petId);
+    notifyListeners();
+  }
+}
   // ---------------- Veterinarians ----------------
   Future<List<Map<String, dynamic>>> getVeterinarians() async {
     return await _db.getUsersByRole('vet');

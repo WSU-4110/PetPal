@@ -82,6 +82,106 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
           ),
         ),
         child: SafeArea(
+          child: Column(
+            children: [
+              DropdownButton<Pet>(
+                value: selectedPet,
+                items: appState.pets
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
+                    .toList(),
+                onChanged: (p) {
+                  if (p != null) {
+                    setState(() => selectedPet = p);
+                    context.read<AppState>().loadMedicalRecords(p.id!);
+                    }
+                  },
+                ),
+              Expanded(
+                child: records.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No medical records yet.",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: records.length,
+                        itemBuilder: (context, i) {
+                          final record = records[i];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.purpleAccent.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                record.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "${record.date} — ${record.vetName}",
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white70),
+                                onPressed: () async {
+                                  final result = await showDialog<MedicalRecord>(
+                                    context: context,
+                                    builder: (_) => EditMedicalRecordDialog(
+                                      medicalrecord: record,
+                                      pets: appState.pets,
+                                    ),
+                                  );
+                                  if (result != null) {
+                                    await context.read<AppState>().updateMedicalRecord(result);
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await appState.deleteMedicalRecord(record.id!, record.petId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Medical record deleted')),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           child: _isLoading
               ? const Center(
                   child: CircularProgressIndicator(
