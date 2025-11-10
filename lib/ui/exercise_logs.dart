@@ -177,52 +177,6 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                               blurRadius: 10,
                               offset: const Offset(0, 6),
                             ),
-                            child: ListTile(
-                              title: Text(
-                                record.length,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              subtitle: Text(
-                                "${record.date} — ${record.observations}",
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.white70),
-                                onPressed: () async {
-                                  final result = await showDialog<ExerciseLog>(
-                                    context: context,
-                                    builder: (_) => EditExerciseLogDialog(
-                                      exerciseLog: record,
-                                      pets: appState.pets,
-                                    ),
-                                  );
-                                  if (result != null) {
-                                    await context.read<AppState>().updateExerciseLog(result);
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    await appState.deleteExerciseLog(record.id!, record.petId);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Exercise Log deleted')),
-                                    );
-                                  },
-                                ),
-                                ],
-                            ),
                           ],
                         ),
                         child: ListTile(
@@ -241,20 +195,34 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                               fontSize: 14,
                             ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white70),
-                            onPressed: () async {
-                              final result = await showDialog<ExerciseLog>(
-                                context: context,
-                                builder: (_) => EditExerciseLogDialog(
-                                  exerciseLog: record,
-                                  pets: appState.pets,
-                                ),
-                              );
-                              if (result != null) {
-                                await context.read<AppState>().updateExerciseLog(result);
-                              }
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white70),
+                                onPressed: () async {
+                                  final result = await showDialog<ExerciseLog>(
+                                    context: context,
+                                    builder: (_) => EditExerciseLogDialog(
+                                      exerciseLog: record,
+                                      pets: appState.pets,
+                                    ),
+                                  );
+                                  if (result != null) {
+                                    await context.read<AppState>().updateExerciseLog(result);
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () async {
+                                  await appState.deleteExerciseLog(record.id!, record.petId);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Exercise Log deleted')),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );

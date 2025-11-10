@@ -1,4 +1,3 @@
-// lib/state/app_state.dart
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -274,7 +273,6 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------- Groom Logs ----------------
-
   Future<void> addGroomLog(GroomLog record) async {
     await _db.insertGroomLog(record);
     groomLogs = await _db.getGroomLog(record.petId);
@@ -297,7 +295,7 @@ class AppState extends ChangeNotifier {
     groomLogs = await _db.getGroomLog(petId);
     notifyListeners();
   }
-}
+
   // ---------------- Veterinarians ----------------
   Future<List<Map<String, dynamic>>> getVeterinarians() async {
     return await _db.getUsersByRole('vet');

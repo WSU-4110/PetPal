@@ -1,4 +1,3 @@
-// lib/services/db_service.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:path/path.dart';
@@ -12,16 +11,13 @@ import '../models/medical_record.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
 
-
 class DBService {
   static final DBService _instance = DBService._internal();
   factory DBService() => _instance;
   DBService._internal();
 
   Database? _db;
-  static const int _dbVersion = 9; // bump to 10 for safe upgrade
-  // Bump when schema changes. Keep >= on devices.
-  static const int _dbVersion = 6;
+  static const int _dbVersion = 10; // Bump to 10 for safe upgrade
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -69,6 +65,7 @@ class DBService {
             await db.execute("ALTER TABLE pets ADD COLUMN birthdate TEXT;");
           }
         } catch (_) {}
+        
         // indexes (idempotent)
         try {
           await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
@@ -171,11 +168,6 @@ class DBService {
     // --- Indexes ---
     await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
-    // indexes
-    try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_reminders_petId ON reminders(petId);');
-    } catch (_) {}
   }
 
   // ---------------- Helpers ----------------

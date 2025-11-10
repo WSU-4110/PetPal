@@ -52,7 +52,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 return _buildAppointmentCard(_appointments[index]);
               },
             ),
-      // Removed the floatingActionButton
+      // Removed floatingActionButton to maintain swipe-back navigation
     );
   }
 
@@ -498,7 +498,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Veterinarian
+              // Veterinarian - This loads from vet stakeholders
               _buildVetSelector(),
               const SizedBox(height: 12),
 
@@ -654,11 +654,15 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         else
           DropdownButtonFormField<int>(
             value: _selectedVetId,
+            hint: const Text('Select a veterinarian'),
             items: _vets
                 .map(
                   (vet) => DropdownMenuItem<int>(
                     value: vet['id'],
-                    child: Text(vet['name']),
+                    child: Text(
+                      vet['name'] ?? 'Unknown Vet',
+                      style: const TextStyle(color: Colors.black),
+                    ),
                   ),
                 )
                 .toList(),
@@ -668,6 +672,8 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
           ),
       ],
@@ -706,6 +712,8 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            filled: true,
+            fillColor: Colors.grey[50],
           ),
         ),
       ],
@@ -754,11 +762,15 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         _selectedTime!.minute,
       );
 
-      final vet = _vets.firstWhere((vet) => vet['id'] == _selectedVetId);
+      // Find the selected vet from the list
+      final selectedVet = _vets.firstWhere(
+        (vet) => vet['id'] == _selectedVetId,
+        orElse: () => {'name': 'Unknown Vet'},
+      );
 
       final appointment = Appointment(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        vetName: vet['name'],
+        vetName: selectedVet['name'] ?? 'Unknown Vet',
         clinicName: _selectedClinic!,
         dateTime: appointmentDate,
         type: _selectedType!,
