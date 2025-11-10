@@ -4,6 +4,12 @@ void main() {
   runApp(const PetPalApp());
 }
 
+/// Some purplish theme colors
+const Color kPrimaryPurple = Color(0xFF7C4DFF);
+const Color kDarkPurple = Color(0xFF4A2C82);
+const Color kLightLavender = Color(0xFFF5ECFF);
+const Color kDeepPurple = Color(0xFF512DA8);
+
 class PetPalApp extends StatelessWidget {
   const PetPalApp({super.key});
 
@@ -11,14 +17,166 @@ class PetPalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PetPal',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kPrimaryPurple,
+          primary: kPrimaryPurple,
+          secondary: kDeepPurple,
+        ),
         useMaterial3: true,
+        scaffoldBackgroundColor: kLightLavender,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: kPrimaryPurple,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kPrimaryPurple,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
       ),
-      home: const LoginPage(),
+      home: const StartPage(),
     );
   }
 }
+
+//
+// -------------------- START / WELCOME PAGE --------------------
+//
+
+class StartPage extends StatelessWidget {
+  const StartPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [kDarkPurple, kPrimaryPurple],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // top paw icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.pets,
+                    color: Colors.white,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // big title
+                const Text(
+                  'Find Your\nBest Pet!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Now you can keep track of all your pets\nand their care in one place.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+                const Spacer(),
+                // rounded top card-ish shape like the reference
+                Container(
+                  width: double.infinity,
+                  height: size.height * 0.30,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                      topRight: Radius.circular(40),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ready to get started?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Create an account or log in to manage\nreminders, health, and more.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Get Started',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+//
+// -------------------- LOGIN PAGE --------------------
+//
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,11 +188,9 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
   String _role = 'owner';
 
   void _login() {
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -46,78 +202,193 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PetPal Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to PetPal',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+      backgroundColor: kLightLavender,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+            child: Column(
               children: [
-                const Text('Role:'),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: _role,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      _role = value;
-                    });
-                  },
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'owner',
-                      child: Text('Owner'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'vet',
-                      child: Text('Vet'),
-                    ),
-                  ],
+                // Paw icon + title area
+                const SizedBox(height: 8),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: kPrimaryPurple,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.pets,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Welcome Back',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: kDarkPurple,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Card with fields (similar to the mockup)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Log in to your account',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: kDarkPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          filled: true,
+                          fillColor: kLightLavender.withOpacity(0.7),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          filled: true,
+                          fillColor: kLightLavender.withOpacity(0.7),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            'Forgot password?',
+                            style: TextStyle(color: kDeepPurple),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Role picker
+                      Row(
+                        children: [
+                          const Text(
+                            'Role:',
+                            style: TextStyle(color: kDarkPurple),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButton<String>(
+                            value: _role,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'owner',
+                                child: Text('Owner'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'vet',
+                                child: Text('Vet'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() => _role = value);
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          child: const Text(
+                            'Log In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Center(
+                        child: Text(
+                          '—  or continue with  —',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: const Text('Log in with Google'),
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        icon: const Icon(Icons.apple, size: 22),
+                        label: const Text('Log in with Apple'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _login,
-                child: const Text('Login'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+//
+// -------------------- MAIN NAV + DRAWER + PAGES --------------------
+//
 
 class MainNavigation extends StatefulWidget {
   final String role;
@@ -145,16 +416,12 @@ class _MainNavigationState extends State<MainNavigation> {
         HealthScreen(),
       ];
     } else {
-      return const [
-        Center(child: Text('Unknown role')),
-      ];
+      return const [Center(child: Text('Unknown role'))];
     }
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   String get _title {
@@ -184,15 +451,17 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final isOwner = widget.role == 'owner';
+
     return Scaffold(
       appBar: AppBar(
+        title: Text(_title),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Text(_title),
       ),
       drawer: const AppDrawer(),
       body: _pages[_selectedIndex],
@@ -200,10 +469,10 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.teal,
+        selectedItemColor: kPrimaryPurple,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: widget.role == 'owner'
+        items: isOwner
             ? const [
           BottomNavigationBarItem(
               icon: Icon(Icons.home), label: 'Home'),
@@ -227,7 +496,6 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 }
 
-
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -240,13 +508,17 @@ class AppDrawer extends StatelessWidget {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.teal,
+                color: kPrimaryPurple,
               ),
-              child: Text(
-                'PetPal Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  'PetPal Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -289,6 +561,8 @@ class AppDrawer extends StatelessWidget {
   }
 }
 
+// Simple placeholder screens for each tab.
+// You can replace these with your real pages later.
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
