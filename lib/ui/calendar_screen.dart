@@ -5,10 +5,10 @@ import '../services/db_service.dart';
 import 'add_reminder_dialog.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({Key? key}) : super(key: key);
+  const CalendarScreen({super.key});
 
   @override
-  _CalendarScreenState createState() => _CalendarScreenState();
+  State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
@@ -40,11 +40,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
       final key = DateTime(r.scheduledAt.year, r.scheduledAt.month, r.scheduledAt.day);
       map.putIfAbsent(key, () => []).add(r);
     }
-    setState(() {
-      _events = map;
-      _isLoading = false;
-      _selectedReminders.value = _getRemindersForDay(_selectedDay);
-    });
+    if (mounted) {
+      setState(() {
+        _events = map;
+        _isLoading = false;
+        _selectedReminders.value = _getRemindersForDay(_selectedDay);
+      });
+    }
   }
 
   List<Reminder> _getRemindersForDay(DateTime day) {
@@ -54,6 +56,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Future<void> _addReminder() async {
     final pets = await _dbService.getPets();
+    if (!mounted) return;
     final newRem = await showDialog<Reminder>(
       context: context,
       builder: (_) => AddReminderDialog(pets: pets),
@@ -162,7 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(

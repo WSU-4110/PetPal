@@ -1,15 +1,17 @@
-// main.dart
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'ui/home_screen.dart';
 import 'ui/pet_list_screen.dart';
 import 'ui/reminder_list_screen.dart';
-import 'ui/health_screen.dart';
-import 'ui/app_drawer.dart';
-import 'ui/login_page.dart';
-import 'state/app_state.dart';
 import 'ui/exercise_screen.dart';
 import 'ui/groom_screen.dart';
+import 'ui/app_drawer.dart'; // AppDrawer import
+import 'ui/login_page.dart';
+import 'ui/medical_records.dart';
+import 'state/app_state.dart' as app_state; // aliased to avoid ambiguity
+import 'models/pet.dart';
 
 void main() {
   runApp(const PetPalApp());
@@ -22,15 +24,27 @@ class PetPalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) {
-      final appState = AppState();
-      appState.loadPet();
-      appState.loadReminder();
-      return appState;
-  },
+        final state = app_state.AppState();
+        state.init(); // load initial data and settings
+        return state;
+      },
       child: MaterialApp(
         title: 'PetPal',
         theme: ThemeData(primarySwatch: Colors.teal),
-        home: const LoginPage(),
+        debugShowCheckedModeBanner: false,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const LoginPage(),
+          '/main': (context) {
+            final args =
+                ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+            return MainNavigation(role: args['role'] as String);
+          },
+          '/medical_records': (context) {
+            final pet = ModalRoute.of(context)!.settings.arguments as Pet;
+            return MedicalRecordsPage(petId: pet.id!);
+          },
+        },
       ),
     );
   }
@@ -71,6 +85,24 @@ class _MainNavigationState extends State<MainNavigation> {
       ];
     } else {
       return [Center(child: Text("Unknown role"))];
+      return const [
+        HomeScreen(),
+        PetListScreen(),
+        ReminderListScreen(),
+        ExerciseScreen(),
+      ];
+    } else if (widget.role == 'vet') {
+      return const [
+        HomeScreen(),
+        Center(child: Text('Vet Appointments')),
+      ];
+    } else if (widget.role == 'trainer') {
+      return const [
+        HomeScreen(),
+        ExerciseScreen(),
+      ];
+    } else {
+      return const [Center(child: Text("Unknown role"))];
     }
   }
 
@@ -78,6 +110,44 @@ class _MainNavigationState extends State<MainNavigation> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  String _getAppBarTitle() {
+    switch (widget.role) {
+      case 'owner':
+        return 'Owner Dashboard';
+      case 'vet':
+        return 'Veterinarian Dashboard';
+      case 'trainer':
+        return 'Trainer Dashboard';
+      default:
+        return 'Dashboard';
+    }
+  }
+
+  List<BottomNavigationBarItem> _getBottomNavItems() {
+    if (widget.role == 'owner') {
+      return const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.pets), label: 'Pets'),
+        BottomNavigationBarItem(icon: Icon(Icons.alarm), label: 'Reminders'),
+        BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+      ];
+    } else if (widget.role == 'vet') {
+      return const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Health'),
+      ];
+    } else if (widget.role == 'trainer') {
+      return const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.directions_run), label: 'Exercise'),
+      ];
+    } else {
+      return const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      ];
+    }
   }
 
   @override
@@ -104,6 +174,7 @@ class _MainNavigationState extends State<MainNavigation> {
             return 'Dash';
     }
   }()),
+        title: Text(_getAppBarTitle()),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -153,6 +224,7 @@ class _MainNavigationState extends State<MainNavigation> {
               ];
           }
         }(),
+        items: _getBottomNavItems(),
       ),
     );
   }

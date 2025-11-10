@@ -1,0 +1,53 @@
+name: Flutter CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev_with_tests
+      - dev
+  pull_request:
+    branches:
+      - dev_with_tests
+      - dev
+
+jobs:
+  build-and-test:
+    name: Build & Test Flutter App
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter (use Flutter that bundles Dart 3.9.2+)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'    # <-- exact version recommended by pub resolver
+
+      - name: Show flutter & dart versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Static Analysis
+        run: flutter analyze
+
+      - name: Run unit tests
+        run: flutter test --coverage
+
+      - name: Format coverage (optional)
+        run: |
+          dart pub global activate coverage
+          dart run coverage:format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --packages=.packages \
+            --report-on=lib
