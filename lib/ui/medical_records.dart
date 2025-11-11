@@ -8,9 +8,9 @@ import '../models/pet.dart';
 
 class MedicalRecordsPage extends StatefulWidget {
   final int petId;
-  final bool isVet;
+  final bool isOwner;
 
-  const MedicalRecordsPage({super.key, required this.petId, this.isVet = false});
+  const MedicalRecordsPage({super.key, required this.petId, this.isOwner = false});
 
   @override
   State<MedicalRecordsPage> createState() => _MedicalRecordsPageState();
@@ -59,7 +59,15 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
     final appState = context.watch<AppState>();
     final records = appState.medicalRecords;
 
-    final bool isVet = appState.currentUser?['role'] == 'vet';
+    final bool isOwner = appState.currentUser?['role'] == 'owner';
+
+    final String? role = appState.currentUser?['role'] as String?;
+
+    if (role != 'vet' && role != 'owner') {
+      return const Scaffold(
+        body: Center(child: Text('Access denied')),
+      );
+    }
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -94,7 +102,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
               : Column(
                   children: [
                     //only show if user is not a Vet
-                    if (!isVet)
+                    if (isOwner)
                       DropdownButton<Pet>(
                         value: selectedPet,
                         items: appState.pets
@@ -109,7 +117,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                     ),
 
                     // Vet Access Button
-                    if (!isVet)
+                    if (isOwner)
                     ElevatedButton(
                       onPressed: () async {
                         final vets = await context.read<AppState>().getVeterinarians();
@@ -191,7 +199,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        if (!isVet)
+                                        if (isOwner)
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.white70),
                                           onPressed: () async {
@@ -207,7 +215,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                             }
                                           },
                                         ),
-                                        if (!isVet)
+                                        if (isOwner)
                                         IconButton(
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           onPressed: () async {
@@ -219,6 +227,25 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                         ),
                                       ],
                                     ),
+                                    onTap: () {
+                                      Builder(
+                                        builder: (BuildContext scaffoldContext) {
+                                          if (role == 'vet' || role == 'owner') {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => MedicalRecordsPage(petId: selectedPet.id!),
+                                                ),
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Access Denied')),
+                                          );
+                                        }
+                                        return const SizedBox();
+                                      },  
+                                      );
+                                    },
                                   ),
                                 );
                               },

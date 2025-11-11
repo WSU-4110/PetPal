@@ -9,7 +9,6 @@ import '../models/medical_record.dart';
 import '../services/db_service.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
-import '../models/pet_access.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -275,6 +274,10 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+    Future<List<Map<String, dynamic>>> getTrainers() async {
+    return await _db.getUsersByRole('trainer');
+  }
+
   // ---------------- Groom Logs ----------------
   Future<void> addGroomLog(GroomLog record) async {
     await _db.insertGroomLog(record);
@@ -297,6 +300,10 @@ class AppState extends ChangeNotifier {
     await _db.deleteGroomLog(id);
     groomLogs = await _db.getGroomLog(petId);
     notifyListeners();
+  }
+
+  Future<List<Map<String, dynamic>>> getGroomers() async {
+    return await _db.getUsersByRole('groomer');
   }
 
   // ---------------- Veterinarians ----------------
