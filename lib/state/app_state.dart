@@ -9,6 +9,7 @@ import '../models/medical_record.dart';
 import '../services/db_service.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../models/pet_access.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -18,12 +19,14 @@ class AppState extends ChangeNotifier {
 
   // Primary data
   List<Pet> pets = [];
+  List<Pet> accessiblePets = [];
   List<Reminder> reminders = [];
   List<MedicalRecord> medicalRecords = [];
   List<ExerciseLog> exerciseLogs = [];
   List<GroomLog> groomLogs = [];
 
   Map<String, dynamic>? currentUser;
+  Map<int, List<int>> petAccessMap = {};
 
   // App settings
   bool _darkMode = false;
@@ -309,6 +312,38 @@ class AppState extends ChangeNotifier {
       return null;
     }
   }
+
+ // ---------------- Pet Access ----------------
+
+  Future<void> grantAccess(int petId, int userId) async {
+    await _db.grantAccess(petId, userId);
+    // refresh local cache
+    await fetchPetAccess(petId);
+    notifyListeners();
+  }
+
+  Future<void> revokeAccess(int petId, int userId) async {
+    await _db.deletePetAccess(petId, userId);
+    await fetchPetAccess(petId);
+    notifyListeners();
+  }
+
+  Future<void> fetchPetAccess(int petId) async {
+    final rows = await _db.getPetAccess(petId);
+    petAccessMap[petId] = rows.map((r) => r.userId).toList();
+    notifyListeners();
+  }
+
+  List<int> getPetAccessIds(int petId) {
+    return petAccessMap[petId] ?? [];
+  }
+
+  Future<void> loadAccessiblePets(int vetId) async {
+  final petIds = await _db.getAccessiblePetIds(vetId);
+  accessiblePets = pets.where((p) => petIds.contains(p.id)).toList();
+  notifyListeners();
+}
+
 
   // ---------------- Search helpers ----------------
   List<Pet> searchPets({

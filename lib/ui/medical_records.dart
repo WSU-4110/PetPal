@@ -8,7 +8,9 @@ import '../models/pet.dart';
 
 class MedicalRecordsPage extends StatefulWidget {
   final int petId;
-  const MedicalRecordsPage({super.key, required this.petId});
+  final bool isVet;
+
+  const MedicalRecordsPage({super.key, required this.petId, this.isVet = false});
 
   @override
   State<MedicalRecordsPage> createState() => _MedicalRecordsPageState();
@@ -57,6 +59,8 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
     final appState = context.watch<AppState>();
     final records = appState.medicalRecords;
 
+    final bool isVet = appState.currentUser?['role'] == 'vet';
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -89,18 +93,54 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                 )
               : Column(
                   children: [
-                    DropdownButton<Pet>(
-                      value: selectedPet,
-                      items: appState.pets
-                          .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
-                          .toList(),
-                      onChanged: (p) {
-                        if (p != null) {
-                          setState(() => selectedPet = p);
-                          context.read<AppState>().loadMedicalRecords(p.id!);
+                    //only show if user is not a Vet
+                    if (!isVet)
+                      DropdownButton<Pet>(
+                        value: selectedPet,
+                        items: appState.pets
+                            .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
+                            .toList(),
+                        onChanged: (p) {
+                          if (p != null) {
+                            setState(() => selectedPet = p);
+                            context.read<AppState>().loadMedicalRecords(p.id!);
                         }
                       },
                     ),
+
+                    // Vet Access Button
+                    if (!isVet)
+                    ElevatedButton(
+                      onPressed: () async {
+                        final vets = await context.read<AppState>().getVeterinarians();
+
+                        final selectedVet = await showDialog<Map<String, dynamic>>(
+                          context: context,
+                          builder: (cont) {
+                            return SimpleDialog(
+                              title: const Text("Select Vet"),
+                              children: vets.map((vet)
+                              {
+                                final fullName = "${vet['firstName']} ${vet['lastName']}";
+                                return SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(cont, vet),
+                                  child: Text(fullName),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        );
+
+                        if (selectedVet != null) {
+                          await context.read<AppState>().grantAccess(selectedPet.id!, selectedVet['id']);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Granted access to ${selectedVet['firstName']}")),
+                          );
+                        }
+                      },
+                      child: const Text("Grant Vet Access"),
+                    ),
+
                     Expanded(
                       child: records.isEmpty
                           ? const Center(
@@ -151,6 +191,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        if (!isVet)
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.white70),
                                           onPressed: () async {
@@ -166,6 +207,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                             }
                                           },
                                         ),
+                                        if (!isVet)
                                         IconButton(
                                           icon: const Icon(Icons.delete, color: Colors.red),
                                           onPressed: () async {

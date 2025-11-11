@@ -10,6 +10,7 @@ import '../models/reminder.dart';
 import '../models/medical_record.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../models/pet_access.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -17,7 +18,7 @@ class DBService {
   DBService._internal();
 
   Database? _db;
-  static const int _dbVersion = 10; // Bump to 10 for safe upgrade
+  static const int _dbVersion = 11; // Bump to 11 for safe upgrade
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -162,6 +163,17 @@ class DBService {
         maintenance TEXT,
         date TEXT NOT NULL,
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
+      );
+    ''');
+
+    // == Access table for granting Vets/Trainers/Groomers access to add/edit user information
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pet_access (
+        pet_id INT NOT NULL,
+        user_id INT NOT NULL,
+        PRIMARY KEY (pet_id, user_id),
+        FOREIGN KEY (pet_id) REFERENCES pets(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
       );
     ''');
 
@@ -365,6 +377,42 @@ class DBService {
   Future<List<GroomLog>> getGroomLog(int petId) async => (await database).query('groom_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(GroomLog.fromMap).toList());
   Future<int> updateGroomLog(GroomLog r) async => (await database).update('groom_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteGroomLog(int id) async => (await database).delete('groom_logs', where: 'id = ?', whereArgs: [id]);
+
+  // ---------------- Pet Access ----------------
+  Future<int> insertPetAccess(PetAccess access) async =>
+      (await database).insert('pet_access', access.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+
+  Future<List<PetAccess>> getPetAccess(int petId) async =>
+      (await database).query('pet_access',
+          where: 'pet_id = ?', whereArgs: [petId]).then(
+          (rows) => rows.map(PetAccess.fromMap).toList());
+
+  Future<int> deletePetAccess(int petId, int userId) async =>
+      (await database).delete('pet_access',
+          where: 'pet_id = ? AND user_id = ?', whereArgs: [petId, userId]);
+  
+  Future<void> grantAccess(int petId, int userId) async {
+    await (await database).insert(
+      'pet_access',
+      {
+        'pet_id': petId,
+        'user_id': userId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<int>> getAccessiblePetIds(int vetId) async {
+  final rows = await (await database).query(
+    'pet_access',
+    where: 'user_id = ?',
+    whereArgs: [vetId],
+  );
+  return rows.map((r) => r['pet_id'] as int).toList();
+}
+
+
 
   Future<void> close() async {
     if (_db != null) {
