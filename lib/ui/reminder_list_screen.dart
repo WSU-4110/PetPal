@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/reminder.dart';
-import '../models/pet.dart';
 import 'add_reminder_dialog.dart';
 import 'edit_reminder_dialog.dart';
-import 'calendar_screen.dart';
 import 'package:intl/intl.dart';
 
 class ReminderListScreen extends StatefulWidget {

@@ -8,7 +8,9 @@ import '../models/pet.dart';
 
 class ExerciseLogs extends StatefulWidget {
   final int petId;
-  const ExerciseLogs({super.key, required this.petId});
+  final bool isOwner;
+
+  const ExerciseLogs({super.key, required this.petId, this.isOwner = false});
 
   @override
   State<ExerciseLogs> createState() => _ExerciseLogsPageState();
@@ -65,6 +67,8 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
     final appState = context.watch<AppState>();
     final records = appState.exerciseLogs;
 
+    final bool isOwner = appState.currentUser?['role'] == 'owner';
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -91,6 +95,7 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
         child: SafeArea(
           child: Column(
             children: [
+              if (isOwner)
               // Only show dropdown if we have pets and a selected pet
               if (!_isLoading && selectedPet != null)
                 Container(
@@ -120,6 +125,39 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                     },
                   ),
                 ),
+
+                // Vet Access Button
+                    if (isOwner)
+                    ElevatedButton(
+                      onPressed: () async {
+                        final trainers = await context.read<AppState>().getTrainers();
+
+                        final selectedTrainer = await showDialog<Map<String, dynamic>>(
+                          context: context,
+                          builder: (cont) {
+                            return SimpleDialog(
+                              title: const Text("Select Trainer"),
+                              children: trainers.map((trainer)
+                              {
+                                final fullName = "${trainer['firstName']} ${trainer['lastName']}";
+                                return SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(cont, trainer),
+                                  child: Text(fullName),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        );
+
+                        if (selectedTrainer != null) {
+                          await context.read<AppState>().grantAccess(selectedPet!.id!, selectedTrainer['id']);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Granted access to ${selectedTrainer['firstName']}")),
+                          );
+                        }
+                      },
+                      child: const Text("Grant Vet Access"),
+                    ),
               // Loading indicator
               if (_isLoading)
                 const Expanded(
@@ -198,6 +236,7 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (isOwner)
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
@@ -213,6 +252,7 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                                   }
                                 },
                               ),
+                              if (isOwner)
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () async {
