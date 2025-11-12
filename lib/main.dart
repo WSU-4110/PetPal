@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'ui/home_screen.dart';
 import 'ui/pet_list_screen.dart';
 import 'ui/reminder_list_screen.dart';
-import 'ui/exercise_screen.dart';
-import 'ui/groom_screen.dart';
+import 'ui/exercise_logs.dart';
+import 'ui/groom_logs.dart';
 import 'ui/app_drawer.dart'; // AppDrawer import
 import 'ui/login_page.dart';
 import 'ui/medical_records.dart';
@@ -70,8 +70,8 @@ class _MainNavigationState extends State<MainNavigation> {
           HomeScreen(),
           PetListScreen(),
           ReminderListScreen(),
-          ExerciseScreen(),
-          GroomScreen(),
+          ExerciseLogs(petId: 1),
+          GroomLogs(petId: 1),
         ];
       case 'vet':
         return [
