@@ -7,6 +7,7 @@ import '../ui/calendar_screen.dart';
 import '../ui/search_screen.dart';
 import '../ui/settings_screen.dart';
 import '../ui/help_screen.dart';
+import '../ui/weekly_report.dart';
 import 'login_page.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -122,8 +123,12 @@ class AppDrawer extends StatelessWidget {
 
           ListTile(
             leading: const Icon(Icons.notifications),
-            title: const Text("Notifications"),
-            onTap: () => Navigator.pop(context),
+            title: const Text("Weekly Report"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const WeeklyReportScreen()));
+            },
           ),
 
           ListTile(

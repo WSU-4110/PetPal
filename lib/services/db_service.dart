@@ -10,6 +10,7 @@ import '../models/reminder.dart';
 import '../models/medical_record.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../models/notification.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -162,6 +163,16 @@ class DBService {
         maintenance TEXT,
         date TEXT NOT NULL,
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS notifications(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        body TEXT,
+        scheduledAt TEXT,
+        deliveredAt TEXT
       );
     ''');
 
@@ -365,6 +376,12 @@ class DBService {
   Future<List<GroomLog>> getGroomLog(int petId) async => (await database).query('groom_logs', where: 'petId = ?', whereArgs: [petId], orderBy: 'date DESC').then((m) => m.map(GroomLog.fromMap).toList());
   Future<int> updateGroomLog(GroomLog r) async => (await database).update('groom_logs', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
   Future<int> deleteGroomLog(int id) async => (await database).delete('groom_logs', where: 'id = ?', whereArgs: [id]);
+
+  // ---------------- Notifications ----------------
+  Future<int> insertNotification(AppNotification n) async => (await database).insert('notifications', n.toMap());
+  Future<List<AppNotification>> getAllNotifications() async => (await database).query('notifications', orderBy: 'scheduledAt DESC').then((rows) => rows.map(AppNotification.fromMap).toList());
+  Future<int> updateNotification(AppNotification n) async => (await database).update('notifications', n.toMap(), where: 'id = ?', whereArgs: [n.id]);
+  Future<int> deleteNotification(int id) async => (await database).delete('notifications', where: 'id = ?', whereArgs: [id]);
 
   Future<void> close() async {
     if (_db != null) {

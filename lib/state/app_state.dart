@@ -9,6 +9,7 @@ import '../models/medical_record.dart';
 import '../services/db_service.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../models/notification.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -189,7 +190,13 @@ class AppState extends ChangeNotifier {
   // ---------------- REMINDERS ----------------
   Future<void> addReminder(Reminder r) async {
     await _db.insertReminder(r);
+    await _db.insertNotification(AppNotification(
+      title: r.title,
+      body: 'Reminder for ${r.category}',
+      scheduledAt: r.scheduledAt,
+    ));
     reminders = await _db.getAllReminders();
+    _unreadNotificationsCount++;
     notifyListeners();
   }
 
@@ -346,6 +353,20 @@ class AppState extends ChangeNotifier {
     final rnd = Random();
     final p = pets[rnd.nextInt(pets.length)];
     return p.image ?? Pet.imageFor(p.species, p.breed);
+  }
+
+  // ---------------- Notifications ----------------
+  int _unreadNotificationsCount = 0;
+  int get unreadNotificationsCount => _unreadNotificationsCount;
+
+  void incrementUnreadNotifications() {
+    _unreadNotificationsCount++;
+    notifyListeners();
+  }
+
+  void clearUnreadNotifications() {
+    _unreadNotificationsCount = 0;
+    notifyListeners();
   }
 
   List<String> getTips({int max = 6}) {

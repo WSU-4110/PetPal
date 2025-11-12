@@ -769,11 +769,11 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     if (isRecurring) {
       final reminders = <Reminder>[];
       final daysInterval = _getDaysInterval();
-      
+
       // Create reminders for the next 90 days (or adjust as needed)
       for (int i = 0; i < 90; i += daysInterval) {
         final reminderDate = dt.add(Duration(days: i));
-        
+
         reminders.add(Reminder(
           petId: selectedPet!.id!,
           title: titleController.text.trim(),
@@ -781,7 +781,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
           scheduledAt: reminderDate,
         ));
       }
-      
+
       Navigator.pop(context, reminders);
     } else {
       // Single reminder
@@ -791,6 +791,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         category: category,
         scheduledAt: dt,
       );
+
 
       Navigator.pop(context, reminder);
     }
