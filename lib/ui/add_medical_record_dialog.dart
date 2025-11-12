@@ -1,3 +1,4 @@
+// screens/add_medical_record_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +22,7 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
   late TimeOfDay _selectedTime;
   late DateTime _selectedDate;
 
- @override
+  @override
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
@@ -33,7 +34,7 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
-   Future<void> pickDate() async {
+  Future<void> pickDate() async {
     final date = await showDatePicker(
         context: context,
         initialDate: _selectedDate,
@@ -43,22 +44,21 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
       setState(() {
         _selectedDate = _combine(date, _selectedTime);
         _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    });
+      });
+    }
   }
-}
 
-
-    Future<void> pickTime() async {
+  Future<void> pickTime() async {
     final time = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
     );
-    if (time != null){ 
+    if (time != null) { 
       setState(() {
-       _selectedTime = time;
-       _selectedDate = _combine(_selectedDate, time);
-       _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    });
+        _selectedTime = time;
+        _selectedDate = _combine(_selectedDate, time);
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      });
     }
   }
 
@@ -73,71 +73,352 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("Add Medical Record"),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: "Appointment"),
-                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with gradient background
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary.withOpacity(0.8),
+                    colorScheme.primary.withOpacity(0.6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
               ),
-              TextFormField(
-                controller: _descController,
-                decoration: const InputDecoration(labelText: "Description of appointment"),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.medical_services,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Add Medical Record',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Record a medical appointment for your pet',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: pickDate,
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    controller: _dateController,
-                    decoration: const InputDecoration(labelText: "Date"),
-                    validator: (v) => v == null || v.isEmpty ? "Required" : null,
+            ),
+
+            // Form content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title input card
+                      _buildFormCard(
+                        title: 'Appointment',
+                        icon: Icons.title,
+                        child: TextFormField(
+                          controller: _titleController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter appointment title...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Description input card
+                      _buildFormCard(
+                        title: 'Description',
+                        icon: Icons.description,
+                        child: TextFormField(
+                          controller: _descController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'Enter description of appointment...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Schedule card
+                      _buildFormCard(
+                        title: 'Schedule',
+                        icon: Icons.schedule,
+                        child: Column(
+                          children: [
+                            _buildDateSelector(),
+                            const SizedBox(height: 12),
+                            _buildTimeSelector(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Vet/Clinic card
+                      _buildFormCard(
+                        title: 'Vet/Clinic',
+                        icon: Icons.local_hospital,
+                        child: TextFormField(
+                          controller: _vetController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter vet or clinic name...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              TextButton(
-                onPressed: pickTime,
-                child: Text(_selectedTime.format(context)),
+            ),
+
+            // Bottom action buttons
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
               ),
-              TextFormField(
-                controller: _vetController,
-                decoration: const InputDecoration(labelText: "Vet/Clinic Name"),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          final record = MedicalRecord(
+                            petId: widget.petId,
+                            title: _titleController.text,
+                            description: _descController.text,
+                            date: _dateController.text,
+                            vetName: _vetController.text,
+                          );
+                          
+                          // Store navigator before async operation
+                          final navigator = Navigator.of(context);
+                          await context.read<AppState>().addMedicalRecord(record);
+                          if (mounted) {
+                            navigator.pop();
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Save Record',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return GestureDetector(
+      onTap: pickDate,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _dateController.text.isNotEmpty
+                    ? DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate)
+                    : 'Select Date',
+                style: TextStyle(
+                  color: _dateController.text.isNotEmpty ? Colors.black87 : Colors.grey[600],
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+    );
+  }
+
+  Widget _buildTimeSelector() {
+    return GestureDetector(
+      onTap: pickTime,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
         ),
-        ElevatedButton(
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              final record = MedicalRecord(
-                petId: widget.petId,
-                title: _titleController.text,
-                description: _descController.text,
-                date: _dateController.text,
-                vetName: _vetController.text,
-              );
-              
-              // Store the navigator before the async operation
-              final navigator = Navigator.of(context);
-              await context.read<AppState>().addMedicalRecord(record);
-              if (mounted) {
-                navigator.pop();
-              }
-            }
-          },
-          child: const Text("Save"),
+        child: Row(
+          children: [
+            Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _selectedTime.format(context),
+                style: TextStyle(
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

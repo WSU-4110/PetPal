@@ -21,6 +21,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   bool isRecurring = false;
   String recurringInterval = 'Daily';
   int customDays = 1;
+  bool _isSaving = false; // Add this to prevent multiple saves
 
   @override
   void initState() {
@@ -43,7 +44,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date != null) setState(() => selectedDate = date);
+    if (date != null && mounted) {
+      setState(() => selectedDate = date);
+    }
   }
 
   Future<void> pickTime() async {
@@ -51,7 +54,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       context: context,
       initialTime: selectedTime ?? TimeOfDay.now(),
     );
-    if (time != null) setState(() => selectedTime = time);
+    if (time != null && mounted) {
+      setState(() => selectedTime = time);
+    }
   }
 
   @override
@@ -97,7 +102,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.alarm_add,
                           color: Colors.white,
                           size: 24,
@@ -115,7 +120,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _isSaving ? null : () => Navigator.pop(context),
                         icon: const Icon(Icons.close, color: Colors.white),
                       ),
                     ],
@@ -202,7 +207,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _isSaving ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -216,7 +221,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: _saveReminder,
+                      onPressed: _isSaving ? null : _saveReminder,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
@@ -226,12 +231,21 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                         ),
                         elevation: 2,
                       ),
-                      child: const Text(
-                        'Add Reminder',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Add Reminder',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -744,6 +758,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   }
 
   void _saveReminder() {
+    // Prevent multiple saves
+    if (_isSaving) return;
+    
     if (selectedPet == null ||
         titleController.text.trim().isEmpty ||
         selectedDate == null ||
@@ -756,6 +773,10 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       );
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     final dt = DateTime(
       selectedDate!.year,
@@ -770,8 +791,11 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       final reminders = <Reminder>[];
       final daysInterval = _getDaysInterval();
       
-      // Create reminders for the next 90 days (or adjust as needed)
-      for (int i = 0; i < 90; i += daysInterval) {
+      // Limit to a reasonable number of reminders (e.g., 30 occurrences or 90 days max)
+      final maxOccurrences = 30;
+      int occurrences = 0;
+      
+      for (int i = 0; occurrences < maxOccurrences && i < 365; i += daysInterval) {
         final reminderDate = dt.add(Duration(days: i));
         
         reminders.add(Reminder(
@@ -780,9 +804,16 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
           category: category,
           scheduledAt: reminderDate,
         ));
+        
+        occurrences++;
       }
       
-      Navigator.pop(context, reminders);
+      // Use a short delay to ensure the dialog closes properly
+      Future.microtask(() {
+        if (mounted) {
+          Navigator.pop(context, reminders);
+        }
+      });
     } else {
       // Single reminder
       final reminder = Reminder(
@@ -792,7 +823,11 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         scheduledAt: dt,
       );
 
-      Navigator.pop(context, reminder);
+      Future.microtask(() {
+        if (mounted) {
+          Navigator.pop(context, reminder);
+        }
+      });
     }
   }
 }

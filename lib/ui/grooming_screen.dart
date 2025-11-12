@@ -1,45 +1,61 @@
-// lib/ui/appointments_screen.dart
+// lib/ui/grooming_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../state/app_state.dart';
 
-class Appointment {
+class GroomingAppointment {
   final String id;
-  final String vetName;
-  final String clinicName;
+  final String groomerName;
+  final String salon;
   final DateTime dateTime;
   final String type;
   final String status;
-  final int? vetId;
+  final int? groomerId;
 
-  Appointment({
+  GroomingAppointment({
     required this.id,
-    required this.vetName,
-    required this.clinicName,
+    required this.groomerName,
+    required this.salon,
     required this.dateTime,
     required this.type,
     required this.status,
-    this.vetId,
+    this.groomerId,
   });
 }
 
-class AppointmentsScreen extends StatefulWidget {
+class GroomingScreen extends StatefulWidget {
   final Pet pet;
 
-  const AppointmentsScreen({super.key, required this.pet});
+  const GroomingScreen({super.key, required this.pet});
 
   @override
-  State<AppointmentsScreen> createState() => _AppointmentsScreenState();
+  State<GroomingScreen> createState() => _GroomingScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen> {
-  final List<Appointment> _appointments = [];
+class _GroomingScreenState extends State<GroomingScreen> {
+  final List<GroomingAppointment> _appointments = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF2D3142)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          '${widget.pet.name}\'s Grooming',
+          style: const TextStyle(
+            color: Color(0xFF2D3142),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: _appointments.isEmpty
           ? _buildEmptyState()
           : ListView.builder(
@@ -61,13 +77,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.calendar_today,
+            Icons.cut,
             size: 80,
             color: Colors.grey[300],
           ),
           const SizedBox(height: 16),
           Text(
-            'No appointments yet',
+            'No grooming appointments yet',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -76,7 +92,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Book your first vet appointment',
+            'Book your first grooming session',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -84,9 +100,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: _showBookAppointmentDialog,
+            onPressed: _showBookGroomingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
+              backgroundColor: const Color(0xFF4ECDC4),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -94,14 +110,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Book Appointment'),
+            label: const Text('Book Grooming'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAppointmentCard(Appointment appointment) {
+  Widget _buildAppointmentCard(GroomingAppointment appointment) {
     final isUpcoming = appointment.status == 'upcoming';
     final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
 
@@ -181,12 +197,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  color: const Color(0xFF4ECDC4).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.medical_services,
-                  color: Color(0xFF6C63FF),
+                  Icons.cut,
+                  color: Color(0xFF4ECDC4),
                   size: 28,
                 ),
               ),
@@ -205,7 +221,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      appointment.vetName,
+                      appointment.groomerName,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -214,7 +230,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      appointment.clinicName,
+                      appointment.salon,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF9CA3AF),
@@ -260,14 +276,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       child: InkWell(
-        onTap: _showBookAppointmentDialog,
+        onTap: _showBookGroomingDialog,
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF6C63FF).withOpacity(0.3),
+              color: const Color(0xFF4ECDC4).withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -276,16 +292,16 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFF6C63FF),
+                color: Color(0xFF4ECDC4),
                 size: 28,
               ),
               SizedBox(width: 12),
               Text(
-                'Book New Appointment',
+                'Book New Grooming',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6C63FF),
+                  color: Color(0xFF4ECDC4),
                 ),
               ),
             ],
@@ -295,12 +311,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  void _showBookAppointmentDialog() {
+  void _showBookGroomingDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => BookAppointmentSheet(
+      builder: (context) => BookGroomingSheet(
         pet: widget.pet,
         onBooked: (appointment) {
           setState(() {
@@ -311,12 +327,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  void _cancelAppointment(Appointment appointment) {
+  void _cancelAppointment(GroomingAppointment appointment) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this appointment?'),
+        content: const Text('Are you sure you want to cancel this grooming appointment?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -339,7 +355,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  void _rescheduleAppointment(Appointment appointment) {
+  void _rescheduleAppointment(GroomingAppointment appointment) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Reschedule feature coming soon')),
     );
@@ -357,59 +373,59 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 }
 
-// Book Appointment Bottom Sheet
-class BookAppointmentSheet extends StatefulWidget {
+// Book Grooming Bottom Sheet
+class BookGroomingSheet extends StatefulWidget {
   final Pet pet;
-  final Function(Appointment) onBooked;
+  final Function(GroomingAppointment) onBooked;
 
-  const BookAppointmentSheet({
+  const BookGroomingSheet({
     super.key,
     required this.pet,
     required this.onBooked,
   });
 
   @override
-  State<BookAppointmentSheet> createState() => _BookAppointmentSheetState();
+  State<BookGroomingSheet> createState() => _BookGroomingSheetState();
 }
 
-class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
+class _BookGroomingSheetState extends State<BookGroomingSheet> {
   final _formKey = GlobalKey<FormState>();
-  int? _selectedVetId;
-  String? _selectedClinic;
+  int? _selectedGroomerId;
+  String? _selectedSalon;
   String? _selectedType;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
-  List<Map<String, dynamic>> _vets = [];
-  bool _loadingVets = true;
+  List<Map<String, dynamic>> _groomers = [];
+  bool _loadingGroomers = true;
 
-  final _clinics = [
-    'Pet Care Center',
-    'Animal Hospital',
-    'Veterinary Clinic Downtown',
-    'Happy Paws Clinic',
+  final _salons = [
+    'Pampered Paws Salon',
+    'Happy Tails Grooming',
+    'Pet Spa Downtown',
+    'Furry Friends Salon',
   ];
 
   final _types = [
-    'Check-up',
-    'Vaccination',
-    'Surgery',
-    'Dental Care',
-    'Emergency',
+    'Full Grooming',
+    'Bath & Brush',
+    'Haircut',
+    'Nail Trim',
+    'Teeth Cleaning',
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadVets();
+    _loadGroomers();
   }
 
-  Future<void> _loadVets() async {
+  Future<void> _loadGroomers() async {
     final appState = Provider.of<AppState>(context, listen: false);
-    final vets = await appState.getVeterinarians();
+    final groomers = await appState.getGroomers();
     setState(() {
-      _vets = vets;
-      _loadingVets = false;
+      _groomers = groomers;
+      _loadingGroomers = false;
     });
   }
 
@@ -451,7 +467,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                 ),
               ),
               const Text(
-                'Book Appointment',
+                'Book Grooming',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -460,7 +476,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Schedule a visit for ${widget.pet.name}',
+                'Schedule grooming for ${widget.pet.name}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF9CA3AF),
@@ -469,7 +485,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               const SizedBox(height: 16),
 
               _buildDropdown(
-                label: 'Appointment Type',
+                label: 'Service Type',
                 value: _selectedType,
                 items: _types,
                 onChanged: (value) => setState(() => _selectedType = value),
@@ -477,14 +493,14 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               const SizedBox(height: 12),
 
               _buildDropdown(
-                label: 'Clinic',
-                value: _selectedClinic,
-                items: _clinics,
-                onChanged: (value) => setState(() => _selectedClinic = value),
+                label: 'Salon',
+                value: _selectedSalon,
+                items: _salons,
+                onChanged: (value) => setState(() => _selectedSalon = value),
               ),
               const SizedBox(height: 12),
 
-              _buildVetSelector(),
+              _buildGroomerSelector(),
               const SizedBox(height: 12),
 
               Row(
@@ -500,7 +516,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF6C63FF)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4ECDC4)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -532,7 +548,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFF6C63FF)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFF4ECDC4)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -559,9 +575,9 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _bookAppointment,
+                  onPressed: _bookGrooming,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C63FF),
+                    backgroundColor: const Color(0xFF4ECDC4),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -569,7 +585,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                     ),
                   ),
                   child: const Text(
-                    'Book Appointment',
+                    'Book Grooming',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -581,12 +597,12 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
     );
   }
 
-  Widget _buildVetSelector() {
+  Widget _buildGroomerSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Veterinarian',
+          'Groomer',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -595,7 +611,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         ),
         const SizedBox(height: 8),
         
-        if (_loadingVets)
+        if (_loadingGroomers)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -610,7 +626,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
               ),
             ),
           )
-        else if (_vets.isEmpty)
+        else if (_groomers.isEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -626,7 +642,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'No veterinarians available',
+                    'No groomers available',
                     style: TextStyle(color: Colors.orange),
                   ),
                 ),
@@ -635,23 +651,23 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
           )
         else
           DropdownButtonFormField<int>(
-            value: _selectedVetId,
-            hint: const Text('Select a veterinarian'),
-            items: _vets
+            value: _selectedGroomerId,
+            hint: const Text('Select a groomer'),
+            items: _groomers
                 .map(
-                  (vet) {
-                    final firstName = vet['firstName'] ?? '';
-                    final lastName = vet['lastName'] ?? '';
-                    final displayName = 'Dr. $firstName $lastName'.trim();
+                  (groomer) {
+                    final firstName = groomer['firstName'] ?? '';
+                    final lastName = groomer['lastName'] ?? '';
+                    final displayName = '$firstName $lastName'.trim();
                     
                     return DropdownMenuItem<int>(
-                      value: vet['id'] as int,
+                      value: groomer['id'] as int,
                       child: Text(displayName),
                     );
                   },
                 )
                 .toList(),
-            onChanged: (value) => setState(() => _selectedVetId = value),
+            onChanged: (value) => setState(() => _selectedGroomerId = value),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(horizontal: 12),
               border: OutlineInputBorder(
@@ -728,10 +744,10 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
     }
   }
 
-  void _bookAppointment() {
+  void _bookGrooming() {
     if (_formKey.currentState!.validate()) {
-      if (_selectedVetId == null ||
-          _selectedClinic == null ||
+      if (_selectedGroomerId == null ||
+          _selectedSalon == null ||
           _selectedType == null ||
           _selectedDate == null ||
           _selectedTime == null) {
@@ -749,30 +765,30 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         _selectedTime!.minute,
       );
 
-      // Find the selected vet from the list
-      final selectedVet = _vets.firstWhere(
-        (vet) => vet['id'] == _selectedVetId,
-        orElse: () => {'firstName': 'Unknown', 'lastName': 'Vet'},
+      // Find the selected groomer from the list
+      final selectedGroomer = _groomers.firstWhere(
+        (groomer) => groomer['id'] == _selectedGroomerId,
+        orElse: () => {'firstName': 'Unknown', 'lastName': 'Groomer'},
       );
 
-      final firstName = selectedVet['firstName'] ?? '';
-      final lastName = selectedVet['lastName'] ?? '';
-      final vetName = 'Dr. $firstName $lastName'.trim();
+      final firstName = selectedGroomer['firstName'] ?? '';
+      final lastName = selectedGroomer['lastName'] ?? '';
+      final groomerName = '$firstName $lastName'.trim();
 
-      final appointment = Appointment(
+      final appointment = GroomingAppointment(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        vetName: vetName,
-        clinicName: _selectedClinic!,
+        groomerName: groomerName,
+        salon: _selectedSalon!,
         dateTime: appointmentDate,
         type: _selectedType!,
         status: 'upcoming',
-        vetId: _selectedVetId,
+        groomerId: _selectedGroomerId,
       );
 
       widget.onBooked(appointment);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment booked successfully')),
+        const SnackBar(content: Text('Grooming appointment booked successfully!')),
       );
     }
   }

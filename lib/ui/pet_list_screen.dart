@@ -1,3 +1,4 @@
+// lib/ui/pet_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -26,29 +27,31 @@ class PetListScreen extends StatelessWidget {
           child: pets.isEmpty
               ? const Center(
                   child: Text(
-                    'No pets yet',
+                    'No pets yet.',
                     style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white70),
+                      color: Colors.white70,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: pets.length,
                   itemBuilder: (context, index) {
-                    final Pet pet = pets[index];
+                    final pet = pets[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: Colors.white.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 8)
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: Row(
@@ -59,32 +62,35 @@ class PetListScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(pet.name,
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white)),
+                                Text(
+                                  pet.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
-                                    '${pet.breed} • ${pet.species} • Age: ${pet.age}',
-                                    style:
-                                        const TextStyle(color: Colors.white70)),
+                                  '${pet.breed} • ${pet.species} • Age: ${pet.age}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                           Column(
                             children: [
                               IconButton(
-                                icon:
-                                    const Icon(Icons.edit, color: Colors.white70),
+                                icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
                                   // Navigate to PetFormScreen in edit mode
                                   final updatedPet = await Navigator.push<Pet>(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => PetFormScreen(
-                                        pet: pet,
-                                      ),
+                                      builder: (_) => PetFormScreen(pet: pet),
                                     ),
                                   );
 
@@ -95,15 +101,9 @@ class PetListScreen extends StatelessWidget {
                                 },
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.redAccent),
+                                icon: const Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () async {
                                   await appState.deletePet(pet.id!);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                            content: Text('Pet deleted')));
-                                  }
                                 },
                               ),
                             ],
@@ -115,7 +115,6 @@ class PetListScreen extends StatelessWidget {
                 ),
         ),
       ),
-      // Match the styled plus button from reminder_list_screen
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -124,7 +123,7 @@ class PetListScreen extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.pinkAccent.withValues(alpha: 0.5),
+              color: Colors.pinkAccent.withOpacity(0.5),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -134,10 +133,12 @@ class PetListScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const PetFormScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PetFormScreen()),
+            );
           },
-          child: const Icon(Icons.add, size: 30),
+          child: const Icon(Icons.add, size: 30, color: Colors.white),
         ),
       ),
     );

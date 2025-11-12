@@ -1,3 +1,4 @@
+// screens/edit_groom_log_dialog.dart 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/pet.dart';
@@ -14,14 +15,14 @@ class EditGroomLogDialog extends StatefulWidget {
 }
 
 class _EditGroomLogDialogState extends State<EditGroomLogDialog> {
-    late TextEditingController typeController;
-    late TextEditingController descriptionController;
-    late TextEditingController dateController;
-    late TextEditingController maintenanceController;
-    late Pet selectedPet;
-    late TimeOfDay selectedTime;
-    late DateTime selectedDate;
-
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController typeController;
+  late TextEditingController descriptionController;
+  late TextEditingController dateController;
+  late TextEditingController maintenanceController;
+  late Pet selectedPet;
+  late TimeOfDay selectedTime;
+  late DateTime selectedDate;
 
   @override
   void initState() {
@@ -31,12 +32,16 @@ class _EditGroomLogDialogState extends State<EditGroomLogDialog> {
     dateController = TextEditingController(text: widget.groomLog.date);
     maintenanceController = TextEditingController(text: widget.groomLog.maintenance);
     try {
-        selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.groomLog.date);
+      selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.groomLog.date);
     } catch (err) {
       selectedDate = DateTime.now();
     }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
     selectedPet = widget.pets.firstWhere((p) => p.id == widget.groomLog.petId);
+  }
+
+  DateTime _combine(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   Future<void> pickDate() async {
@@ -45,8 +50,12 @@ class _EditGroomLogDialogState extends State<EditGroomLogDialog> {
         initialDate: selectedDate,
         firstDate: DateTime(2000),
         lastDate: DateTime(2100));
-    if (date != null) setState(() => selectedDate = date);
-    dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(selectedDate);
+    if (date != null) {
+      setState(() {
+        selectedDate = _combine(date, selectedTime);
+        dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(selectedDate);
+      });
+    }
   }
 
   Future<void> pickTime() async {
@@ -54,63 +63,374 @@ class _EditGroomLogDialogState extends State<EditGroomLogDialog> {
       context: context,
       initialTime: selectedTime,
     );
-    if (time != null) setState(() => selectedTime = time);
+    if (time != null) { 
+      setState(() {
+        selectedTime = time;
+        selectedDate = _combine(selectedDate, time);
+        dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(selectedDate);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    typeController.dispose();
+    descriptionController.dispose();
+    dateController.dispose();
+    maintenanceController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Grooming Log'),
-      content: SingleChildScrollView(
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: typeController,
-              decoration: const InputDecoration(labelText: 'Type of Grooming'),
+            // Header with gradient background
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary.withOpacity(0.8),
+                    colorScheme.primary.withOpacity(0.6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.content_cut,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Edit Grooming Log',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Update grooming session for ${selectedPet.name}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-              maxLines: 2,
+
+            // Form content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Type input card
+                      _buildFormCard(
+                        title: 'Type of Grooming',
+                        icon: Icons.category,
+                        child: TextFormField(
+                          controller: typeController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter grooming type...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Description input card
+                      _buildFormCard(
+                        title: 'Description',
+                        icon: Icons.description,
+                        child: TextFormField(
+                          controller: descriptionController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'Enter description...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Schedule card
+                      _buildFormCard(
+                        title: 'Schedule',
+                        icon: Icons.schedule,
+                        child: Column(
+                          children: [
+                            _buildDateSelector(),
+                            const SizedBox(height: 12),
+                            _buildTimeSelector(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Maintenance input card
+                      _buildFormCard(
+                        title: 'Future Maintenance',
+                        icon: Icons.build,
+                        child: TextFormField(
+                          controller: maintenanceController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter future maintenance notes...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: colorScheme.primary),
+                            ),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            TextField(
-              controller: maintenanceController,
-              decoration: const InputDecoration(labelText: 'Maintenance Done'),
-            ),
-            Row(
-              children: [
-                TextButton(
-                    onPressed: pickDate,
-                    child: Text(DateFormat('yyyy-MM-dd').format(selectedDate))),
-                TextButton(
-                    onPressed: pickTime,
-                    child: Text(selectedTime.format(context))),
-              ],
+
+            // Bottom action buttons
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          final dt = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
+                          dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(dt);
+                          
+                          final updated = GroomLog(
+                            id: widget.groomLog.id,
+                            petId: widget.groomLog.petId,
+                            type: typeController.text,
+                            description: descriptionController.text,
+                            date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
+                            maintenance: maintenanceController.text,
+                          );
+                          Navigator.pop(context, updated);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Update Log',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        ElevatedButton(
-            onPressed: () {
-              final dt = DateTime(selectedDate.year, selectedDate.month,
-                  selectedDate.day, selectedTime.hour, selectedTime.minute);
-                  dateController.text = DateFormat('yyyy-MM-dd hh:mm').format(dt);
-              final updated = GroomLog(
-                id: widget.groomLog.id,
-                petId: widget.groomLog.petId,
-                type: typeController.text,
-                description: descriptionController.text,
-                date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
-                maintenance: maintenanceController.text,
-              );
-              Navigator.pop(context, updated);
-            },
-            child: const Text('Save')),
-      ],
+    );
+  }
+
+  Widget _buildFormCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return GestureDetector(
+      onTap: pickDate,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                DateFormat('EEEE, MMM dd, yyyy').format(selectedDate),
+                style: TextStyle(
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSelector() {
+    return GestureDetector(
+      onTap: pickTime,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                selectedTime.format(context),
+                style: TextStyle(
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          ],
+        ),
+      ),
     );
   }
 }

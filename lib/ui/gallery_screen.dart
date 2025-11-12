@@ -1,10 +1,13 @@
 // lib/ui/gallery_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet.dart';
 
 class GalleryItem {
   final String id;
-  final String imageUrl;
+  final String imageUrl; // can be network URL OR local file path
   final String caption;
   final DateTime date;
 
@@ -27,6 +30,10 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   final List<GalleryItem> _galleryItems = [];
+  final ImagePicker _picker = ImagePicker();
+
+  bool _isNetwork(String path) =>
+      path.startsWith('http://') || path.startsWith('https://');
 
   @override
   Widget build(BuildContext context) {
@@ -129,18 +136,31 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       width: double.infinity,
                       height: double.infinity,
                       color: Colors.grey[200],
-                      child: Image.network(
-                        item.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.photo,
-                            size: 50,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      child: _isNetwork(item.imageUrl)
+                          ? Image.network(
+                              item.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.photo,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : Image.file(
+                              File(item.imageUrl),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.photo,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                     ),
                     Positioned(
                       top: 8,
@@ -245,15 +265,25 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
                     ),
-                    child: Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 300,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.photo, size: 80),
-                      ),
-                    ),
+                    child: _isNetwork(item.imageUrl)
+                        ? Image.network(
+                            item.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 300,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.photo, size: 80),
+                            ),
+                          )
+                        : Image.file(
+                            File(item.imageUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 300,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.photo, size: 80),
+                            ),
+                          ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(20),
@@ -302,112 +332,134 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   void _showAddPhotoDialog() {
     final captionController = TextEditingController();
+    String? pickedPath;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateSheet) => Container(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
           ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Add New Photo',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3142),
-                ),
-              ),
-              const SizedBox(height: 24),
-              InkWell(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Image picker would open here')),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF6C63FF).withOpacity(0.3),
-                      width: 2,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_photo_alternate,
-                        size: 60,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Tap to select photo',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Add New Photo',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3142),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: captionController,
-                decoration: InputDecoration(
-                  labelText: 'Caption',
-                  hintText: 'Add a caption...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 24),
+                InkWell(
+                  onTap: () async {
+                    final XFile? file = await _picker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 2048,
+                      maxHeight: 2048,
+                      imageQuality: 85,
+                    );
+                    if (file != null) {
+                      setStateSheet(() {
+                        pickedPath = file.path;
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF6C63FF).withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: pickedPath == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate,
+                                size: 60,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tap to select photo',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.file(
+                              File(pickedPath!),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                   ),
-                  prefixIcon: const Icon(Icons.edit),
                 ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (captionController.text.isNotEmpty) {
+                const SizedBox(height: 20),
+                TextField(
+                  controller: captionController,
+                  decoration: InputDecoration(
+                    labelText: 'Caption',
+                    hintText: 'Add a caption...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.edit),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (pickedPath == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please pick a photo')),
+                        );
+                        return;
+                      }
                       setState(() {
                         _galleryItems.add(
                           GalleryItem(
-                            id: DateTime.now()
-                                .millisecondsSinceEpoch
-                                .toString(),
-                            imageUrl:
-                                'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba',
-                            caption: captionController.text,
+                            id: DateTime.now().millisecondsSinceEpoch.toString(),
+                            imageUrl: pickedPath!,
+                            caption: captionController.text.isEmpty ? 'No caption' : captionController.text,
                             date: DateTime.now(),
                           ),
                         );
@@ -419,24 +471,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           backgroundColor: Color(0xFF4ECDC4),
                         ),
                       );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C63FF),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Add Photo',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  child: const Text(
-                    'Add Photo',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

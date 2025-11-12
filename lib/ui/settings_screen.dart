@@ -51,9 +51,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         maxHeight: 1024,
         imageQuality: 85,
       );
+      
       if (picked == null) return;
       if (!mounted) return;
-      await Provider.of<AppState>(context, listen: false).setProfileImage(picked.path);
+      
+      // Get the path and verify it exists
+      final imagePath = picked.path;
+      final imageFile = File(imagePath);
+      
+      if (!await imageFile.exists()) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image file not found'))
+        );
+        return;
+      }
+      
+      // Set the profile image
+      await Provider.of<AppState>(context, listen: false).setProfileImage(imagePath);
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile image updated'))
@@ -61,23 +77,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image pick failed: $e'))
+        SnackBar(content: Text('Failed to pick image: $e'))
       );
     }
   }
 
   Widget _profileAvatar(AppState appState) {
     final path = appState.profileImagePath;
-    ImageProvider? provider;
+    Widget avatarChild;
 
     if (path == null || path.isEmpty) {
-      provider = null;
-    } else if (path.startsWith('http')) {
-      provider = NetworkImage(path);
-    } else if (path.startsWith('/')) {
-      provider = FileImage(File(path));
+      avatarChild = const Icon(Icons.person, size: 46, color: Colors.white70);
     } else {
-      provider = AssetImage(path);
+      ImageProvider? provider;
+      
+      try {
+        if (path.startsWith('http')) {
+          provider = NetworkImage(path);
+        } else if (path.startsWith('/') || path.startsWith('file://')) {
+          final file = File(path.replaceFirst('file://', ''));
+          if (file.existsSync()) {
+            provider = FileImage(file);
+          }
+        } else {
+          provider = AssetImage(path);
+        }
+      } catch (e) {
+        debugPrint('Error loading profile image: $e');
+        provider = null;
+      }
+
+      if (provider != null) {
+        avatarChild = Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(
+              image: provider,
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      } else {
+        avatarChild = const Icon(Icons.person, size: 46, color: Colors.white70);
+      }
     }
 
     return Stack(
@@ -85,10 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         CircleAvatar(
           radius: 46,
           backgroundColor: Colors.white.withOpacity(0.24),
-          backgroundImage: provider,
-          child: provider == null
-              ? const Icon(Icons.person, size: 46, color: Colors.white70)
-              : null,
+          child: avatarChild,
         ),
         Positioned(
           right: -4,
@@ -116,44 +155,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showPickOptions() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (c) => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_forever),
-              title: const Text('Remove picture'),
-              onTap: () {
-                Navigator.pop(context);
-                _removeProfileImage();
-              },
-            ),
-          ],
-        ),
-      ),
+      builder: (c) {
+        return GestureDetector(
+          onTap: () => Navigator.of(c).pop(),
+          behavior: HitTestBehavior.opaque,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.35,
+            minChildSize: 0.25,
+            maxChildSize: 0.5,
+            builder: (_, controller) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    const Text(
+                      'Choose Photo',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView(
+                        controller: controller,
+                        children: [
+                          Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: const Icon(Icons.photo_library, color: Colors.white70),
+                              title: const Text(
+                                'Choose from gallery',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _pickImage(ImageSource.gallery);
+                              },
+                            ),
+                          ),
+                          Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: const Icon(Icons.camera_alt, color: Colors.white70),
+                              title: const Text(
+                                'Take a photo',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _pickImage(ImageSource.camera);
+                              },
+                            ),
+                          ),
+                          Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              leading: const Icon(Icons.delete_forever, color: Colors.white70),
+                              title: const Text(
+                                'Remove picture',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _removeProfileImage();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/pet.dart';
 import 'appointments_screen.dart';
+import 'grooming_screen.dart';
 import 'gallery_screen.dart';
 import 'health_screen.dart';
 
@@ -30,7 +31,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   }
 
   String _formatDateShort(DateTime date) {
-    // Format: Mon dd, yyyy  -> e.g. Nov 08, 2025
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final m = months[date.month - 1];
     return '$m ${date.day.toString().padLeft(2, '0')}, ${date.year}';
@@ -39,8 +39,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final pet = widget.pet;
-    
-    // Use the age property from the Pet model
     final yearsOld = pet.age;
 
     return Scaffold(
@@ -60,17 +58,14 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
           ),
         ),
         centerTitle: true,
-        // Removed the edit button from actions
       ),
       body: Column(
         children: [
-          // Top section with pet info
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // Pet avatar without edit button
                 Container(
                   width: 120,
                   height: 120,
@@ -86,7 +81,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 16),
                 
-                // Pet name without energy indicator
                 Text(
                   pet.name,
                   style: const TextStyle(
@@ -97,7 +91,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 8),
                 
-                // Pet details
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -128,7 +121,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                   ],
                 ),
 
-                // Birthdate row: only visible when birthdate exists
                 if (pet.birthdate != null) ...[
                   const SizedBox(height: 4),
                   Row(
@@ -170,18 +162,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                 ),
                 const SizedBox(height: 20),
                 
-                // Action buttons
+                // Only 2 action buttons now
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildActionButton(
-                      icon: Icons.alarm,
-                      label: 'Add\nReminder',
-                      color: const Color(0xFF6C63FF),
-                      onTap: () {
-                        // Add reminder
-                      },
-                    ),
                     _buildActionButton(
                       icon: Icons.favorite,
                       label: 'Book\nVet',
@@ -200,7 +184,12 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                       label: 'Book\nGrooming',
                       color: const Color(0xFF4ECDC4),
                       onTap: () {
-                        // Book grooming
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => GroomingScreen(pet: pet),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -209,7 +198,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
             ),
           ),
           
-          // Tab bar
           Container(
             color: Colors.white,
             child: TabBar(
@@ -234,7 +222,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
             ),
           ),
           
-          // Tab content
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -297,7 +284,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 100,
+        width: 140,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
