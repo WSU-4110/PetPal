@@ -104,7 +104,7 @@ class _EditGroomLogDialogState extends State<EditGroomLogDialog> {
                 petId: widget.groomLog.petId,
                 type: typeController.text,
                 description: descriptionController.text,
-                date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
+                date: dateController.text,
                 maintenance: maintenanceController.text,
               );
               Navigator.pop(context, updated);

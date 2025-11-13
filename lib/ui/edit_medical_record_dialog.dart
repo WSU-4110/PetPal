@@ -114,7 +114,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
                 petId: widget.medicalrecord.petId,
                 title: titleController.text,
                 description: descController.text,
-                date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
+                date: dateController.text,
                 vetName: vetController.text,
               );
               Navigator.pop(context, updated);

@@ -104,7 +104,7 @@ class _EditExerciseLogDialogState extends State<EditExerciseLogDialog> {
                 petId: widget.exerciseLog.petId,
                 length: lengthController.text,
                 activity: activityController.text,
-                date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
+                date: dateController.text,
                 observations: observationsController.text,
               );
               Navigator.pop(context, updated);
