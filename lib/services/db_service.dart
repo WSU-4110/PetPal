@@ -18,7 +18,7 @@ class DBService {
   DBService._internal();
 
   Database? _db;
-  static const int _dbVersion = 11; // Bump to 11 for safe upgrade
+  static const int _dbVersion = 12; // Bump to 12 for safe upgrade
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -136,6 +136,8 @@ class DBService {
         description TEXT,
         date TEXT NOT NULL,
         vetName TEXT,
+        weight FLOAT,
+        status TEXT,
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
       );
     ''');
