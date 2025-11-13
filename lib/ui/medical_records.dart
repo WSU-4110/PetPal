@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:petpal/ui/home_screen.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'add_medical_record_dialog.dart';
 import 'edit_medical_record_dialog.dart';
 import '../models/medical_record.dart';
 import '../models/pet.dart';
+import 'home_screen.dart';
 
 class MedicalRecordsPage extends StatefulWidget {
   final int petId;
@@ -64,10 +66,25 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
     final String? role = appState.currentUser?['role'] as String?;
 
     if (role != 'vet' && role != 'owner') {
-      return const Scaffold(
-        body: Center(child: Text('Access denied')),
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("Access Denied"),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                Navigator.pop(context);
+            },
+              child: Text("Return Home"),
+              ),
+            ],
+          ),
+        ),
       );
     }
+
 
     return Scaffold(
       extendBodyBehindAppBar: true,
