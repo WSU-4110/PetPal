@@ -218,18 +218,19 @@ class _GroomLogsPageState extends State<GroomLogs> {
                         ),
                         child: ListTile(
                           title: Text(
-                            record.type,
+                            "Title: ${record.type}\n",
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 20,
                             ),
                           ),
                           subtitle: Text(
-                            "${record.date} — ${record.maintenance}",
+                            "Description: ${record.description}\n\nMaintenance: ${record.maintenance}\n\nDate and Time: ${record.date}",
                             style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
                           trailing: Row(

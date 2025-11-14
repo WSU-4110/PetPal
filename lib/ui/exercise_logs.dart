@@ -219,18 +219,19 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                         ),
                         child: ListTile(
                           title: Text(
-                            record.length,
+                            "Activity: ${record.activity}\n",
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 20,
                             ),
                           ),
                           subtitle: Text(
-                            "${record.date} — ${record.observations}",
+                            "Observations: ${record.observations}\n\nLength of Activity: ${record.length}\n\nDate and Time: ${record.date}",
                             style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
                           trailing: Row(
