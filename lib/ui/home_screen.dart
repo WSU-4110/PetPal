@@ -590,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 80,
         height: 80,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
+        errorBuilder: (_, _, _) => const Icon(Icons.pets, size: 40, color: Colors.white70),
       ),
     );
   }

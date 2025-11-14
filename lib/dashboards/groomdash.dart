@@ -40,13 +40,15 @@ class _GroomerDashboardState extends State<GroomerDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Center(
+              child: Text(
               'Groomer Dashboard',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
             const SizedBox(height: 20),
             const Text(
               'Select a pet to view grooming records:',

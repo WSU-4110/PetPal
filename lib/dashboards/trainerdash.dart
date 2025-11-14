@@ -40,13 +40,15 @@ class _TrainerDashboardState extends State<TrainerDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Center(
+              child: Text(
               'Trainer Dashboard',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
             const SizedBox(height: 20),
             const Text(
               'Select a pet to view training records:',

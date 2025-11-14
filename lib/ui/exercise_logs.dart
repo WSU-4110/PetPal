@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/exercise_log.dart';
 import '../models/pet.dart';
+import 'appointments_screen.dart';
 
 class ExerciseLogs extends StatefulWidget {
   final int petId;
@@ -252,6 +253,18 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                                   }
                                 },
                               ),
+                              if (!isOwner)
+                                ElevatedButton(
+                                   onPressed: () {
+                                       Navigator.push(
+                                         context,
+                                         MaterialPageRoute(
+                                         builder: (context) => AppointmentsScreen(pet: selectedPet!),
+                                         ),
+                                        );
+                                       },
+                                         child: const Text("View Appointments"),
+                                     ),
                               if (isOwner)
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
