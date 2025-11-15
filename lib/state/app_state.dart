@@ -1,14 +1,15 @@
+// lib/state/app_state.dart
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
-import '../services/db_service.dart';
+import '../models/appointment.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../services/db_service.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
@@ -23,6 +24,9 @@ class AppState extends ChangeNotifier {
   List<MedicalRecord> medicalRecords = [];
   List<ExerciseLog> exerciseLogs = [];
   List<GroomLog> groomLogs = [];
+  List<Appointment> appointments = [];
+  List<Map<String, dynamic>> groomingAppointments = [];
+  List<Map<String, dynamic>> trainingAppointments = [];
 
   Map<String, dynamic>? currentUser;
   Map<int, List<int>> petAccessMap = {};
@@ -44,6 +48,7 @@ class AppState extends ChangeNotifier {
   Future<void> _loadInitialData() async {
     pets = await _db.getPets();
     reminders = await _db.getAllReminders();
+    await loadAppointments();
     notifyListeners();
   }
 
@@ -212,6 +217,278 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ---------------- APPOINTMENTS ----------------
+  Future<void> addAppointment(Appointment appointment) async {
+    try {
+      // Insert into database and get the ID
+      final id = await _db.insertAppointment(appointment);
+
+      // Create a new appointment object with the returned ID
+      final appointmentWithId = appointment.copyWith(id: id);
+
+      // Add to the appointments list
+      appointments.add(appointmentWithId);
+
+      // Sort appointments by date (newest first)
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+      notifyListeners();
+    } catch (e) {
+      print('Error adding appointment: $e');
+      // Still notify listeners to prevent UI from getting stuck
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointments() async {
+    try {
+      appointments = await _db.getAllAppointments();
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointmentsForPet(int petId) async {
+    try {
+      // Get all appointments from database
+      final allAppointments = await _db.getAllAppointments();
+
+      // Filter for this pet
+      final petAppointments = allAppointments.where((a) => a.petId == petId).toList();
+
+      // Update the appointments list with pet-specific ones
+      appointments.removeWhere((a) => a.petId == petId);
+      appointments.addAll(petAppointments);
+
+      // Sort appointments by date
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointmentsForVet(int vetId) async {
+    try {
+      // Get all appointments and filter locally
+      final allAppointments = await _db.getAllAppointments();
+      final vetAppointments = allAppointments.where((a) => a.vetId == vetId).toList();
+
+      appointments = vetAppointments;
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments for vet: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<List<Appointment>> getUpcomingAppointments({int? petId, int? vetId}) async {
+    try {
+      final allAppointments = await _db.getAllAppointments();
+      final now = DateTime.now();
+
+      return allAppointments.where((a) {
+        // Filter by pet if specified
+        if (petId != null && a.petId != petId) return false;
+
+        // Filter by vet if specified
+        if (vetId != null && a.vetId != vetId) return false;
+
+        // Only include upcoming appointments
+        return a.dateTime.isAfter(now) && a.status == 'upcoming';
+      }).toList();
+    } catch (e) {
+      print('Error getting upcoming appointments: $e');
+      return [];
+    }
+  }
+
+  Future<void> updateAppointment(Appointment appointment) async {
+    try {
+      await _db.updateAppointment(appointment);
+
+      // Update the appointment in the list
+      final index = appointments.indexWhere((a) => a.id == appointment.id);
+      if (index != -1) {
+        appointments[index] = appointment;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('Error updating appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteAppointment(int id) async {
+    try {
+      await _db.deleteAppointment(id);
+
+      // Remove from the appointments list
+      appointments.removeWhere((a) => a.id == id);
+
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Appointment> getAppointmentsForPetLocal(int petId) {
+    return appointments.where((a) => a.petId == petId).toList();
+  }
+
+  // ---------------- GROOMING APPOINTMENTS ----------------
+  Future<void> addGroomingAppointment(Map<String, dynamic> appointment) async {
+    try {
+      await _db.insertGroomingAppointment(appointment);
+      // Reload grooming appointments for this pet
+      await loadGroomingAppointmentsForPet(appointment['petId']);
+    } catch (e) {
+      print('Error adding grooming appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadGroomingAppointmentsForPet(int petId) async {
+    try {
+      groomingAppointments = await _db.getGroomingAppointmentsForPet(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error loading grooming appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Map<String, dynamic>> getGroomingAppointmentsForPetLocal(int petId) {
+    return groomingAppointments.where((a) {
+      try {
+        return (a['petId'] as int) == petId;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  Future<void> deleteGroomingAppointment(String id) async {
+    try {
+      await _db.deleteGroomingAppointment(id);
+      // Remove from local list
+      groomingAppointments.removeWhere((a) => a['id'].toString() == id);
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting grooming appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  // ---------------- TRAINING APPOINTMENTS ----------------
+  Future<void> addTrainingAppointment(Map<String, dynamic> appointment) async {
+    try {
+      await _db.insertTrainingAppointment(appointment);
+      // Reload training appointments for this pet
+      await loadTrainingAppointmentsForPet(appointment['petId']);
+    } catch (e) {
+      print('Error adding training appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Loads training appointments for a single pet (keeps behavior for existing callers).
+  Future<void> loadTrainingAppointmentsForPet(int petId) async {
+    try {
+      trainingAppointments = await _db.getTrainingAppointmentsForPet(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error loading training appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  /// Robust helper: load training appointments assigned to a specific trainer.
+  /// This method queries the DB for each accessible pet for the trainer and collects
+  /// all appointments assigned to `trainerId`. It tolerates different key names
+  /// and string/int stored ids.
+  Future<void> loadTrainingAppointmentsForTrainer(int trainerId) async {
+    try {
+      final List<Map<String, dynamic>> collected = [];
+
+      // First try to get pet ids accessible to this trainer via DB helper.
+      List<int> petIds = [];
+      try {
+        petIds = await _db.getAccessiblePetIds(trainerId);
+      } catch (_) {
+        // If DB helper doesn't exist or fails, use accessiblePets if populated
+        if (accessiblePets.isNotEmpty) {
+          petIds = accessiblePets.map((p) => p.id!).toList();
+        } else {
+          // fallback: load all pets and iterate (slower)
+          final allPets = await _db.getPets();
+          petIds = allPets.map((p) => p.id!).toList();
+        }
+      }
+
+      for (final pid in petIds) {
+        try {
+          final list = await _db.getTrainingAppointmentsForPet(pid);
+          if (list != null && list.isNotEmpty) {
+            collected.addAll(List<Map<String, dynamic>>.from(list));
+          }
+        } catch (e) {
+          // ignore per-pet failures, but log for debugging
+          print('Error loading training appointments for pet $pid: $e');
+        }
+      }
+
+      // Filter: normalize possible keys that represent the trainer id
+      final filtered = collected.where((a) {
+        try {
+          final candidate = a['trainerId'] ?? a['trainer_id'] ?? a['trainer'] ?? a['assignedTo'] ?? a['assigned_trainer'];
+          if (candidate == null) return false;
+          if (candidate is int) return candidate == trainerId;
+          if (candidate is String) return int.tryParse(candidate) == trainerId;
+          return false;
+        } catch (_) {
+          return false;
+        }
+      }).toList();
+
+      trainingAppointments = filtered;
+      notifyListeners();
+    } catch (e) {
+      print('Error loading training appointments for trainer $trainerId: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Map<String, dynamic>> getTrainingAppointmentsForPetLocal(int petId) {
+    return trainingAppointments.where((a) {
+      try {
+        return (a['petId'] as int) == petId;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  Future<void> deleteTrainingAppointment(String id) async {
+    try {
+      await _db.deleteTrainingAppointment(id);
+      // Remove from local list
+      trainingAppointments.removeWhere((a) => a['id'].toString() == id);
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting training appointment: $e');
+      notifyListeners();
+    }
+  }
+
   // ---------------- PASSWORD HELPERS ----------------
   bool isPasswordStrong(String password) => passwordChecks(password).every((c) => c);
 
@@ -274,7 +551,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-    Future<List<Map<String, dynamic>>> getTrainers() async {
+  Future<List<Map<String, dynamic>>> getTrainers() async {
     return await _db.getUsersByRole('trainer');
   }
 
@@ -320,8 +597,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
- // ---------------- Pet Access ----------------
-
+  // ---------------- Pet Access ----------------
   Future<void> grantAccess(int petId, int userId) async {
     await _db.grantAccess(petId, userId);
     // refresh local cache
@@ -346,11 +622,35 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> loadAccessiblePets(int vetId) async {
-  final petIds = await _db.getAccessiblePetIds(vetId);
-  accessiblePets = pets.where((p) => petIds.contains(p.id)).toList();
-  notifyListeners();
-}
+    final petIds = await _db.getAccessiblePetIds(vetId);
+    accessiblePets = pets.where((p) => petIds.contains(p.id)).toList();
+    notifyListeners();
+  }
 
+  // ---------------- USER ROLE CHECKERS ----------------
+  bool get isOwner {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'owner' || role == 'pet_owner';
+  }
+
+  bool get isVet {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'vet' || role == 'veterinarian';
+  }
+
+  bool get isGroomer {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'groomer' || role == 'pet_groomer';
+  }
+
+  bool get isTrainer {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'trainer' || role == 'pet_trainer';
+  }
 
   // ---------------- Search helpers ----------------
   List<Pet> searchPets({

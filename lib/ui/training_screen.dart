@@ -1,73 +1,42 @@
-// lib/ui/grooming_screen.dart
+// lib/ui/training_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../state/app_state.dart';
 
-class GroomingAppointment {
-  final String id;
-  final String groomerName;
-  final String salon;
-  final DateTime dateTime;
-  final String type;
-  final String status;
-  final int? groomerId;
-
-  GroomingAppointment({
-    required this.id,
-    required this.groomerName,
-    required this.salon,
-    required this.dateTime,
-    required this.type,
-    required this.status,
-    this.groomerId,
-  });
-}
-
-class GroomingScreen extends StatefulWidget {
+class TrainingScreen extends StatefulWidget {
   final Pet pet;
 
-  const GroomingScreen({super.key, required this.pet});
+  const TrainingScreen({super.key, required this.pet});
 
   @override
-  State<GroomingScreen> createState() => _GroomingScreenState();
+  State<TrainingScreen> createState() => _TrainingScreenState();
 }
 
-class _GroomingScreenState extends State<GroomingScreen> {
-  List<GroomingAppointment> _appointments = [];
+class _TrainingScreenState extends State<TrainingScreen> {
+  List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadGroomingAppointments();
+    _loadTrainingAppointments();
   }
 
-  Future<void> _loadGroomingAppointments() async {
+  Future<void> _loadTrainingAppointments() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      await appState.loadGroomingAppointmentsForPet(widget.pet.id!);
-      final groomingAppointments = appState.getGroomingAppointmentsForPetLocal(widget.pet.id!);
+      await appState.loadTrainingAppointmentsForPet(widget.pet.id!);
+      final trainingAppointments = appState.getTrainingAppointmentsForPetLocal(widget.pet.id!);
       
       if (mounted) {
         setState(() {
-          _appointments.clear();
-          for (final appointment in groomingAppointments) {
-            _appointments.add(GroomingAppointment(
-              id: appointment['id'].toString(),
-              groomerName: appointment['groomerName'] ?? 'Unknown Groomer',
-              salon: appointment['salon'] ?? 'Unknown Salon',
-              dateTime: DateTime.parse(appointment['dateTime']),
-              type: appointment['type'] ?? 'Unknown Type',
-              status: appointment['status'] ?? 'upcoming',
-              groomerId: appointment['groomerId'] as int?,
-            ));
-          }
+          _appointments = trainingAppointments;
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Error loading grooming appointments: $e');
+      print('Error loading training appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -88,7 +57,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '${widget.pet.name}\'s Grooming',
+          '${widget.pet.name}\'s Training',
           style: const TextStyle(
             color: Color(0xFF2D3142),
             fontWeight: FontWeight.bold,
@@ -97,8 +66,8 @@ class _GroomingScreenState extends State<GroomingScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFF4ECDC4)),
-            onPressed: _showBookGroomingDialog,
+            icon: const Icon(Icons.add, color: Color(0xFFFF9F43)),
+            onPressed: _showBookTrainingDialog,
           ),
         ],
       ),
@@ -125,13 +94,13 @@ class _GroomingScreenState extends State<GroomingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.cut,
+            Icons.fitness_center,
             size: 80,
             color: Colors.grey[300],
           ),
           const SizedBox(height: 16),
           Text(
-            'No grooming appointments yet',
+            'No training sessions yet',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -140,7 +109,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Book your first grooming session',
+            'Book your first training session',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -148,9 +117,9 @@ class _GroomingScreenState extends State<GroomingScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: _showBookGroomingDialog,
+            onPressed: _showBookTrainingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4ECDC4),
+              backgroundColor: const Color(0xFFFF9F43),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -158,7 +127,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
               ),
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Book Grooming'),
+            label: const Text('Book Training'),
           ),
         ],
       ),
@@ -169,14 +138,14 @@ class _GroomingScreenState extends State<GroomingScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       child: InkWell(
-        onTap: _showBookGroomingDialog,
+        onTap: _showBookTrainingDialog,
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF4ECDC4).withOpacity(0.3),
+              color: const Color(0xFFFF9F43).withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -185,16 +154,16 @@ class _GroomingScreenState extends State<GroomingScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFF4ECDC4),
+                color: Color(0xFFFF9F43),
                 size: 28,
               ),
               SizedBox(width: 12),
               Text(
-                'Book New Grooming',
+                'Book New Training',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF4ECDC4),
+                  color: Color(0xFFFF9F43),
                 ),
               ),
             ],
@@ -204,12 +173,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
     );
   }
 
-  void _showBookGroomingDialog() {
+  void _showBookTrainingDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => BookGroomingSheet(
+      builder: (context) => BookTrainingSheet(
         pet: widget.pet,
         onBooked: (appointment) {
           setState(() {
@@ -220,9 +189,10 @@ class _GroomingScreenState extends State<GroomingScreen> {
     );
   }
 
-  Widget _buildAppointmentCard(GroomingAppointment appointment) {
-    final isUpcoming = appointment.status == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
+  Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
+    final isUpcoming = appointment['status'] == 'upcoming';
+    final statusColor = isUpcoming ? const Color(0xFFFF9F43) : Colors.grey;
+    final dateTime = DateTime.parse(appointment['dateTime']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -300,12 +270,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4ECDC4).withOpacity(0.1),
+                  color: const Color(0xFFFF9F43).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.cut,
-                  color: Color(0xFF4ECDC4),
+                  Icons.fitness_center,
+                  color: Color(0xFFFF9F43),
                   size: 28,
                 ),
               ),
@@ -315,7 +285,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      appointment.type,
+                      appointment['type'] ?? 'Unknown Training',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -324,7 +294,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      appointment.groomerName,
+                      appointment['trainerName'] ?? 'Unknown Trainer',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -333,7 +303,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      appointment.salon,
+                      appointment['facility'] ?? 'Unknown Facility',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF9CA3AF),
@@ -352,7 +322,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
               const Icon(Icons.calendar_today, size: 16, color: Color(0xFF9CA3AF)),
               const SizedBox(width: 8),
               Text(
-                _formatDate(appointment.dateTime),
+                _formatDate(dateTime),
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
@@ -362,7 +332,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
               const Icon(Icons.access_time, size: 16, color: Color(0xFF9CA3AF)),
               const SizedBox(width: 8),
               Text(
-                _formatTime(appointment.dateTime),
+                _formatTime(dateTime),
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
@@ -375,12 +345,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
     );
   }
 
-  void _cancelAppointment(GroomingAppointment appointment) {
+  void _cancelAppointment(Map<String, dynamic> appointment) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this grooming appointment?'),
+        title: const Text('Cancel Training Session'),
+        content: const Text('Are you sure you want to cancel this training session?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -388,23 +358,24 @@ class _GroomingScreenState extends State<GroomingScreen> {
           ),
           TextButton(
             onPressed: () async {
+              Navigator.pop(context);
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
-                await appState.deleteGroomingAppointment(appointment.id);
+                await appState.deleteTrainingAppointment(appointment['id'].toString());
                 
                 if (mounted) {
                   Navigator.pop(context);
-                  _loadGroomingAppointments();
+                  _loadTrainingAppointments();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Appointment cancelled')),
+                    const SnackBar(content: Text('Training session cancelled')),
                   );
                 }
               } catch (e) {
                 if (mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error cancelling appointment: $e')),
+                    SnackBar(content: Text('Error cancelling training session: $e')),
                   );
                 }
               }
@@ -416,7 +387,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
     );
   }
 
-  void _rescheduleAppointment(GroomingAppointment appointment) {
+  void _rescheduleAppointment(Map<String, dynamic> appointment) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Reschedule feature coming soon')),
     );
@@ -434,68 +405,68 @@ class _GroomingScreenState extends State<GroomingScreen> {
   }
 }
 
-// Book Grooming Bottom Sheet
-class BookGroomingSheet extends StatefulWidget {
+// Book Training Bottom Sheet
+class BookTrainingSheet extends StatefulWidget {
   final Pet pet;
-  final Function(GroomingAppointment) onBooked;
+  final Function(Map<String, dynamic>) onBooked;
 
-  const BookGroomingSheet({
+  const BookTrainingSheet({
     super.key,
     required this.pet,
     required this.onBooked,
   });
 
   @override
-  State<BookGroomingSheet> createState() => _BookGroomingSheetState();
+  State<BookTrainingSheet> createState() => _BookTrainingSheetState();
 }
 
-class _BookGroomingSheetState extends State<BookGroomingSheet> {
+class _BookTrainingSheetState extends State<BookTrainingSheet> {
   final _formKey = GlobalKey<FormState>();
-  int? _selectedGroomerId;
-  String? _selectedSalon;
+  int? _selectedTrainerId;
+  String? _selectedFacility;
   String? _selectedType;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
-  List<Map<String, dynamic>> _groomers = [];
-  bool _loadingGroomers = true;
+  List<Map<String, dynamic>> _trainers = [];
+  bool _loadingTrainers = true;
   bool _isSubmitting = false;
 
-  final _salons = [
-    'Pampered Paws Salon',
-    'Happy Tails Grooming',
-    'Pet Spa Downtown',
-    'Furry Friends Salon',
+  final _facilities = [
+    'Pet Training Center',
+    'Happy Paws Academy',
+    'Canine Training Institute',
+    'Agility Training Ground',
   ];
 
   final _types = [
-    'Full Grooming',
-    'Bath & Brush',
-    'Haircut',
-    'Nail Trim',
-    'Teeth Cleaning',
+    'Basic Obedience',
+    'Advanced Training',
+    'Agility Training',
+    'Behavioral Training',
+    'Puppy Training',
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadGroomers();
+    _loadTrainers();
   }
 
-  Future<void> _loadGroomers() async {
+  Future<void> _loadTrainers() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      final groomers = await appState.getGroomers();
+      final trainers = await appState.getTrainers();
       if (mounted) {
         setState(() {
-          _groomers = groomers;
-          _loadingGroomers = false;
+          _trainers = trainers;
+          _loadingTrainers = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _loadingGroomers = false;
+          _loadingTrainers = false;
         });
       }
     }
@@ -539,7 +510,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                 ),
               ),
               const Text(
-                'Book Grooming',
+                'Book Training Session',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -548,7 +519,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Schedule grooming for ${widget.pet.name}',
+                'Schedule training for ${widget.pet.name}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF9CA3AF),
@@ -556,20 +527,20 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
               ),
               const SizedBox(height: 16),
               _buildDropdown(
-                label: 'Service Type',
+                label: 'Training Type',
                 value: _selectedType,
                 items: _types,
                 onChanged: (value) => setState(() => _selectedType = value),
               ),
               const SizedBox(height: 12),
               _buildDropdown(
-                label: 'Salon',
-                value: _selectedSalon,
-                items: _salons,
-                onChanged: (value) => setState(() => _selectedSalon = value),
+                label: 'Facility',
+                value: _selectedFacility,
+                items: _facilities,
+                onChanged: (value) => setState(() => _selectedFacility = value),
               ),
               const SizedBox(height: 12),
-              _buildGroomerSelector(),
+              _buildTrainerSelector(),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -584,7 +555,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4ECDC4)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFFF9F43)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -616,7 +587,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFF4ECDC4)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFFFF9F43)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -642,9 +613,9 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _bookGrooming,
+                  onPressed: _isSubmitting ? null : _bookTraining,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4ECDC4),
+                    backgroundColor: const Color(0xFFFF9F43),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -661,11 +632,15 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                           ),
                         )
                       : const Text(
-                          'Book Grooming',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          'Book Training',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                 ),
               ),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -673,12 +648,12 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
     );
   }
 
-  Widget _buildGroomerSelector() {
+  Widget _buildTrainerSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Groomer',
+          'Trainer',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -686,7 +661,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
           ),
         ),
         const SizedBox(height: 8),
-        if (_loadingGroomers)
+        if (_loadingTrainers)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -701,24 +676,24 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
               ),
             ),
           )
-        else if (_groomers.isEmpty)
+        else if (_trainers.isEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: const Color(0xFFFF9F43).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.orange.withOpacity(0.3),
+                color: const Color(0xFFFF9F43).withOpacity(0.3),
               ),
             ),
             child: const Row(
               children: [
-                Icon(Icons.warning, color: Colors.orange),
+                Icon(Icons.warning, color: Color(0xFFFF9F43)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'No groomers available',
-                    style: TextStyle(color: Colors.orange),
+                    'No trainers available',
+                    style: TextStyle(color: Color(0xFFFF9F43)),
                   ),
                 ),
               ],
@@ -733,25 +708,25 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
-                value: _selectedGroomerId,
+                value: _selectedTrainerId,
                 hint: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Select a groomer'),
+                  child: Text('Select a trainer'),
                 ),
                 isExpanded: true,
-                items: _groomers.map((groomer) {
-                  final firstName = groomer['firstName'] ?? '';
-                  final lastName = groomer['lastName'] ?? '';
+                items: _trainers.map((trainer) {
+                  final firstName = trainer['firstName'] ?? '';
+                  final lastName = trainer['lastName'] ?? '';
                   final displayName = '$firstName $lastName'.trim();
                   return DropdownMenuItem<int>(
-                    value: groomer['id'] as int,
+                    value: trainer['id'] as int,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(displayName),
                     ),
                   );
                 }).toList(),
-                onChanged: (value) => setState(() => _selectedGroomerId = value),
+                onChanged: (value) => setState(() => _selectedTrainerId = value),
               ),
             ),
           ),
@@ -831,9 +806,9 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
     }
   }
 
-  Future<void> _bookGrooming() async {
-    if (_selectedGroomerId == null ||
-        _selectedSalon == null ||
+  Future<void> _bookTraining() async {
+    if (_selectedTrainerId == null ||
+        _selectedFacility == null ||
         _selectedType == null ||
         _selectedDate == null ||
         _selectedTime == null) {
@@ -857,40 +832,35 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
         _selectedTime!.minute,
       );
 
-      // Find the selected groomer from the list
-      final selectedGroomer = _groomers.firstWhere(
-        (groomer) => groomer['id'] == _selectedGroomerId,
-        orElse: () => {'firstName': 'Unknown', 'lastName': 'Groomer'},
+      // Find the selected trainer from the list
+      final selectedTrainer = _trainers.firstWhere(
+        (trainer) => trainer['id'] == _selectedTrainerId,
+        orElse: () => {'firstName': 'Unknown', 'lastName': 'Trainer'},
       );
 
-      final firstName = selectedGroomer['firstName'] ?? '';
-      final lastName = selectedGroomer['lastName'] ?? '';
-      final groomerName = '$firstName $lastName'.trim();
+      final firstName = selectedTrainer['firstName'] ?? '';
+      final lastName = selectedTrainer['lastName'] ?? '';
+      final trainerName = '$firstName $lastName'.trim();
 
+      // Create a map for the appointment
       final appointment = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'petId': widget.pet.id!,
-        'groomerName': groomerName,
-        'groomerId': _selectedGroomerId,
-        'salon': _selectedSalon!,
+        'petId': widget.pet.id,
+        'trainerId': _selectedTrainerId,
+        'trainerName': trainerName,
+        'facility': _selectedFacility,
         'dateTime': appointmentDate.toIso8601String(),
-        'type': _selectedType!,
+        'type': _selectedType,
         'status': 'upcoming',
       };
 
-      // Save to AppState
+      // Add the appointment to the database
       final appState = Provider.of<AppState>(context, listen: false);
-      await appState.addGroomingAppointment(appointment);
+      await appState.addTrainingAppointment(appointment);
 
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Grooming appointment booked successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      widget.onBooked(appointment);
+
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);

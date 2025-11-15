@@ -29,13 +29,10 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     super.initState();
     titleController = TextEditingController(text: widget.medicalrecord.title);
     descController = TextEditingController(text: widget.medicalrecord.description);
-    dateController = TextEditingController(text: widget.medicalrecord.date);
+    // Fixed: MedicalRecord.date is DateTime, not String
+    selectedDate = widget.medicalrecord.date;
+    dateController = TextEditingController(text: DateFormat('yyyy-MM-dd hh:mm').format(selectedDate));
     vetController = TextEditingController(text: widget.medicalrecord.vetName);
-    try {
-      selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.medicalrecord.date);
-    } catch (err) {
-      selectedDate = DateTime.now();
-    }
     selectedTime = TimeOfDay.fromDateTime(selectedDate);
     selectedPet = widget.pets.firstWhere((p) => p.id == widget.medicalrecord.petId);
   }
@@ -298,7 +295,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
                             petId: widget.medicalrecord.petId,  // Keep the original petId
                             title: titleController.text,
                             description: descController.text,
-                            date: DateFormat('yyyy-MM-dd hh:mm').format(dt),
+                            date: dt, // Fixed: Use DateTime instead of String
                             vetName: vetController.text,
                           );
                           Navigator.pop(context, updated);

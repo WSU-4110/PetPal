@@ -278,7 +278,7 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                             petId: widget.petId,
                             title: _titleController.text,
                             description: _descController.text,
-                            date: _dateController.text,
+                            date: _selectedDate, // Fixed: Use DateTime instead of String
                             vetName: _vetController.text,
                           );
                           

@@ -363,7 +363,8 @@ class _SearchScreenState extends State<SearchScreen> {
               title: Text('${item.title} • ${item.vetName}',
                   style: const TextStyle(color: Colors.white)),
               subtitle:
-                  Text(item.description, style: const TextStyle(color: Colors.white70)),
+                  // Fixed: Use null-aware operator to handle nullable description
+                  Text(item.description ?? 'No description', style: const TextStyle(color: Colors.white70)),
             ),
           );
         }).toList(),
