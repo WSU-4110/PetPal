@@ -1,19 +1,23 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'ui/home_screen.dart';
+import 'ui/owner_home_screen.dart';
 import 'ui/pet_list_screen.dart';
 import 'ui/reminder_list_screen.dart';
 import 'ui/exercise_logs.dart';
 import 'ui/groom_logs.dart';
-import 'ui/app_drawer.dart'; // AppDrawer import
+import 'ui/app_drawer.dart';
 import 'ui/login_page.dart';
 import 'ui/medical_records.dart';
-import 'state/app_state.dart' as app_state; // aliased to avoid ambiguity
+import 'ui/vet_home_screen.dart';
+import 'ui/groomer_home_screen.dart';
+import 'ui/trainer_home_screen.dart';
+import 'dashboards/vetdash.dart';
+import 'dashboards/trainerdash.dart';
+import 'dashboards/groomdash.dart';
+import 'state/app_state.dart' as app_state;
 import 'models/pet.dart';
-import '../dashboards/vetdash.dart';
-import '../dashboards/trainerdash.dart';
-import '../dashboards/groomdash.dart';
 
 void main() {
   runApp(const PetPalApp());
@@ -38,8 +42,7 @@ class PetPalApp extends StatelessWidget {
         routes: {
           '/': (context) => const LoginPage(),
           '/main': (context) {
-            final args =
-                ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
             return MainNavigation(role: args['role'] as String);
           },
           '/medical_records': (context) {
@@ -67,7 +70,7 @@ class _MainNavigationState extends State<MainNavigation> {
     switch (widget.role) {
       case 'owner':
         return const [
-          HomeScreen(),
+          OwnerHomeScreen(),
           PetListScreen(),
           ReminderListScreen(),
           ExerciseLogs(petId: 1),
@@ -75,20 +78,18 @@ class _MainNavigationState extends State<MainNavigation> {
         ];
       case 'vet':
         return [
-          const HomeScreen(),
-          // Don't initialize MedicalRecordsPage with petId=0
-          // Instead create a VetDashboard that handles pet selection
-          VetDashboard(),
+          const VetHomeScreen(),
+          const VetDashboard(),
         ];
       case 'trainer':
         return [
-          HomeScreen(),
-          TrainerDashboard(),
+          const TrainerHomeScreen(),
+          const TrainerDashboard(),
         ];
       case 'groomer':
         return [
-          HomeScreen(),
-          GroomerDashboard(),
+          const GroomerHomeScreen(),
+          const GroomerDashboard(),
         ];
       default:
         return [Center(child: Text("Unknown role"))];
@@ -110,7 +111,7 @@ class _MainNavigationState extends State<MainNavigation> {
       case 'trainer':
         return 'Trainer Dashboard';
       case 'groomer':
-        return 'Grooming Dashboard';
+        return 'Groomer Dashboard';
       default:
         return 'Dashboard';
     }
