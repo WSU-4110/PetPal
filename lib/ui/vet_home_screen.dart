@@ -1,8 +1,9 @@
-// lib/ui/vet_home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/appointment.dart';
+import '../models/pet.dart';
+import 'vet_pet_details_screen.dart';
 
 class VetHomeScreen extends StatefulWidget {
   const VetHomeScreen({super.key});
@@ -11,22 +12,31 @@ class VetHomeScreen extends StatefulWidget {
   State<VetHomeScreen> createState() => _VetHomeScreenState();
 }
 
-class _VetHomeScreenState extends State<VetHomeScreen> {
+class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProviderStateMixin {
   List<Appointment> _appointments = [];
+  List<Pet> _accessiblePets = [];
   bool _isLoading = true;
   String _filterStatus = 'all'; // all, upcoming, completed
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _loadAppointments();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadData();
   }
 
-  Future<void> _loadAppointments() async {
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       // Use user['id'] instead of currentUserId
-      final vetId = appState.user?['id'] as int?;
+      final vetId = appState.user?['id'];
       if (vetId != null) {
         // Load all appointments first
         await appState.loadAppointments();
@@ -34,15 +44,20 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
         // Filter appointments locally
         final appointments = appState.appointments.where((a) => a.vetId == vetId).toList();
         
+        // Load accessible pets for this vet
+        await appState.loadAccessiblePets(vetId);
+        final accessiblePets = appState.accessiblePets;
+        
         if (mounted) {
           setState(() {
             _appointments = appointments;
+            _accessiblePets = accessiblePets;
             _isLoading = false;
           });
         }
       }
     } catch (e) {
-      print('Error loading vet appointments: $e');
+      print('Error loading vet data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -67,6 +82,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Removes the back button
         backgroundColor: const Color(0xFF6C63FF),
         elevation: 0,
         title: const Text(
@@ -76,29 +92,21 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadAppointments,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              appState.logout();
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 _buildHeader(upcomingCount, completedCount),
-                _buildFilterChips(),
+                _buildTabs(),
                 Expanded(
-                  child: _filteredAppointments.isEmpty
-                      ? _buildEmptyState()
-                      : _buildAppointmentsList(),
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildAppointmentsList(),
+                      _buildAccessiblePetsList(),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -190,6 +198,25 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
     );
   }
 
+  Widget _buildTabs() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+      ),
+      child: TabBar(
+        controller: _tabController,
+        labelColor: const Color(0xFF6C63FF),
+        unselectedLabelColor: const Color(0xFF9CA3AF),
+        indicatorColor: const Color(0xFF6C63FF),
+        tabs: const [
+          Tab(text: 'Appointments'),
+          Tab(text: 'My Patients'),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilterChips() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -265,18 +292,241 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
   }
 
   Widget _buildAppointmentsList() {
-    // Sort appointments by date
-    final sortedAppointments = List<Appointment>.from(_filteredAppointments)
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return Column(
+      children: [
+        _buildFilterChips(),
+        Expanded(
+          child: _filteredAppointments.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: _filteredAppointments.length,
+                  itemBuilder: (context, index) {
+                    return _buildAppointmentCard(_filteredAppointments[index]);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
 
-    return RefreshIndicator(
-      onRefresh: _loadAppointments,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: sortedAppointments.length,
-        itemBuilder: (context, index) {
-          return _buildAppointmentCard(sortedAppointments[index]);
-        },
+  Widget _buildAccessiblePetsList() {
+    if (_accessiblePets.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.pets, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No accessible pets',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Pet owners need to grant you access to view their pets',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: _accessiblePets.length,
+      itemBuilder: (context, index) {
+        final pet = _accessiblePets[index];
+        return _buildPetCard(pet);
+      },
+    );
+  }
+
+  Widget _buildPetCard(Pet pet) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  border: Border.all(
+                    color: const Color(0xFF6C63FF),
+                    width: 2,
+                  ),
+                ),
+                child: _buildPetAvatar(pet),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pet.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D3142),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${pet.species} • ${pet.breed}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${pet.age} years old • ${pet.gender}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFF6C63FF)),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VetPetDetailsScreen(pet: pet),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildActionButton(
+                icon: Icons.medical_services,
+                label: 'Medical\nRecords',
+                color: const Color(0xFF6C63FF),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VetPetDetailsScreen(pet: pet, initialTab: 0),
+                    ),
+                  );
+                },
+              ),
+              _buildActionButton(
+                icon: Icons.favorite,
+                label: 'Health\nInfo',
+                color: const Color(0xFF4ECDC4),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VetPetDetailsScreen(pet: pet, initialTab: 1),
+                    ),
+                  );
+                },
+              ),
+              _buildActionButton(
+                icon: Icons.add_circle,
+                label: 'Add\nRecord',
+                color: const Color(0xFFFFB74D),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VetPetDetailsScreen(pet: pet, initialTab: 0),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPetAvatar(Pet pet) {
+    final image = pet.image;
+    if (image == null || image.isEmpty) {
+      return const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF));
+    }
+    if (image.startsWith('http')) {
+      return ClipOval(
+        child: Image.network(
+          image,
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF)),
+        ),
+      );
+    }
+    return ClipOval(
+      child: Image.asset(
+        image,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF)),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -286,7 +536,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
     final isUpcoming = appointment.status == 'upcoming';
     final statusColor = isUpcoming ? const Color(0xFF6C63FF) : Colors.grey;
     
-    // Get pet name from the app state
+    // Get pet name from app state
     final pet = appState.getPetById(appointment.petId);
     final petName = pet?.name ?? 'Unknown';
 
@@ -459,7 +709,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> {
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
-                // Create a copy of the appointment with updated status
+                // Create a copy of appointment with updated status
                 final updatedAppointment = appointment.copyWith(status: 'completed');
                 
                 // Update the appointment in the database

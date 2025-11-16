@@ -89,6 +89,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Removes the back button
         backgroundColor: const Color(0xFFFF9F43),
         elevation: 0,
         title: const Text(
@@ -98,18 +99,6 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadAppointments,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              appState.logout();
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -295,15 +284,12 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
         return aDate.compareTo(bDate);
       });
 
-    return RefreshIndicator(
-      onRefresh: _loadAppointments,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: sortedAppointments.length,
-        itemBuilder: (context, index) {
-          return _buildAppointmentCard(sortedAppointments[index]);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: sortedAppointments.length,
+      itemBuilder: (context, index) {
+        return _buildAppointmentCard(sortedAppointments[index]);
+      },
     );
   }
 

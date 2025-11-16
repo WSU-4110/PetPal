@@ -1,4 +1,3 @@
-// lib/ui/medical_records_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -33,7 +32,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
       final pets = appState.pets;
       
       if (pets.isNotEmpty) {
-        // Find the pet with matching ID or use the first pet as fallback
+        // Find the pet with matching ID or use the first pet as a fallback
         final pet = pets.firstWhere(
           (p) => p.id == widget.petId,
           orElse: () => pets.first,
@@ -225,6 +224,22 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                           fontSize: 14,
                                         ),
                                       ),
+                                      if (isVet) ...[
+                                        const SizedBox(height: 20),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _showAddRecordDialog(context),
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Add First Record'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 )
@@ -232,8 +247,7 @@ class _MedicalRecordsPageState extends State<MedicalRecordsPage> {
                                   padding: const EdgeInsets.all(20),
                                   itemCount: records.length,
                                   itemBuilder: (context, i) {
-                                    final record = records[i];
-                                    return _buildRecordCard(record, isVet, appState);
+                                    return _buildRecordCard(records[i], isVet, appState);
                                   },
                                 ),
                         ),

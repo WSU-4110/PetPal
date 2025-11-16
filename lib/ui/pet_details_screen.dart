@@ -1,4 +1,3 @@
-// lib/ui/pet_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
@@ -26,6 +25,11 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    
+    // Pre-load medical records when the screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMedicalRecords();
+    });
   }
 
   @override
@@ -34,13 +38,25 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
     super.dispose();
   }
 
-  // Refresh the UI/data when returning from other screens
+  // Load medical records for this pet
+  Future<void> _loadMedicalRecords() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    try {
+      await appState.loadMedicalRecords(widget.pet.id!);
+    } catch (e) {
+      // Handle error silently or show a snackbar
+      print('Error loading medical records: $e');
+    }
+  }
+
+  // Refresh UI/data when returning from other screens
   Future<void> _refreshData() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       await appState.loadAppointmentsForPet(widget.pet.id!);
       await appState.loadGroomingAppointmentsForPet(widget.pet.id!);
       await appState.loadTrainingAppointmentsForPet(widget.pet.id!);
+      await appState.loadMedicalRecords(widget.pet.id!);
       setState(() {});
     } catch (e) {
       // ignore or handle
@@ -57,6 +73,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     final pet = widget.pet;
     final yearsOld = pet.age;
+    final appState = Provider.of<AppState>(context);
+    final isVet = appState.currentUser?['role'] == 'vet';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -75,6 +93,20 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (isVet)
+            IconButton(
+              icon: const Icon(Icons.add, color: Color(0xFF6C63FF)),
+              onPressed: () {
+                // Switch to health tab and trigger add medical record
+                _tabController.animateTo(0);
+                // We'll use a notification to trigger the add dialog in the health tab
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  // This will be handled in the HealthTabScreen
+                });
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -496,8 +528,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-            child: Text(isUpcoming ? 'Upcoming' : 'Completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
-          ),
+            child: Text(isUpcoming ? 'Upcoming' : 'Completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor))),
           if (isUpcoming)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Color(0xFF9CA3AF)),

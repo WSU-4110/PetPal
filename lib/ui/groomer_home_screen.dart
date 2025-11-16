@@ -113,6 +113,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Removes the back button
         backgroundColor: const Color(0xFF4ECDC4),
         elevation: 0,
         title: const Text(
@@ -123,10 +124,6 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadAppointments,
-          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () {
@@ -315,15 +312,12 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     final sortedAppointments = List<GroomerAppointment>.from(_filteredAppointments)
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-    return RefreshIndicator(
-      onRefresh: _loadAppointments,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: sortedAppointments.length,
-        itemBuilder: (context, index) {
-          return _buildAppointmentCard(sortedAppointments[index]);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: sortedAppointments.length,
+      itemBuilder: (context, index) {
+        return _buildAppointmentCard(sortedAppointments[index]);
+      },
     );
   }
 

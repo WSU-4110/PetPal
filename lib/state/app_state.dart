@@ -30,6 +30,9 @@ class AppState extends ChangeNotifier {
 
   Map<String, dynamic>? currentUser;
   Map<int, List<int>> petAccessMap = {};
+  
+  // Add this map to store pet health information
+  final Map<int, Map<String, dynamic>> _petHealthInfo = {};
 
   // App settings
   bool _darkMode = false;
@@ -525,6 +528,45 @@ class AppState extends ChangeNotifier {
     await _db.deleteMedicalRecord(id);
     medicalRecords = await _db.getMedicalRecordsForPet(petId);
     notifyListeners();
+  }
+
+  // ---------------- Pet Health Information ----------------
+  // Get pet health information
+  Future<Map<String, dynamic>?> getPetHealthInfo(int petId) async {
+    try {
+      // First check if we already have this data in our cache
+      if (_petHealthInfo.containsKey(petId)) {
+        return _petHealthInfo[petId];
+      }
+      
+      // If not, try to fetch it from the database
+      final healthInfo = await _db.getPetHealthInfo(petId);
+      
+      if (healthInfo != null) {
+        _petHealthInfo[petId] = healthInfo;
+      }
+      
+      return healthInfo;
+    } catch (e) {
+      print('Error getting pet health info: $e');
+      return null;
+    }
+  }
+
+  // Update pet health information
+  Future<void> updatePetHealthInfo(int petId, Map<String, dynamic> healthInfo) async {
+    try {
+      // Update in the database
+      await _db.updatePetHealthInfo(petId, healthInfo);
+      
+      // Update the local cache
+      _petHealthInfo[petId] = healthInfo;
+      
+      notifyListeners();
+    } catch (e) {
+      print('Error updating pet health info: $e');
+      rethrow;
+    }
   }
 
   // ---------------- Exercise Logs ----------------

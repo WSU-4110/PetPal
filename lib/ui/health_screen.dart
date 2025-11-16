@@ -7,7 +7,6 @@ import '../state/app_state.dart';
 
 class HealthTabScreen extends StatefulWidget {
   final Pet pet;
-
   const HealthTabScreen({super.key, required this.pet});
 
   @override
@@ -18,6 +17,11 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
   List<MedicalRecord> _records = [];
   bool _isLoading = true;
   bool _isVet = false;
+  bool _isOwner = false;
+  bool _showMedicalRecords = false;
+
+  // Health information fields - unified with vet home screen
+  Map<String, dynamic>? _healthInfo;
 
   @override
   void initState() {
@@ -25,14 +29,41 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload data when the screen becomes visible again
+    _loadData();
+  }
+
   Future<void> _loadData() async {
     final appState = Provider.of<AppState>(context, listen: false);
+
+    // Check user role
+    setState(() {
+      _isVet = appState.currentUser?['role'] == 'vet';
+      _isOwner = appState.currentUser?['role'] == 'owner';
+    });
+
+    // Load medical records for this pet
     await appState.loadMedicalRecords(widget.pet.id!);
-    
+
+    // Load health information for this pet
+    await _loadHealthInfo(appState);
+
     setState(() {
       _records = appState.medicalRecords;
-      _isVet = appState.isVet;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _loadHealthInfo(AppState appState) async {
+    // Load health information from database
+    final healthInfo = await appState.getPetHealthInfo(widget.pet.id!);
+
+    // Always update the state with the latest data
+    setState(() {
+      _healthInfo = healthInfo;
     });
   }
 
@@ -42,68 +73,283 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return SingleChildScrollView(
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Health Information Section
+              _buildHealthInfoSection(),
+
+              // Action Buttons (only for owners)
+              if (_isOwner) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _buildGrantAccessButton()),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildMedicalRecordsButton()),
+                  ],
+                ),
+              ],
+
+              // Medical Records List (only when showMedicalRecords is true)
+              if (_showMedicalRecords) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Medical Records',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3142),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_records.isEmpty)
+                  _buildEmptyState()
+                else
+                  ..._records.map((record) => _buildMedicalRecordCard(record)),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHealthInfoSection() {
+    // Default values if health info is not available
+    final lastCheckup = _healthInfo?['lastCheckup'];
+    final vaccinationStatus = _healthInfo?['vaccinationStatus'] ?? 'Not recorded';
+    final nextVaccinationDue = _healthInfo?['nextVaccinationDue'];
+    final allergies = _healthInfo?['allergies'];
+    final medications = _healthInfo?['medications'];
+    final notes = _healthInfo?['notes'];
+
+    // Additional fields to match vet home screen
+    final diet = _healthInfo?['diet'] ?? 'Not recorded';
+    final weight = _healthInfo?['weight'] ?? 'Not recorded';
+    final activityLevel = _healthInfo?['activityLevel'] ?? 'Not recorded';
+    final behavior = _healthInfo?['behavior'] ?? 'Not recorded';
+    final specialNeeds = _healthInfo?['specialNeeds'] ?? 'Not recorded';
+
+    return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add Record Button (only for vets)
-          if (_isVet) ...[
-            _buildAddRecordButton(),
-            const SizedBox(height: 20),
+          const Text(
+            'Health Information',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3142),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Basic Health Info
+          _buildHealthInfoRow(
+            'Last Checkup',
+            lastCheckup != null ? _formatDate(lastCheckup) : 'Not recorded',
+            Icons.calendar_today,
+          ),
+
+          _buildHealthInfoRow(
+            'Vaccination Status',
+            vaccinationStatus,
+            Icons.vaccines,
+          ),
+
+          if (nextVaccinationDue != null)
+            _buildHealthInfoRow(
+              'Next Vaccination Due',
+              _formatDate(nextVaccinationDue),
+              Icons.event,
+            ),
+
+          // Physical Information
+          const SizedBox(height: 8),
+          const Divider(),
+          const SizedBox(height: 8),
+
+          _buildHealthInfoRow(
+            'Weight',
+            weight,
+            Icons.monitor_weight,
+          ),
+
+          _buildHealthInfoRow(
+            'Diet',
+            diet,
+            Icons.restaurant,
+          ),
+
+          _buildHealthInfoRow(
+            'Activity Level',
+            activityLevel,
+            Icons.directions_run,
+          ),
+
+          // Health Conditions
+          const SizedBox(height: 8),
+          const Divider(),
+          const SizedBox(height: 8),
+
+          if (allergies != null && allergies.toString().isNotEmpty)
+            _buildHealthInfoRow(
+              'Allergies',
+              allergies.toString(),
+              Icons.warning,
+            ),
+
+          if (medications != null && medications.toString().isNotEmpty)
+            _buildHealthInfoRow(
+              'Current Medications',
+              medications.toString(),
+              Icons.medication,
+            ),
+
+          if (specialNeeds != null && specialNeeds.toString().isNotEmpty)
+            _buildHealthInfoRow(
+              'Special Needs',
+              specialNeeds.toString(),
+              Icons.accessibility_new,
+            ),
+
+          // Behavioral Information
+          if (behavior != null && behavior.toString().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 8),
+
+            _buildHealthInfoRow(
+              'Behavior',
+              behavior.toString(),
+              Icons.psychology,
+            ),
           ],
 
-          // Medical Records List
-          if (_records.isEmpty)
-            _buildEmptyState()
-          else
-            ..._records.map((record) => _buildMedicalRecordCard(record)),
+          // Notes
+          if (notes != null && notes.toString().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Notes',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3142),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    notes.toString(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildAddRecordButton() {
-    return InkWell(
-      onTap: () => _showAddRecordDialog(),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6C63FF), Color(0xFF8E87FF)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+  Widget _buildHealthInfoRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: const Color(0xFF6C63FF),
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6C63FF).withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D3142),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrantAccessButton() {
+    return ElevatedButton.icon(
+      onPressed: _showGrantAccessDialog,
+      icon: const Icon(Icons.person_add, size: 18),
+      label: const Text('Grant Vet Access'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF4ECDC4),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.add, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Add Medical Record',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildMedicalRecordsButton() {
+    return ElevatedButton.icon(
+      onPressed: () {
+        setState(() {
+          _showMedicalRecords = !_showMedicalRecords;
+        });
+      },
+      icon: Icon(_showMedicalRecords ? Icons.visibility_off : Icons.visibility, size: 18),
+      label: Text(_showMedicalRecords ? 'Hide Records' : 'Medical Records'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF6C63FF),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
     );
@@ -162,7 +408,6 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
       'Critical': const Color(0xFFEF5350),
     };
     final statusColor = statusColors[record.status] ?? const Color(0xFF9CA3AF);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -180,362 +425,218 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header with title and menu
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      record.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D3142),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (record.vetName != null)
+                      Text(
+                        'By ${record.vetName}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Status badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor, width: 1),
+                ),
                 child: Text(
-                  record.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3142),
+                  record.status ?? 'Normal',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
                   ),
                 ),
               ),
-              if (_isVet)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF9CA3AF)),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditRecordDialog(record);
-                    } else if (value == 'delete') {
-                      _deleteRecord(record);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 18),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
-          if (record.status != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                record.status!,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ],
+
+          // Description section
           if (record.description != null && record.description!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              record.description!,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 16, color: Color(0xFF9CA3AF)),
-              const SizedBox(width: 8),
-              Text(
-                _formatDate(record.date),
+              child: Text(
+                record.description!,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
                 ),
               ),
-              if (record.vetName != null) ...[
-                const SizedBox(width: 20),
-                const Icon(Icons.person, size: 16, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    record.vetName!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF6B7280),
+            ),
+          ],
+
+          // Details section
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F7FA),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                // Date and vet row
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 18, color: Color(0xFF6C63FF)),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDate(record.date),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF2D3142),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
+                if (record.weight != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.monitor_weight, size: 18, color: Color(0xFF6C63FF)),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${record.weight} kg',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF2D3142),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGrantAccessDialog() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      // Get all veterinarians
+      final vets = await appState.getVeterinarians();
+
+      if (!mounted) return;
+
+      final selectedVet = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF4ECDC4),
+            title: const Text(
+              "Select Veterinarian",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: vets.isEmpty
+                  ? const Text(
+                      'No veterinarians available',
+                      style: TextStyle(color: Colors.white70),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: vets.length,
+                      itemBuilder: (context, index) {
+                        final vet = vets[index];
+                        final fullName = "Dr. ${vet['firstName']} ${vet['lastName']}";
+                        return ListTile(
+                          title: Text(
+                            fullName,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            vet['email'] ?? '',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () => Navigator.pop(dialogContext, vet),
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ],
+          );
+        },
+      );
+
+      if (selectedVet != null && mounted) {
+        try {
+          // Grant access to vet - use safe type conversion
+          final vetId = selectedVet['id'];
+          if (vetId != null) {
+            await appState.grantAccess(widget.pet.id!, vetId);
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Granted access to Dr. ${selectedVet['firstName']} ${selectedVet['lastName']}"),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Error granting access: $e"),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error loading veterinarians: $e"),
+            backgroundColor: Colors.red,
           ),
-          if (record.weight != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.monitor_weight, size: 16, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 8),
-                Text(
-                  '${record.weight} kg',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showAddRecordDialog() {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final weightController = TextEditingController();
-    String? selectedStatus = 'Normal';
-    DateTime selectedDate = DateTime.now();
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Medical Record'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: weightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Weight (kg)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['Normal', 'Attention', 'Critical']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (value) => setDialogState(() => selectedStatus = value),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a title')),
-                  );
-                  return;
-                }
-
-                final appState = Provider.of<AppState>(context, listen: false);
-                final vetName = appState.displayName;
-
-                final record = MedicalRecord(
-                  petId: widget.pet.id!,
-                  title: titleController.text,
-                  date: selectedDate,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                  vetName: 'Dr. $vetName',
-                  weight: weightController.text.isEmpty ? null : double.tryParse(weightController.text),
-                  status: selectedStatus,
-                );
-
-                await appState.addMedicalRecord(record);
-                await _loadData();
-                
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Medical record added')),
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showEditRecordDialog(MedicalRecord record) {
-    final titleController = TextEditingController(text: record.title);
-    final descriptionController = TextEditingController(text: record.description ?? '');
-    final weightController = TextEditingController(text: record.weight?.toString() ?? '');
-    String? selectedStatus = record.status ?? 'Normal';
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Medical Record'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: weightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Weight (kg)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: selectedStatus,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['Normal', 'Attention', 'Critical']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (value) => setDialogState(() => selectedStatus = value),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a title')),
-                  );
-                  return;
-                }
-
-                final updated = MedicalRecord(
-                  id: record.id,
-                  petId: record.petId,
-                  title: titleController.text,
-                  date: record.date,
-                  description: descriptionController.text.isEmpty ? null : descriptionController.text,
-                  vetName: record.vetName,
-                  weight: weightController.text.isEmpty ? null : double.tryParse(weightController.text),
-                  status: selectedStatus,
-                );
-
-                final appState = Provider.of<AppState>(context, listen: false);
-                await appState.updateMedicalRecord(updated);
-                await _loadData();
-                
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Medical record updated')),
-                  );
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _deleteRecord(MedicalRecord record) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Record'),
-        content: const Text('Are you sure you want to delete this medical record?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);
-              await appState.deleteMedicalRecord(record.id!, widget.pet.id!);
-              await _loadData();
-              
-              if (mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Medical record deleted')),
-                );
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 
   String _formatDate(DateTime date) {
