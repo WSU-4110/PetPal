@@ -34,22 +34,88 @@ class PetPalApp extends StatelessWidget {
         state.init(); // load initial data and settings
         return state;
       },
-      child: MaterialApp(
-        title: 'PetPal',
-        theme: ThemeData(primarySwatch: Colors.teal),
-        debugShowCheckedModeBanner: false,
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const LoginPage(),
-          '/main': (context) {
-            final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-            return MainNavigation(role: args['role'] as String);
+      child: DefaultTextStyle(
+        style: const TextStyle(color: Colors.white), // force all text white
+        child: MaterialApp(
+          title: 'PetPal',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: false,
+            scaffoldBackgroundColor: const Color.fromRGBO(184, 146, 247, 1),
+            colorScheme: const ColorScheme.light(
+              primary: Color.fromRGBO(184, 146, 247, 1),
+              secondary: Color.fromRGBO(250, 196, 241, 1),
+              surface: Color.fromRGBO(184, 146, 247, 1),
+              onPrimary: Colors.white,
+              onSecondary: Colors.white,
+              onSurface: Colors.white,
+            ),
+            textTheme: const TextTheme(
+              displayLarge: TextStyle(color: Colors.white),
+              displayMedium: TextStyle(color: Colors.white),
+              displaySmall: TextStyle(color: Colors.white),
+              headlineLarge: TextStyle(color: Colors.white),
+              headlineMedium: TextStyle(color: Colors.white),
+              headlineSmall: TextStyle(color: Colors.white),
+              titleLarge: TextStyle(color: Colors.white),
+              titleMedium: TextStyle(color: Colors.white),
+              titleSmall: TextStyle(color: Colors.white),
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white),
+              bodySmall: TextStyle(color: Colors.white),
+              labelLarge: TextStyle(color: Colors.white),
+              labelMedium: TextStyle(color: Colors.white),
+              labelSmall: TextStyle(color: Colors.white),
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+              titleTextStyle: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Colors.white,
+              ),
+            ),
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              backgroundColor: Colors.transparent,
+              selectedItemColor: Colors.white,
+              unselectedItemColor: Colors.white70,
+              showUnselectedLabels: true,
+            ),
+            drawerTheme: const DrawerThemeData(
+              backgroundColor: Color.fromRGBO(250, 196, 241, 1),
+            ),
+            floatingActionButtonTheme: const FloatingActionButtonThemeData(
+              backgroundColor: Color.fromRGBO(250, 196, 241, 1),
+              foregroundColor: Colors.white,
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: const Color.fromRGBO(255, 255, 255, 0.15),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none,
+              ),
+              labelStyle: const TextStyle(color: Colors.white),
+              hintStyle: const TextStyle(color: Colors.white70),
+            ),
+          ),
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const LoginPage(),
+            '/main': (context) {
+              final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+              return MainNavigation(role: args['role'] as String);
+            },
+            '/medical_records': (context) {
+              final pet = ModalRoute.of(context)!.settings.arguments as Pet;
+              return MedicalRecordsPage(petId: pet.id!);
+            },
           },
-          '/medical_records': (context) {
-            final pet = ModalRoute.of(context)!.settings.arguments as Pet;
-            return MedicalRecordsPage(petId: pet.id!);
-          },
-        },
+        ),
       ),
     );
   }
@@ -151,36 +217,63 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.fromRGBO(184, 146, 247, 1),
+            Color.fromRGBO(250, 196, 241, 1),
+          ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          title: Text(_getAppBarTitle()),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Settings coming soon!')),
+                );
+              },
+            ),
+          ],
+        ),
+        drawer: const AppDrawer(),
+        body: _pages[_selectedIndex],
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.fromRGBO(184, 146, 247, 1),
+                Color.fromRGBO(250, 196, 241, 1),
+              ],
+            ),
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white70,
+            showUnselectedLabels: true,
+            items: _getBottomNavItems(),
           ),
         ),
-        title: Text(_getAppBarTitle()),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon!')),
-              );
-            },
-          ),
-        ],
-      ),
-      drawer: const AppDrawer(),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: _getBottomNavItems(),
       ),
     );
   }
