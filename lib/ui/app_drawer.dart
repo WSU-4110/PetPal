@@ -131,13 +131,15 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text("Weekly Report"),
+          _DrawerItem(
+            icon: Icons.notifications,
+            title: "Weekly Report",
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const WeeklyReportScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
+              );
             },
           ),
 
