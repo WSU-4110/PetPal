@@ -12,7 +12,6 @@ class GroomingAppointment {
   final String type;
   final String status;
   final int? groomerId;
-
   GroomingAppointment({
     required this.id,
     required this.groomerName,
@@ -26,7 +25,6 @@ class GroomingAppointment {
 
 class GroomingScreen extends StatefulWidget {
   final Pet pet;
-
   const GroomingScreen({super.key, required this.pet});
 
   @override
@@ -48,25 +46,41 @@ class _GroomingScreenState extends State<GroomingScreen> {
     try {
       await appState.loadGroomingAppointmentsForPet(widget.pet.id!);
       final groomingAppointments = appState.getGroomingAppointmentsForPetLocal(widget.pet.id!);
-      
       if (mounted) {
         setState(() {
           _appointments.clear();
           for (final appointment in groomingAppointments) {
+            // appointment is expected to be a Map<String, dynamic>
+            final dynamic rawDate = appointment['dateTime'];
+            DateTime parsedDate;
+            if (rawDate is DateTime) {
+              parsedDate = rawDate;
+            } else if (rawDate is String) {
+              parsedDate = DateTime.tryParse(rawDate) ?? DateTime.now();
+            } else if (rawDate is num) {
+              parsedDate = DateTime.fromMillisecondsSinceEpoch(rawDate.toInt());
+            } else {
+              parsedDate = DateTime.now();
+            }
+
             _appointments.add(GroomingAppointment(
               id: appointment['id'].toString(),
               groomerName: appointment['groomerName'] ?? 'Unknown Groomer',
               salon: appointment['salon'] ?? 'Unknown Salon',
-              dateTime: DateTime.parse(appointment['dateTime']),
+              dateTime: parsedDate,
               type: appointment['type'] ?? 'Unknown Type',
               status: appointment['status'] ?? 'upcoming',
-              groomerId: appointment['groomerId'] as int?,
+              groomerId: appointment['groomerId'] is int
+                  ? appointment['groomerId'] as int
+                  : (appointment['groomerId'] is num ? (appointment['groomerId'] as num).toInt() : null),
             ));
           }
           _isLoading = false;
         });
       }
     } catch (e) {
+      // keep error output simple for debugging
+      // ignore: avoid_print
       print('Error loading grooming appointments: $e');
       if (mounted) {
         setState(() {
@@ -216,6 +230,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
             _appointments.add(appointment);
           });
         },
+        onRefresh: _loadGroomingAppointments,
       ),
     );
   }
@@ -223,7 +238,6 @@ class _GroomingScreenState extends State<GroomingScreen> {
   Widget _buildAppointmentCard(GroomingAppointment appointment) {
     final isUpcoming = appointment.status == 'upcoming';
     final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -389,16 +403,11 @@ class _GroomingScreenState extends State<GroomingScreen> {
           TextButton(
             onPressed: () async {
               final appState = Provider.of<AppState>(context, listen: false);
-              
               try {
                 await appState.deleteGroomingAppointment(appointment.id);
-                
                 if (mounted) {
                   Navigator.pop(context);
                   _loadGroomingAppointments();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Appointment cancelled')),
-                  );
                 }
               } catch (e) {
                 if (mounted) {
@@ -438,11 +447,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
 class BookGroomingSheet extends StatefulWidget {
   final Pet pet;
   final Function(GroomingAppointment) onBooked;
-
+  final Function() onRefresh;
   const BookGroomingSheet({
     super.key,
     required this.pet,
     required this.onBooked,
+    required this.onRefresh,
   });
 
   @override
@@ -456,18 +466,15 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
   String? _selectedType;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-
   List<Map<String, dynamic>> _groomers = [];
   bool _loadingGroomers = true;
   bool _isSubmitting = false;
-
   final _salons = [
     'Pampered Paws Salon',
     'Happy Tails Grooming',
     'Pet Spa Downtown',
     'Furry Friends Salon',
   ];
-
   final _types = [
     'Full Grooming',
     'Bath & Brush',
@@ -593,9 +600,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                                     : 'Select Date',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: _selectedDate != null
-                                      ? const Color(0xFF2D3142)
-                                      : const Color(0xFF9CA3AF),
+                                  color: _selectedDate != null ? const Color(0xFF2D3142) : const Color(0xFF9CA3AF),
                                 ),
                               ),
                             ),
@@ -620,14 +625,10 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _selectedTime != null
-                                    ? _selectedTime!.format(context)
-                                    : 'Select Time',
+                                _selectedTime != null ? _selectedTime!.format(context) : 'Select Time',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: _selectedTime != null
-                                      ? const Color(0xFF2D3142)
-                                      : const Color(0xFF9CA3AF),
+                                  color: _selectedTime != null ? const Color(0xFF2D3142) : const Color(0xFF9CA3AF),
                                 ),
                               ),
                             ),
@@ -744,13 +745,13 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                   final lastName = groomer['lastName'] ?? '';
                   final displayName = '$firstName $lastName'.trim();
                   return DropdownMenuItem<int>(
-                    value: groomer['id'] as int,
+                    value: groomer['id'] is int ? groomer['id'] as int : (groomer['id'] is num ? (groomer['id'] as num).toInt() : null),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text(displayName),
                     ),
                   );
-                }).toList(),
+                }).where((item) => item.value != null).toList(),
                 onChanged: (value) => setState(() => _selectedGroomerId = value),
               ),
             ),
@@ -857,7 +858,6 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
         _selectedTime!.minute,
       );
 
-      // Find the selected groomer from the list
       final selectedGroomer = _groomers.firstWhere(
         (groomer) => groomer['id'] == _selectedGroomerId,
         orElse: () => {'firstName': 'Unknown', 'lastName': 'Groomer'},
@@ -878,18 +878,12 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
         'status': 'upcoming',
       };
 
-      // Save to AppState
       final appState = Provider.of<AppState>(context, listen: false);
       await appState.addGroomingAppointment(appointment);
 
       if (mounted) {
+        widget.onRefresh();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Grooming appointment booked successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
@@ -900,6 +894,10 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }

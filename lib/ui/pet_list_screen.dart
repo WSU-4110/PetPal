@@ -45,7 +45,7 @@ class PetListScreen extends StatelessWidget {
                       Icon(
                         Icons.pets,
                         size: 80,
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withAlpha((0.7 * 255).round()),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -76,11 +76,11 @@ class PetListScreen extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withAlpha((0.12 * 255).round()),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withAlpha((0.05 * 255).round()),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -124,15 +124,22 @@ class PetListScreen extends StatelessWidget {
                                       builder: (_) => PetFormScreen(pet: pet),
                                     ),
                                   );
+                                  
+                                  // FIX: Check context mounted state before using Provider.of
+                                  if (!context.mounted) return;
+
                                   if (updatedPet != null) {
-                                    await appState.updatePet(updatedPet);
+                                    Provider.of<AppState>(context, listen: false).updatePet(updatedPet);
                                   }
                                 },
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () async {
-                                  await appState.deletePet(pet.id!);
+                                  // This use of Provider.of is fine because it's synchronous
+                                  // within an async function, but it's good practice to ensure
+                                  // the Pet is deleted via the AppState service.
+                                  Provider.of<AppState>(context, listen: false).deletePet(pet.id!);
                                 },
                               ),
                             ],

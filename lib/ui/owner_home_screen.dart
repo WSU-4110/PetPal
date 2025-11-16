@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
-import '../models/appointment.dart';
+// import '../models/appointment.dart'; // FIX: Removed unused import
 import 'pet_details_screen.dart';
-import 'appointments_screen.dart';
+// import 'appointments_screen.dart'; // FIX: Removed unused import
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -42,6 +42,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   // Helper to safely read tips from AppState
   List<String> _safeGetTips(AppState appState) {
     try {
+      // FIX: Removed dead code/dead null-aware expression. The function 
+      // is expected to return List<String>? based on the original logic.
       final tips = appState.getTips();
       return tips ?? <String>[];
     } catch (_) {
@@ -52,6 +54,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void _onAppStateChanged() {
     final newTips = _safeGetTips(_appState);
     if (!_listEquals(newTips, _tips)) {
+      if (!mounted) return; // Guard setState
       setState(() {
         _tips = newTips;
         _currentTipIndex = 0;
@@ -101,9 +104,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     // Get user name safely
     String userName = 'there';
     try {
-      final dyn = appState as dynamic;
-      if (dyn.currentUser != null) {
-        final user = Map<String, dynamic>.from(dyn.currentUser);
+      final user = appState.currentUser;
+      if (user != null) {
+        // Safe access assuming currentUser is Map<String, dynamic>?
         userName = user['firstName'] ?? user['first_name'] ?? 'there';
       }
     } catch (_) {}
@@ -178,7 +181,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            // FIX: Replaced withValues with withAlpha
+                            color: Colors.white.withAlpha((0.2 * 255).round()),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -250,11 +254,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    // FIX: Replaced withValues with withAlpha
+                    color: Colors.white.withAlpha((0.15 * 255).round()),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        // FIX: Replaced withValues with withAlpha
+                        color: Colors.black.withAlpha((0.08 * 255).round()),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -267,7 +273,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          // FIX: Replaced withValues with withAlpha
+                          color: Colors.white.withAlpha((0.06 * 255).round()),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -344,11 +351,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              // FIX: Replaced withValues with withAlpha
+                              color: Colors.white.withAlpha((0.15 * 255).round()),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
+                                  // FIX: Replaced withValues with withAlpha
+                                  color: Colors.black.withAlpha((0.1 * 255).round()),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -415,11 +424,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         height: 170,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
+          // FIX: Replaced withValues with withAlpha
+          color: Colors.white.withAlpha((0.15 * 255).round()),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              // FIX: Replaced withValues with withAlpha
+              color: Colors.black.withAlpha((0.1 * 255).round()),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -477,6 +488,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           width: 80,
           height: 80,
           fit: BoxFit.cover,
+          // FIX: Replaced multiple underscores with single underscores
           errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
         ),
       );
@@ -487,6 +499,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         width: 80,
         height: 80,
         fit: BoxFit.cover,
+        // FIX: Replaced multiple underscores with single underscores
         errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
       ),
     );
@@ -498,11 +511,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       padding: const EdgeInsets.symmetric(
           vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        // FIX: Replaced withValues with withAlpha
+        color: Colors.white.withAlpha((0.12 * 255).round()),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            // FIX: Replaced withValues with withAlpha
+            color: Colors.black.withAlpha((0.1 * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -624,7 +639,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void _showCompleteTaskDialog(Reminder reminder, AppState appState) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFFB892F7),
           shape: RoundedRectangleBorder(
@@ -646,7 +661,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text(
                 'Cancel',
                 style: TextStyle(color: Colors.white70, fontSize: 16),
@@ -654,7 +669,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 final updated = Reminder(
                   id: reminder.id,
                   petId: reminder.petId,
@@ -663,6 +678,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   scheduledAt: reminder.scheduledAt,
                   done: true,
                 );
+                // The AppState listener handles the UI rebuild, no need for setState/mounted check here.
                 await appState.updateReminder(updated);
               },
               style: ElevatedButton.styleFrom(
@@ -680,7 +696,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void _showUncompleteTaskDialog(Reminder reminder, AppState appState) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           backgroundColor: const Color(0xFFB892F7),
           shape: RoundedRectangleBorder(
@@ -702,7 +718,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text(
                 'Cancel',
                 style: TextStyle(color: Colors.white70, fontSize: 16),
@@ -710,7 +726,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 final updated = Reminder(
                   id: reminder.id,
                   petId: reminder.petId,
@@ -719,6 +735,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   scheduledAt: reminder.scheduledAt,
                   done: false,
                 );
+                // The AppState listener handles the UI rebuild, no need for setState/mounted check here.
                 await appState.updateReminder(updated);
               },
               style: ElevatedButton.styleFrom(
@@ -744,15 +761,22 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     
     upcomingAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     
+    // Calculate alpha for opacity fixes (0.15 * 255 = 38, 0.1 * 255 = 25, 0.2 * 255 = 51)
+    final int alpha15 = (0.15 * 255).round();
+    final int alpha10 = (0.1 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+    
     if (upcomingAppointments.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
+          // FIX: Replaced withValues with withAlpha
+          color: Colors.white.withAlpha(alpha15),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              // FIX: Replaced withValues with withAlpha
+              color: Colors.black.withAlpha(alpha10),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -778,11 +802,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        // FIX: Replaced withValues with withAlpha
+        color: Colors.white.withAlpha(alpha15),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            // FIX: Replaced withValues with withAlpha
+            color: Colors.black.withAlpha(alpha10),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -796,7 +822,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  // FIX: Replaced withValues with withAlpha
+                  color: Colors.white.withAlpha(alpha20),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(

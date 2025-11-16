@@ -54,10 +54,10 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         // Load all pets to get their grooming appointments
         await appState.loadPet();
         final allPets = appState.pets;
-        
+
         // Collect all grooming appointments for all pets
         List<Map<String, dynamic>> allGroomingAppointments = [];
-        
+
         for (final pet in allPets) {
           try {
             final petAppointments = await appState.db.getGroomingAppointmentsForPet(pet.id!);
@@ -66,23 +66,23 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
             print('Error loading grooming appointments for pet ${pet.id}: $e');
           }
         }
-        
+
         // Filter for this groomer
         final groomerAppointments = allGroomingAppointments.where((a) => a['groomerId'] == groomerId).toList();
-        
+
         if (mounted) {
           setState(() {
             _appointments = groomerAppointments.map((a) => GroomerAppointment(
-              id: a['id'].toString(),
-              groomerName: a['groomerName'] ?? 'Unknown Groomer',
-              salon: a['salon'] ?? 'Unknown Salon',
-              dateTime: DateTime.parse(a['dateTime']),
-              type: a['type'] ?? 'Unknown Type',
-              status: a['status'] ?? 'upcoming',
-              groomerId: a['groomerId'] as int?,
-              petName: a['petName'] as String?,
-              petId: a['petId'] as int?,
-            )).toList();
+                  id: a['id'].toString(),
+                  groomerName: a['groomerName'] ?? 'Unknown Groomer',
+                  salon: a['salon'] ?? 'Unknown Salon',
+                  dateTime: DateTime.parse(a['dateTime']),
+                  type: a['type'] ?? 'Unknown Type',
+                  status: a['status'] ?? 'upcoming',
+                  groomerId: a['groomerId'] as int?,
+                  petName: a['petName'] as String?,
+                  petId: a['petId'] as int?,
+                )).toList();
             _isLoading = false;
           });
         }
@@ -109,7 +109,6 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     final appState = Provider.of<AppState>(context);
     final upcomingCount = _appointments.where((a) => a.status == 'upcoming').length;
     final completedCount = _appointments.where((a) => a.status == 'completed').length;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -123,14 +122,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              appState.logout();
-            },
-          ),
-        ],
+        // Removed the logout IconButton from actions
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -151,7 +143,6 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   Widget _buildHeader(int upcomingCount, int completedCount) {
     final appState = Provider.of<AppState>(context);
     final groomerName = '${appState.currentUser?['firstName'] ?? ''} ${appState.currentUser?['lastName'] ?? ''}'.trim();
-
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -311,7 +302,6 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     // Sort appointments by date
     final sortedAppointments = List<GroomerAppointment>.from(_filteredAppointments)
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: sortedAppointments.length,
@@ -325,14 +315,13 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     final appState = Provider.of<AppState>(context);
     final isUpcoming = appointment.status == 'upcoming';
     final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
-    
+
     // Get pet name from the app state if not already available
     String petName = appointment.petName ?? 'Unknown';
     if (petName == 'Unknown' && appointment.petId != null) {
       final pet = appState.getPetById(appointment.petId);
       petName = pet?.name ?? 'Unknown';
     }
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -498,9 +487,9 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               final appState = Provider.of<AppState>(context, listen: false);
-              
+
               try {
                 // Create a map of the appointment with updated status
                 final updatedAppointment = {
@@ -514,13 +503,13 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
                   'petId': appointment.petId,
                   'petName': appointment.petName,
                 };
-                
+
                 // Update the appointment in the database
                 await appState.db.updateGroomingAppointment(updatedAppointment);
-                
+
                 // Reload appointments
                 _loadAppointments();
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Appointment marked as completed'),
@@ -557,16 +546,16 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               final appState = Provider.of<AppState>(context, listen: false);
-              
+
               try {
                 // Delete the appointment from the database
                 await appState.deleteGroomingAppointment(appointment.id);
-                
+
                 // Reload appointments
                 _loadAppointments();
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Appointment cancelled')),
                 );
