@@ -1,31 +1,36 @@
+// lib/state/app_state.dart
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
-import '../services/db_service.dart';
+import '../models/appointment.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
 import '../models/notification.dart';
+import '../services/db_service.dart';
 
 class AppState extends ChangeNotifier {
   final DBService _db = DBService();
-
-  // Make DB service accessible to other classes
   DBService get db => _db;
 
   // Primary data
   List<Pet> pets = [];
+  List<Pet> accessiblePets = [];
   List<Reminder> reminders = [];
   List<MedicalRecord> medicalRecords = [];
   List<ExerciseLog> exerciseLogs = [];
   List<GroomLog> groomLogs = [];
+  List<Appointment> appointments = [];
+  List<Map<String, dynamic>> groomingAppointments = [];
+  List<Map<String, dynamic>> trainingAppointments = [];
   List<AppNotification> notifications = [];
 
   Map<String, dynamic>? currentUser;
+  Map<int, List<int>> petAccessMap = {};
+  final Map<int, Map<String, dynamic>> _petHealthInfo = {};
 
   // App settings
   bool _darkMode = false;
@@ -44,6 +49,7 @@ class AppState extends ChangeNotifier {
   Future<void> _loadInitialData() async {
     pets = await _db.getPets();
     reminders = await _db.getAllReminders();
+    await loadAppointments();
     notifyListeners();
   }
 
@@ -75,11 +81,8 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // Settings getters / setters
   bool get isDarkMode => _darkMode;
   String? get profileImagePath => _profileImagePath;
-
-  /// Compatibility: expose `user` getter so older widgets expecting `appState.user` keep working.
   Map<String, dynamic>? get user => currentUser;
 
   String get displayName {
@@ -112,29 +115,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- LOGIN / REGISTER ----------------
+  // Login/Register
   Future<Map<String, dynamic>> login(String email, String password) async {
     final user = await _db.loginUser(email, password);
-
     if (user == null) {
       final byEmail = await _db.getUserByEmail(email);
       if (byEmail == null) throw Exception("invalid email");
       throw Exception("invalid password");
     }
-
     currentUser = user;
     if (_profileImagePath != null) currentUser!['profileImage'] = _profileImagePath;
     notifyListeners();
     return user;
   }
 
-  Future<void> register(
-      String firstName,
-      String lastName,
-      String email,
-      String password,
-      String preference,
-      String role) async {
+  Future<void> register(String firstName, String lastName, String email, String password, String preference, String role) async {
     if (await isEmailRegistered(email)) throw Exception("email is already registered");
     if (!isPasswordStrong(password)) throw Exception("password is not strong enough");
     await _db.registerUser(firstName, lastName, email, password, preference, role);
@@ -154,7 +149,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- PETS ----------------
+  // Pets
   Future<void> addPet(Pet pet) async {
     await _db.insertPet(pet);
     pets = await _db.getPets();
@@ -188,7 +183,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ---------------- REMINDERS ----------------
+  // Reminders
   Future<void> addReminder(Reminder r) async {
     await _db.insertReminder(r);
     await _db.insertNotification(AppNotification(
@@ -220,21 +215,242 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- PASSWORD HELPERS ----------------
+  // Appointments
+  Future<void> addAppointment(Appointment appointment) async {
+    try {
+      final id = await _db.insertAppointment(appointment);
+      final appointmentWithId = appointment.copyWith(id: id);
+      appointments.add(appointmentWithId);
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      notifyListeners();
+    } catch (e) {
+      print('Error adding appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointments() async {
+    try {
+      appointments = await _db.getAllAppointments();
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointmentsForPet(int petId) async {
+    try {
+      final allAppointments = await _db.getAllAppointments();
+      final petAppointments = allAppointments.where((a) => a.petId == petId).toList();
+      appointments.removeWhere((a) => a.petId == petId);
+      appointments.addAll(petAppointments);
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadAppointmentsForVet(int vetId) async {
+    try {
+      final allAppointments = await _db.getAllAppointments();
+      final vetAppointments = allAppointments.where((a) => a.vetId == vetId).toList();
+      appointments = vetAppointments;
+      appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      notifyListeners();
+    } catch (e) {
+      print('Error loading appointments for vet: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<List<Appointment>> getUpcomingAppointments({int? petId, int? vetId}) async {
+    try {
+      final allAppointments = await _db.getAllAppointments();
+      final now = DateTime.now();
+      return allAppointments.where((a) {
+        if (petId != null && a.petId != petId) return false;
+        if (vetId != null && a.vetId != vetId) return false;
+        return a.dateTime.isAfter(now) && a.status == 'upcoming';
+      }).toList();
+    } catch (e) {
+      print('Error getting upcoming appointments: $e');
+      return [];
+    }
+  }
+
+  Future<void> updateAppointment(Appointment appointment) async {
+    try {
+      await _db.updateAppointment(appointment);
+      final index = appointments.indexWhere((a) => a.id == appointment.id);
+      if (index != -1) {
+        appointments[index] = appointment;
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error updating appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteAppointment(int id) async {
+    try {
+      await _db.deleteAppointment(id);
+      appointments.removeWhere((a) => a.id == id);
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Appointment> getAppointmentsForPetLocal(int petId) {
+    return appointments.where((a) => a.petId == petId).toList();
+  }
+
+  // Grooming Appointments
+  Future<void> addGroomingAppointment(Map<String, dynamic> appointment) async {
+    try {
+      await _db.insertGroomingAppointment(appointment);
+      await loadGroomingAppointmentsForPet(appointment['petId']);
+    } catch (e) {
+      print('Error adding grooming appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadGroomingAppointmentsForPet(int petId) async {
+    try {
+      groomingAppointments = await _db.getGroomingAppointmentsForPet(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error loading grooming appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Map<String, dynamic>> getGroomingAppointmentsForPetLocal(int petId) {
+    return groomingAppointments.where((a) {
+      try {
+        return (a['petId'] as int) == petId;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  Future<void> deleteGroomingAppointment(String id) async {
+    try {
+      await _db.deleteGroomingAppointment(id);
+      groomingAppointments.removeWhere((a) => a['id'].toString() == id);
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting grooming appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  // Training Appointments
+  Future<void> addTrainingAppointment(Map<String, dynamic> appointment) async {
+    try {
+      await _db.insertTrainingAppointment(appointment);
+      await loadTrainingAppointmentsForPet(appointment['petId']);
+    } catch (e) {
+      print('Error adding training appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadTrainingAppointmentsForPet(int petId) async {
+    try {
+      trainingAppointments = await _db.getTrainingAppointmentsForPet(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error loading training appointments for pet: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadTrainingAppointmentsForTrainer(int trainerId) async {
+    try {
+      final List<Map<String, dynamic>> collected = [];
+      List<int> petIds = [];
+      try {
+        petIds = await _db.getAccessiblePetIds(trainerId);
+      } catch (_) {
+        if (accessiblePets.isNotEmpty) {
+          petIds = accessiblePets.map((p) => p.id!).toList();
+        } else {
+          final allPets = await _db.getPets();
+          petIds = allPets.map((p) => p.id!).toList();
+        }
+      }
+      for (final pid in petIds) {
+        try {
+          final list = await _db.getTrainingAppointmentsForPet(pid);
+          if (list != null && list.isNotEmpty) {
+            collected.addAll(List<Map<String, dynamic>>.from(list));
+          }
+        } catch (e) {
+          print('Error loading training appointments for pet $pid: $e');
+        }
+      }
+      final filtered = collected.where((a) {
+        try {
+          final candidate = a['trainerId'] ?? a['trainer_id'] ?? a['trainer'] ?? a['assignedTo'] ?? a['assigned_trainer'];
+          if (candidate == null) return false;
+          if (candidate is int) return candidate == trainerId;
+          if (candidate is String) return int.tryParse(candidate) == trainerId;
+          return false;
+        } catch (_) {
+          return false;
+        }
+      }).toList();
+      trainingAppointments = filtered;
+      notifyListeners();
+    } catch (e) {
+      print('Error loading training appointments for trainer $trainerId: $e');
+      notifyListeners();
+    }
+  }
+
+  List<Map<String, dynamic>> getTrainingAppointmentsForPetLocal(int petId) {
+    return trainingAppointments.where((a) {
+      try {
+        return (a['petId'] as int) == petId;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  Future<void> deleteTrainingAppointment(String id) async {
+    try {
+      await _db.deleteTrainingAppointment(id);
+      trainingAppointments.removeWhere((a) => a['id'].toString() == id);
+      notifyListeners();
+    } catch (e) {
+      print('Error deleting training appointment: $e');
+      notifyListeners();
+    }
+  }
+
+  // Password Helpers
   bool isPasswordStrong(String password) => passwordChecks(password).every((c) => c);
 
-  int passwordStrengthScore(String password) =>
-      passwordChecks(password).where((c) => c).length;
+  int passwordStrengthScore(String password) => passwordChecks(password).where((c) => c).length;
 
   List<bool> passwordChecks(String password) => [
-        password.length >= 8,
-        RegExp(r'[A-Z]').hasMatch(password),
-        RegExp(r'[a-z]').hasMatch(password),
-        RegExp(r'\d').hasMatch(password),
-        RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
-      ];
+    password.length >= 8,
+    RegExp(r'[A-Z]').hasMatch(password),
+    RegExp(r'[a-z]').hasMatch(password),
+    RegExp(r'\d').hasMatch(password),
+    RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
+  ];
 
-  // ---------------- Medical Records ----------------
+  // Medical Records
   Future<void> addMedicalRecord(MedicalRecord record) async {
     await _db.insertMedicalRecord(record);
     medicalRecords = await _db.getMedicalRecordsForPet(record.petId);
@@ -258,7 +474,35 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Exercise Logs ----------------
+  // Pet Health Information
+  Future<Map<String, dynamic>?> getPetHealthInfo(int petId) async {
+    try {
+      if (_petHealthInfo.containsKey(petId)) {
+        return _petHealthInfo[petId];
+      }
+      final healthInfo = await _db.getPetHealthInfo(petId);
+      if (healthInfo != null) {
+        _petHealthInfo[petId] = healthInfo;
+      }
+      return healthInfo;
+    } catch (e) {
+      print('Error getting pet health info: $e');
+      return null;
+    }
+  }
+
+  Future<void> updatePetHealthInfo(int petId, Map<String, dynamic> healthInfo) async {
+    try {
+      await _db.updatePetHealthInfo(petId, healthInfo);
+      _petHealthInfo[petId] = healthInfo;
+      notifyListeners();
+    } catch (e) {
+      print('Error updating pet health info: $e');
+      rethrow;
+    }
+  }
+
+  // Exercise Logs
   Future<void> addExerciseLog(ExerciseLog record) async {
     await _db.insertExerciseLog(record);
     exerciseLogs = await _db.getExerciseLog(record.petId);
@@ -282,7 +526,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Groom Logs ----------------
+  Future<List<Map<String, dynamic>>> getTrainers() async {
+    return await _db.getUsersByRole('trainer');
+  }
+
+  // Groom Logs
   Future<void> addGroomLog(GroomLog record) async {
     await _db.insertGroomLog(record);
     groomLogs = await _db.getGroomLog(record.petId);
@@ -306,7 +554,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------- Veterinarians ----------------
+  Future<List<Map<String, dynamic>>> getGroomers() async {
+    return await _db.getUsersByRole('groomer');
+  }
+
+  // Veterinarians
   Future<List<Map<String, dynamic>>> getVeterinarians() async {
     return await _db.getUsersByRole('vet');
   }
@@ -320,7 +572,85 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ---------------- Search helpers ----------------
+  // Pet Access
+  Future<void> grantAccess(int petId, int userId) async {
+    if (petId <= 0 || userId <= 0) {
+      print('Error: petId or userId is invalid: $petId, $userId');
+      return;
+    }
+    try {
+      await _db.grantAccess(petId, userId);
+      await fetchPetAccess(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error granting access: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> revokeAccess(int petId, int userId) async {
+    if (petId <= 0 || userId <= 0) {
+      print('Error: petId or userId is invalid: $petId, $userId');
+      return;
+    }
+    try {
+      await _db.deletePetAccess(petId, userId);
+      await fetchPetAccess(petId);
+      notifyListeners();
+    } catch (e) {
+      print('Error revoking access: $e');
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchPetAccess(int petId) async {
+    try {
+      final rows = await _db.getPetAccess(petId);
+      petAccessMap[petId] = rows.where((r) => r.userId != null).map((r) => r.userId).toList();
+      notifyListeners();
+    } catch (e) {
+      print('Error fetching pet access: $e');
+      petAccessMap[petId] = [];
+      notifyListeners();
+    }
+  }
+
+  List<int> getPetAccessIds(int petId) {
+    return petAccessMap[petId] ?? [];
+  }
+
+  Future<void> loadAccessiblePets(int vetId) async {
+    final petIds = await _db.getAccessiblePetIds(vetId);
+    accessiblePets = pets.where((p) => petIds.contains(p.id)).toList();
+    notifyListeners();
+  }
+
+  // User Role Checkers
+  bool get isOwner {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'owner' || role == 'pet_owner';
+  }
+
+  bool get isVet {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'vet' || role == 'veterinarian';
+  }
+
+  bool get isGroomer {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'groomer' || role == 'pet_groomer';
+  }
+
+  bool get isTrainer {
+    if (currentUser == null) return false;
+    final role = currentUser!['role']?.toString().toLowerCase();
+    return role == 'trainer' || role == 'pet_trainer';
+  }
+
+  // Search Helpers
   List<Pet> searchPets({
     String? query,
     String? species,
@@ -346,7 +676,7 @@ class AppState extends ChangeNotifier {
     }).toList();
   }
 
-  // ---------------- Home visuals / tips ----------------
+  // Home Visuals/Tips
   String getRandomPetImage() {
     if (pets.isEmpty) return Pet.imageFor('', '');
     if (pets.length == 1) {

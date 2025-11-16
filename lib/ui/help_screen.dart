@@ -69,9 +69,32 @@ class HelpScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & FAQ')),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Help & FAQ',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              // Add search functionality if needed
+            },
+          ),
+        ],
+      ),
       body: Container(
-        padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
@@ -79,23 +102,28 @@ class HelpScreen extends StatelessWidget {
             end: Alignment.bottomRight,
           ),
         ),
-        child: ListView(
-          children: faqItems.map((it) {
-            return Card(
-              color: Colors.white.withValues(alpha: 0.06),
-              child: ExpansionTile(
-                collapsedIconColor: Colors.white70,
-                iconColor: Colors.white,
-                title: Text(it['q']!, style: const TextStyle(color: Colors.white)),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(it['a']!, style: const TextStyle(color: Colors.white70)),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              children: faqItems.map((it) {
+                return Card(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  child: ExpansionTile(
+                    collapsedIconColor: Colors.white70,
+                    iconColor: Colors.white,
+                    title: Text(it['q']!, style: const TextStyle(color: Colors.white)),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Text(it['a']!, style: const TextStyle(color: Colors.white70)),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
