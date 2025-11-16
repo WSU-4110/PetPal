@@ -499,8 +499,17 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(widget.pet != null ? 'Edit Pet' : 'Add Pet'),
-        backgroundColor: Colors.white,
         elevation: 0,
+        flexibleSpace: Container(
+        decoration: const BoxDecoration(
+         gradient: LinearGradient(
+            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      backgroundColor: Colors.transparent,
       ),
       body: Container(
         width: double.infinity,

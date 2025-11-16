@@ -603,9 +603,14 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
       if (selectedVet != null && mounted) {
         try {
           // Grant access to vet - use safe type conversion
-          final vetId = selectedVet['id'];
-          if (vetId != null) {
-            await appState.grantAccess(widget.pet.id!, vetId);
+          final vetId = selectedVet['id'] as int?;
+          final petId = widget.pet.id;
+          if (vetId != null && petId != null) {
+            debugPrint('selectedVet: $selectedVet');
+            debugPrint('selectedVet.id: ${selectedVet['id']} (${selectedVet['id']?.runtimeType})');
+            debugPrint('pet.id: ${widget.pet.id} (${widget.pet.id?.runtimeType})');
+
+            await appState.grantAccess(petId, vetId);
 
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
