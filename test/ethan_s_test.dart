@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import  'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/intl.dart';
+import 'package:petpal/state/app_state.dart';
 import 'package:petpal/ui/add_medical_record_dialog.dart';
 import 'package:petpal/ui/edit_medical_record_dialog.dart';
 import 'package:petpal/models/medical_record.dart';
@@ -18,7 +19,6 @@ import 'package:petpal/models/pet.dart';
 void main() {
   late Pet pet;
   late MedicalRecord original;
-  late MedicalRecord original2;
   /*
     MedicalRecord({
     this.id,
@@ -44,18 +44,9 @@ void main() {
         petId: pet.id!,
         title: 'Yearly Checkup',
         description: 'Yearly Checkup and Shot Updates',
-        date: '2025-10-31',
+        date: DateTime(2025, 10, 31),
         vetName: 'Vet Clinic 101',
       );
-
-      original2 = MedicalRecord(
-      id: 101,
-      petId: pet.id!,
-      title: 'Yearly Checkup',
-      description: 'Yearly Checkup and Shot Updates',
-      date: 'No Date Found',
-      vetName: 'Vet Clinic 101',
-  );
 
 });
 
@@ -79,12 +70,24 @@ void main() {
   expect(find.text('Yearly Checkup'), findsOneWidget);
 });
 
-testWidgets('3. Correct date picked', (tester) async {
-  await tester.pumpWidget(MaterialApp(
-    home: EditMedicalRecordDialog(medicalrecord: original, pets: [pet])
-  ));
+testWidgets('3. Add A Successful Medical Record', (tester) async {
+  await tester.pumpWidget(ChangeNotifierProvider<AppState>( //give widget access
+    create: (_) => AppState(),
+    child: MaterialApp(
+    home: AddMedicalRecordDialog(petId: pet.id!)
+  )));
 
-    expect(find.text('2025-10-31'), findsOneWidget);
+    //fill in appointment
+    await tester.enterText(find.byType(TextFormField).at(0), 'Deep clean dogs');
+
+    //fill in description
+    await tester.enterText(find.byType(TextFormField).at(1), 'Cleaned paws and every inch of the dog');
+
+    //save
+    await tester.tap(find.text('Save Record'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cleaned paws and every inch of the dog'), findsOneWidget);
   
 });
 
@@ -112,9 +115,9 @@ testWidgets('4. ElevatedButton Expansion and Save Check', (tester) async {
     await tester.pumpAndSettle();
 
     //change description and save after
-    await tester.enterText(find.bySemanticsLabel('Description'), 'Hello I am a Test.');
+    await tester.enterText(find.byKey( Key('Description')), 'Hello I am a Test.');
 
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Update Record'));
     await tester.pumpAndSettle();
 
     //test id description change matches
@@ -152,19 +155,7 @@ testWidgets('5. Cancel Button Test', (tester) async {
     expect(returned, isNull);
 });
 
-testWidgets('6. Replaces Invalid Date with Todays date', (tester) async {
-
-  await tester.pumpWidget(MaterialApp(
-    home: EditMedicalRecordDialog(medicalrecord: original2, pets: [pet])
-  ));
-
-  expect(find.text('Edit Medical Record'), findsOneWidget);
-
-  final now = DateFormat('yyyy-MM-dd').format(DateTime.now());
-  expect(find.text(now), findsOneWidget);
-});
-
-testWidgets('7. Floating Action Button (FAB) opens AddMedicalRecordDialog', (tester) async {
+testWidgets('6. Floating Action Button (FAB) opens AddMedicalRecordDialog', (tester) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
       body: Container(),

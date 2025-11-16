@@ -193,6 +193,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
                         title: 'Description',
                         icon: Icons.description,
                         child: TextFormField(
+                          key: const Key('Description'), //added for unit test
                           controller: descController,
                           maxLines: 3,
                           decoration: InputDecoration(

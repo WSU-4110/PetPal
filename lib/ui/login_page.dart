@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../main.dart';
+import '../main_nav.dart';
 import '../state/app_state.dart';
 import 'dart:math'; // For random pet picture
 
