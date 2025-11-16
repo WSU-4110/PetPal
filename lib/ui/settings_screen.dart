@@ -785,9 +785,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              // Add search functionality if needed
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -797,414 +820,416 @@ class _SettingsScreenState extends State<SettingsScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _profileAvatar(appState),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(appState.displayName,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
-                        Text(currentUserEmailForDisplay(appState),
-                            style: const TextStyle(color: Colors.white70)),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    // Profile Section
-                    const Text('PROFILE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
+                    _profileAvatar(appState),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(appState.displayName,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(currentUserEmailForDisplay(appState),
+                              style: const TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Profile Section
+                      const Text('PROFILE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: const InputDecoration(
+                                    labelText: 'Display name',
+                                    border: InputBorder.none,
+                                    hintText: 'Your name'),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _saving
+                                        ? null
+                                        : () async {
+                                            setState(() => _saving = true);
+                                            await appState.setDisplayName(_nameController.text);
+                                            setState(() => _saving = false);
+                                            if (!mounted) return;
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Display name saved')));
+                                          },
+                                    child: _saving
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2))
+                                        : const Text('Save'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      _nameController.text = appState.displayName;
+                                    },
+                                    child: const Text('Reset'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Notifications Section
+                      const Text('NOTIFICATIONS', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
                         child: Column(
                           children: [
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                  labelText: 'Display name',
-                                  border: InputBorder.none,
-                                  hintText: 'Your name'),
-                              style: const TextStyle(color: Colors.white),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.notifications_outlined, color: Colors.white70),
+                              title: const Text('Push Notifications', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Receive push notifications', style: TextStyle(color: Colors.white60)),
+                              value: _notificationsEnabled,
+                              onChanged: (value) {
+                                setState(() => _notificationsEnabled = value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'}'))
+                                );
+                              },
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: _saving
-                                      ? null
-                                      : () async {
-                                          setState(() => _saving = true);
-                                          await appState.setDisplayName(_nameController.text);
-                                          setState(() => _saving = false);
-                                          if (!mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Display name saved')));
-                                        },
-                                  child: _saving
-                                      ? const SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(strokeWidth: 2))
-                                      : const Text('Save'),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton(
-                                  onPressed: () {
-                                    _nameController.text = appState.displayName;
-                                  },
-                                  child: const Text('Reset'),
-                                ),
-                              ],
+                            SwitchListTile(
+                              secondary: const Icon(Icons.alarm, color: Colors.white70),
+                              title: const Text('Reminder Notifications', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Get notified about pet care reminders', style: TextStyle(color: Colors.white60)),
+                              value: _reminderNotifications,
+                              onChanged: (value) {
+                                setState(() => _reminderNotifications = value);
+                              },
+                            ),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.local_hospital_outlined, color: Colors.white70),
+                              title: const Text('Veterinary Reminders', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Reminders for vet appointments', style: TextStyle(color: Colors.white60)),
+                              value: _veterinaryReminders,
+                              onChanged: (value) {
+                                setState(() => _veterinaryReminders = value);
+                              },
+                            ),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.event, color: Colors.white70),
+                              title: const Text('Appointment Reminders', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Get notified about upcoming appointments', style: TextStyle(color: Colors.white60)),
+                              value: _appointmentReminders,
+                              onChanged: (value) {
+                                setState(() => _appointmentReminders = value);
+                              },
                             ),
                           ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Notifications Section
-                    const Text('NOTIFICATIONS', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          SwitchListTile(
-                            secondary: const Icon(Icons.notifications_outlined, color: Colors.white70),
-                            title: const Text('Push Notifications', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Receive push notifications', style: TextStyle(color: Colors.white60)),
-                            value: _notificationsEnabled,
-                            onChanged: (value) {
-                              setState(() => _notificationsEnabled = value);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'}'))
-                              );
-                            },
-                          ),
-                          SwitchListTile(
-                            secondary: const Icon(Icons.alarm, color: Colors.white70),
-                            title: const Text('Reminder Notifications', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Get notified about pet care reminders', style: TextStyle(color: Colors.white60)),
-                            value: _reminderNotifications,
-                            onChanged: (value) {
-                              setState(() => _reminderNotifications = value);
-                            },
-                          ),
-                          SwitchListTile(
-                            secondary: const Icon(Icons.local_hospital_outlined, color: Colors.white70),
-                            title: const Text('Veterinary Reminders', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Reminders for vet appointments', style: TextStyle(color: Colors.white60)),
-                            value: _veterinaryReminders,
-                            onChanged: (value) {
-                              setState(() => _veterinaryReminders = value);
-                            },
-                          ),
-                          SwitchListTile(
-                            secondary: const Icon(Icons.event, color: Colors.white70),
-                            title: const Text('Appointment Reminders', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Get notified about upcoming appointments', style: TextStyle(color: Colors.white60)),
-                            value: _appointmentReminders,
-                            onChanged: (value) {
-                              setState(() => _appointmentReminders = value);
-                            },
-                          ),
-                        ],
+                      // Appearance Section
+                      const Text('APPEARANCE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            SwitchListTile(
+                              secondary: const Icon(Icons.dark_mode_outlined, color: Colors.white70),
+                              title: const Text('Dark Mode', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Use dark theme', style: TextStyle(color: Colors.white60)),
+                              value: _darkModeEnabled,
+                              onChanged: (value) {
+                                setState(() => _darkModeEnabled = value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Dark mode ${value ? 'enabled' : 'disabled'}'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.language, color: Colors.white70),
+                              title: const Text('Language', style: TextStyle(color: Colors.white)),
+                              subtitle: Text(_selectedLanguage, style: const TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: _showLanguageDialog,
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.calendar_today, color: Colors.white70),
+                              title: const Text('Date Format', style: TextStyle(color: Colors.white)),
+                              subtitle: Text(_selectedDateFormat, style: const TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: _showDateFormatDialog,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Appearance Section
-                    const Text('APPEARANCE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          SwitchListTile(
-                            secondary: const Icon(Icons.dark_mode_outlined, color: Colors.white70),
-                            title: const Text('Dark Mode', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Use dark theme', style: TextStyle(color: Colors.white60)),
-                            value: _darkModeEnabled,
-                            onChanged: (value) {
-                              setState(() => _darkModeEnabled = value);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Dark mode ${value ? 'enabled' : 'disabled'}'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.language, color: Colors.white70),
-                            title: const Text('Language', style: TextStyle(color: Colors.white)),
-                            subtitle: Text(_selectedLanguage, style: const TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: _showLanguageDialog,
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.calendar_today, color: Colors.white70),
-                            title: const Text('Date Format', style: TextStyle(color: Colors.white)),
-                            subtitle: Text(_selectedDateFormat, style: const TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: _showDateFormatDialog,
-                          ),
-                        ],
+                      // Preferences Section
+                      const Text('PREFERENCES', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.monitor_weight_outlined, color: Colors.white70),
+                              title: const Text('Weight Unit', style: TextStyle(color: Colors.white)),
+                              subtitle: Text(_selectedWeightUnit, style: const TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: _showWeightUnitDialog,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Preferences Section
-                    const Text('PREFERENCES', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.monitor_weight_outlined, color: Colors.white70),
-                            title: const Text('Weight Unit', style: TextStyle(color: Colors.white)),
-                            subtitle: Text(_selectedWeightUnit, style: const TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: _showWeightUnitDialog,
-                          ),
-                        ],
+                      // Security Section
+                      const Text('SECURITY', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.lock_outline, color: Colors.white70),
+                              title: const Text('Change password', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Update your account password', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: _showChangePasswordDialog,
+                            ),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.fingerprint, color: Colors.white70),
+                              title: const Text('Biometric Authentication', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Use fingerprint or face ID', style: TextStyle(color: Colors.white60)),
+                              value: _biometricEnabled,
+                              onChanged: (value) {
+                                setState(() => _biometricEnabled = value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Biometric authentication ${value ? 'enabled' : 'disabled'}'))
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Security Section
-                    const Text('SECURITY', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.lock_outline, color: Colors.white70),
-                            title: const Text('Change password', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Update your account password', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: _showChangePasswordDialog,
-                          ),
-                          SwitchListTile(
-                            secondary: const Icon(Icons.fingerprint, color: Colors.white70),
-                            title: const Text('Biometric Authentication', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Use fingerprint or face ID', style: TextStyle(color: Colors.white60)),
-                            value: _biometricEnabled,
-                            onChanged: (value) {
-                              setState(() => _biometricEnabled = value);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Biometric authentication ${value ? 'enabled' : 'disabled'}'))
-                              );
-                            },
-                          ),
-                        ],
+                      // Data & Privacy Section
+                      const Text('DATA & PRIVACY', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            SwitchListTile(
+                              secondary: const Icon(Icons.backup_outlined, color: Colors.white70),
+                              title: const Text('Auto Backup', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Automatically backup your data', style: TextStyle(color: Colors.white60)),
+                              value: _autoBackup,
+                              onChanged: (value) {
+                                setState(() => _autoBackup = value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Auto backup ${value ? 'enabled' : 'disabled'}'))
+                                );
+                              },
+                            ),
+                            SwitchListTile(
+                              secondary: const Icon(Icons.analytics_outlined, color: Colors.white70),
+                              title: const Text('Analytics', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Help improve the app with usage data', style: TextStyle(color: Colors.white60)),
+                              value: _analyticsEnabled,
+                              onChanged: (value) {
+                                setState(() => _analyticsEnabled = value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Analytics ${value ? 'enabled' : 'disabled'}'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.file_download_outlined, color: Colors.white70),
+                              title: const Text('Export Data', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Download all your data', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Exporting data...'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.privacy_tip_outlined, color: Colors.white70),
+                              title: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('View our privacy policy', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Opening privacy policy...'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.description_outlined, color: Colors.white70),
+                              title: const Text('Terms of Service', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('View terms of service', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Opening terms of service...'))
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Data & Privacy Section
-                    const Text('DATA & PRIVACY', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          SwitchListTile(
-                            secondary: const Icon(Icons.backup_outlined, color: Colors.white70),
-                            title: const Text('Auto Backup', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Automatically backup your data', style: TextStyle(color: Colors.white60)),
-                            value: _autoBackup,
-                            onChanged: (value) {
-                              setState(() => _autoBackup = value);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Auto backup ${value ? 'enabled' : 'disabled'}'))
-                              );
-                            },
-                          ),
-                          SwitchListTile(
-                            secondary: const Icon(Icons.analytics_outlined, color: Colors.white70),
-                            title: const Text('Analytics', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Help improve the app with usage data', style: TextStyle(color: Colors.white60)),
-                            value: _analyticsEnabled,
-                            onChanged: (value) {
-                              setState(() => _analyticsEnabled = value);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Analytics ${value ? 'enabled' : 'disabled'}'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.file_download_outlined, color: Colors.white70),
-                            title: const Text('Export Data', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Download all your data', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Exporting data...'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.privacy_tip_outlined, color: Colors.white70),
-                            title: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('View our privacy policy', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening privacy policy...'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.description_outlined, color: Colors.white70),
-                            title: const Text('Terms of Service', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('View terms of service', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening terms of service...'))
-                              );
-                            },
-                          ),
-                        ],
+                      // About Section
+                      const Text('ABOUT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.info_outline, color: Colors.white70),
+                              title: const Text('App Version', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('1.0.0', style: TextStyle(color: Colors.white60)),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.help_outline, color: Colors.white70),
+                              title: const Text('Help & Support', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Get help with the app', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Opening help center...'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.rate_review_outlined, color: Colors.white70),
+                              title: const Text('Rate App', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Rate us on the app store', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Opening app store...'))
+                                );
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.share_outlined, color: Colors.white70),
+                              title: const Text('Share App', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Share with friends', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Opening share options...'))
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // About Section
-                    const Text('ABOUT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.info_outline, color: Colors.white70),
-                            title: const Text('App Version', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('1.0.0', style: TextStyle(color: Colors.white60)),
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.help_outline, color: Colors.white70),
-                            title: const Text('Help & Support', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Get help with the app', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening help center...'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.rate_review_outlined, color: Colors.white70),
-                            title: const Text('Rate App', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Rate us on the app store', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening app store...'))
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.share_outlined, color: Colors.white70),
-                            title: const Text('Share App', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Share with friends', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening share options...'))
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Account Actions Section
-                    const Text('ACCOUNT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Card(
-                      color: Colors.white.withOpacity(0.04),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.logout, color: Colors.white70),
-                            title: const Text('Logout', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Sign out of your account', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: () async {
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Logout'),
-                                  content: const Text('Are you sure you want to logout?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, true),
-                                      child: const Text('Logout'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirmed == true && mounted) {
-                                await appState.logout();
-                                if (mounted) {
-                                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                      // Account Actions Section
+                      const Text('ACCOUNT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: Colors.white.withOpacity(0.04),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.logout, color: Colors.white70),
+                              title: const Text('Logout', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Sign out of your account', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Logout'),
+                                    content: const Text('Are you sure you want to logout?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: const Text('Logout'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true && mounted) {
+                                  await appState.logout();
+                                  if (mounted) {
+                                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                                  }
                                 }
-                              }
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.delete_outline, color: Colors.white70),
-                            title: const Text('Delete account', style: TextStyle(color: Colors.white)),
-                            subtitle: const Text('Permanently delete your account and data', style: TextStyle(color: Colors.white60)),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                            onTap: _showDeleteAccountDialog,
-                          ),
-                        ],
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.delete_outline, color: Colors.white70),
+                              title: const Text('Delete account', style: TextStyle(color: Colors.white)),
+                              subtitle: const Text('Permanently delete your account and data', style: TextStyle(color: Colors.white60)),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+                              onTap: _showDeleteAccountDialog,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
-                    const Text('Support: support@PetPal.com', style: TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 24),
+                      const Text('Support: support@PetPal.com', style: TextStyle(color: Colors.white70)),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

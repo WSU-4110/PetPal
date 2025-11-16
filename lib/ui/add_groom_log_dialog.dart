@@ -4,10 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/groom_log.dart';
+import '../models/pet.dart';
 
 class AddGroomLogDialog extends StatefulWidget {
-  final int petId;
-  const AddGroomLogDialog({super.key, required this.petId});
+  final int? petId; // Make nullable
+  const AddGroomLogDialog({super.key, this.petId});
 
   @override
   State<AddGroomLogDialog> createState() => _AddGroomLogDialogState();
@@ -21,6 +22,9 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
   final _maintenanceController = TextEditingController();
   late TimeOfDay _selectedTime;
   late DateTime _selectedDate;
+  Pet? selectedPet;
+  List<Pet> pets = [];
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -28,6 +32,24 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
     _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    
+    // Load pets from app state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppState>(context, listen: false);
+      setState(() {
+        pets = appState.pets;
+        // Select the pet if provided, otherwise select the first pet
+        if (widget.petId != null) {
+          try {
+            selectedPet = pets.firstWhere((p) => p.id == widget.petId);
+          } catch (e) {
+            selectedPet = pets.isNotEmpty ? pets.first : null;
+          }
+        } else {
+          selectedPet = pets.isNotEmpty ? pets.first : null;
+        }
+      });
+    });
   }
 
   DateTime _combine(DateTime date, TimeOfDay time) {
@@ -132,7 +154,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _isSaving ? null : () => Navigator.pop(context),
                         icon: const Icon(Icons.close, color: Colors.white),
                       ),
                     ],
@@ -158,6 +180,14 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Pet selector card
+                      _buildFormCard(
+                        title: 'Select Pet',
+                        icon: Icons.pets,
+                        child: _buildPetSelector(),
+                      ),
+                      const SizedBox(height: 16),
+
                       // Type input card
                       _buildFormCard(
                         title: 'Type of Grooming',
@@ -258,7 +288,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _isSaving ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -272,17 +302,30 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
+                      onPressed: _isSaving ? null : () async {
+                        if (_formKey.currentState!.validate() && selectedPet != null) {
+                          setState(() => _isSaving = true);
+                          
                           final record = GroomLog(
-                            petId: widget.petId,
+                            petId: selectedPet!.id!,
                             type: _typeController.text,
                             description: _descriptionController.text,
                             date: DateFormat('yyyy-MM-dd').format(_selectedDate),
                             maintenance: _maintenanceController.text,
                           );
-                          await context.read<AppState>().addGroomLog(record);
-                          Navigator.pop(context);
+                          
+                          try {
+                            await context.read<AppState>().addGroomLog(record);
+                            Navigator.pop(context);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error adding log: $e')),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSaving = false);
+                            }
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -294,12 +337,21 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                         ),
                         elevation: 2,
                       ),
-                      child: const Text(
-                        'Save Log',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save Log',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -355,6 +407,119 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
         ],
       ),
     );
+  }
+
+  Widget _buildPetSelector() {
+    if (pets.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.withOpacity(0.3)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red, size: 20),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'No pets available. Please add a pet first.',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<Pet>(
+          value: selectedPet,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          isExpanded: true,
+          items: pets.map((pet) {
+            return DropdownMenuItem<Pet>(
+              value: pet,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.grey[200],
+                    child: _buildPetImage(pet),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pet.name,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        Text(
+                          '${pet.breed} • ${pet.age} years',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedPet = value;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPetImage(Pet pet) {
+    // Check if image is a network URL or an asset path
+    if (pet.image != null && pet.image!.startsWith('http')) {
+      // Network image
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          pet.image!,
+          width: 32,
+          height: 32,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.pets, size: 18, color: Colors.grey[600]);
+          },
+        ),
+      );
+    } else if (pet.image != null && pet.image!.startsWith('assets/')) {
+      // Asset image
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.asset(
+          pet.image!,
+          width: 32,
+          height: 32,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.pets, size: 18, color: Colors.grey[600]);
+          },
+        ),
+      );
+    } else {
+      // Default icon
+      return Icon(Icons.pets, size: 18, color: Colors.grey[600]);
+    }
   }
 
   Widget _buildDateSelector() {

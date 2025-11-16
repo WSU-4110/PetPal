@@ -252,64 +252,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                 ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          onPressed: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            if (appState.pets.isEmpty) {
-              messenger.showSnackBar(
-                const SnackBar(content: Text('Add a pet first')),
-              );
-              return;
-            }
-
-            // Show the dialog and handle both single and multiple reminders
-            final result = await showDialog<dynamic>(
-              context: context,
-              builder: (context) => AddReminderDialog(pets: appState.pets),
-            );
-
-            if (result != null) {
-              // Check if result is a list of reminders (recurring) or single reminder
-              if (result is List<Reminder>) {
-                // Handle multiple reminders (recurring)
-                for (var reminder in result) {
-                  await appState.addReminder(reminder);
-                }
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('${result.length} recurring reminders added'),
-                  ),
-                );
-              } else if (result is Reminder) {
-                // Handle single reminder
-                await appState.addReminder(result);
-                if (!mounted) return;
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Reminder added')),
-                );
-              }
-            }
-          },
-          child: const Icon(Icons.add_alarm, size: 30),
-        ),
-      ),
+      // FAB removed - handled by main.dart navigation
     );
   }
 

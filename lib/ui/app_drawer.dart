@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../ui/calendar_screen.dart';
-import '../ui/search_screen.dart';
 import '../ui/settings_screen.dart';
 import '../ui/help_screen.dart';
 import 'login_page.dart';
@@ -14,9 +13,13 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logoutPressedNotifier = ValueNotifier(false);
-
     return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -28,6 +31,9 @@ class AppDrawer extends StatelessWidget {
                 colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                topRight: Radius.circular(30),
               ),
             ),
             child: SafeArea(
@@ -53,13 +59,19 @@ class AppDrawer extends StatelessWidget {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white24,
-                        backgroundImage: avatarImage,
-                        child: avatarImage == null
-                            ? const Icon(Icons.person, size: 40, color: Colors.white70)
-                            : null,
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white24,
+                          backgroundImage: avatarImage,
+                          child: avatarImage == null
+                              ? const Icon(Icons.person, size: 40, color: Colors.white70)
+                              : null,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -68,10 +80,10 @@ class AppDrawer extends StatelessWidget {
                           children: [
                             Text(
                               user != null
-                                  ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim().isEmpty
-                                      ? "Your Name"
-                                      : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
-                                  : "Your Name",
+                                      ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim().isEmpty
+                                          ? "Your Name"
+                                          : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
+                                      : "Your Name",
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -100,90 +112,180 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
 
-          ListTile(
-            leading: const Icon(Icons.search),
-            title: const Text("Search & Filter"),
+          const SizedBox(height: 10),
+
+          // -----------------------
+          // SEARCH BUTTON REMOVED
+          // -----------------------
+
+          _DrawerItem(
+            icon: Icons.calendar_today,
+            title: 'Calendar',
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SearchScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+              );
             },
           ),
 
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text('Calendar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const CalendarScreen()));
-            },
-          ),
-
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text("Notifications"),
+          _DrawerItem(
+            icon: Icons.notifications,
+            title: "Notifications",
             onTap: () => Navigator.pop(context),
           ),
 
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text("Help"),
+          _DrawerItem(
+            icon: Icons.help_outline,
+            title: "Help",
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const HelpScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpScreen()),
+              );
             },
           ),
 
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text("Settings"),
+          _DrawerItem(
+            icon: Icons.settings,
+            title: "Settings",
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
 
           const Spacer(flex: 2),
           const Divider(height: 1),
 
-          ValueListenableBuilder<bool>(
-            valueListenable: logoutPressedNotifier,
-            builder: (context, pressed, _) {
-              return GestureDetector(
-                onTapDown: (_) => logoutPressedNotifier.value = true,
-                onTapUp: (_) => logoutPressedNotifier.value = false,
-                onTapCancel: () => logoutPressedNotifier.value = false,
-                onTap: () async {
-                  try {
-                    final asDyn = Provider.of<AppState>(context, listen: false) as dynamic;
-                    if (asDyn.logout is Function) {
-                      await asDyn.logout();
-                    }
-                  } catch (_) {}
-                  if (context.mounted) {
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginPage()));
-                  }
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  color: pressed ? Colors.grey.shade300 : Colors.transparent,
-                  child: const ListTile(
-                    leading: Icon(Icons.logout),
-                    title: Text("Log Out"),
-                  ),
-                ),
-              );
+          _DrawerItem(
+            icon: Icons.logout,
+            title: "Log Out",
+            onTap: () async {
+              try {
+                final asDyn = Provider.of<AppState>(context, listen: false) as dynamic;
+                if (asDyn.logout is Function) {
+                  await asDyn.logout();
+                }
+              } catch (_) {}
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginPage()));
+              }
             },
+            isLogout: true,
           ),
 
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isLogout;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isLogout = false,
+  });
+
+  @override
+  State<_DrawerItem> createState() => _DrawerItemState();
+}
+
+class _DrawerItemState extends State<_DrawerItem> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<Color?> _colorAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _colorAnimation = ColorTween(
+      begin: Colors.transparent,
+      end: widget.isLogout ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: _colorAnimation.value,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: widget.isLogout
+                        ? Colors.red.withOpacity(0.1)
+                        : Theme.of(context).primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    widget.icon,
+                    color: widget.isLogout
+                        ? Colors.red
+                        : Theme.of(context).primaryColor,
+                  ),
+                ),
+                title: Text(
+                  widget.title,
+                  style: TextStyle(
+                    color: widget.isLogout ? Colors.red : null,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,4 +1,4 @@
-// lib/ui/pet_list_screen.dart
+// ui/pet_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -14,7 +14,20 @@ class PetListScreen extends StatelessWidget {
     final pets = appState.pets;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pets')),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text(
+          'Pets',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -25,14 +38,33 @@ class PetListScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: pets.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No pets yet.',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.pets,
+                        size: 80,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No pets yet.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Tap the + button to add your first pet',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : ListView.builder(
@@ -86,15 +118,12 @@ class PetListScreen extends StatelessWidget {
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
-                                  // Navigate to PetFormScreen in edit mode
                                   final updatedPet = await Navigator.push<Pet>(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => PetFormScreen(pet: pet),
                                     ),
                                   );
-
-                                  // If pet was updated, save it
                                   if (updatedPet != null) {
                                     await appState.updatePet(updatedPet);
                                   }
@@ -115,39 +144,13 @@ class PetListScreen extends StatelessWidget {
                 ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.pinkAccent.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PetFormScreen()),
-            );
-          },
-          child: const Icon(Icons.add, size: 30, color: Colors.white),
-        ),
-      ),
+      // Remove the FAB from here since we're using a global FAB in MainNavigation
     );
   }
 
   Widget _buildAvatar(Pet pet) {
     final image = pet.image;
 
-    // No image → show default paw placeholder
     if (image == null || image.isEmpty) {
       return const CircleAvatar(
         radius: 30,
@@ -156,7 +159,6 @@ class PetListScreen extends StatelessWidget {
       );
     }
 
-    // Network image
     if (image.startsWith('http')) {
       return CircleAvatar(
         radius: 30,
@@ -165,7 +167,6 @@ class PetListScreen extends StatelessWidget {
       );
     }
 
-    // Asset image (already has correct path)
     return CircleAvatar(
       radius: 30,
       backgroundColor: Colors.white24,

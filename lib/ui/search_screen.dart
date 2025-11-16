@@ -265,7 +265,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Text(
             'Pets',
             style: TextStyle(
-              color: Colors.black87,
+              color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -347,7 +347,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Text(
             'Medical Records',
             style: TextStyle(
-              color: Colors.black87,
+              color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -381,7 +381,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Text(
               category == 'All' ? 'General Pet Care' : category,
               style: const TextStyle(
-                color: Colors.black87,
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -406,9 +406,19 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('Search', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
       body: Container(
-        padding: const EdgeInsets.all(16),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
@@ -416,129 +426,134 @@ class _SearchScreenState extends State<SearchScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Column(
-          children: [
-            // Search bar
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search pets, medical records, resources...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (v) => setState(() => _query = v),
-            ),
-            const SizedBox(height: 12),
-
-            // Filters row
-            Row(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    decoration: InputDecoration(
-                      labelText: 'Species',
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                // Search bar
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search pets, medical records, resources...',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    value: _species,
-                    items: speciesItems,
-                    onChanged: (v) => setState(() {
-                      _species = v;
-                      _breed = null;
-                    }),
                   ),
+                  onChanged: (v) => setState(() => _query = v),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    decoration: InputDecoration(
-                      labelText: 'Breed',
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 12),
+
+                // Filters row
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String?>(
+                        decoration: InputDecoration(
+                          labelText: 'Species',
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        value: _species,
+                        items: speciesItems,
+                        onChanged: (v) => setState(() {
+                          _species = v;
+                          _breed = null;
+                        }),
+                      ),
                     ),
-                    value: _breed,
-                    items: breedItems,
-                    onChanged: (v) => setState(() => _breed = v),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String?>(
+                        decoration: InputDecoration(
+                          labelText: 'Breed',
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        value: _breed,
+                        items: breedItems,
+                        onChanged: (v) => setState(() => _breed = v),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Resource category filter
+                DropdownButtonFormField<String?>(
+                  decoration: InputDecoration(
+                    labelText: 'Resource Category',
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.category),
                   ),
+                  value: _resourceCategory,
+                  items: categoryItems,
+                  onChanged: (v) => setState(() => _resourceCategory = v),
+                ),
+                const SizedBox(height: 8),
+
+                // Age range + Reset
+                Row(
+                  children: [
+                    Flexible(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Min age',
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) => setState(() => _minAge = int.tryParse(v)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Max age',
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) => setState(() => _maxAge = int.tryParse(v)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => setState(() {
+                        _query = '';
+                        _species = null;
+                        _breed = null;
+                        _minAge = null;
+                        _maxAge = null;
+                        _resourceCategory = null;
+                      }),
+                      child: const Text('Reset'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Results
+                Expanded(
+                  child: displayItems.isEmpty
+                      ? const Center(child: Text('No results', style: TextStyle(color: Colors.white70)))
+                      : ListView(
+                          children: displayItems,
+                        ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Resource category filter
-            DropdownButtonFormField<String?>(
-              decoration: InputDecoration(
-                labelText: 'Resource Category',
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.category),
-              ),
-              value: _resourceCategory,
-              items: categoryItems,
-              onChanged: (v) => setState(() => _resourceCategory = v),
-            ),
-            const SizedBox(height: 8),
-
-            // Age range + Reset
-            Row(
-              children: [
-                Flexible(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Min age',
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => setState(() => _minAge = int.tryParse(v)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Max age',
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.12),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => setState(() => _maxAge = int.tryParse(v)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => setState(() {
-                    _query = '';
-                    _species = null;
-                    _breed = null;
-                    _minAge = null;
-                    _maxAge = null;
-                    _resourceCategory = null;
-                  }),
-                  child: const Text('Reset'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Results
-            Expanded(
-              child: displayItems.isEmpty
-                  ? const Center(child: Text('No results', style: TextStyle(color: Colors.white70)))
-                  : ListView(
-                      children: displayItems,
-                    ),
-            ),
-          ],
+          ),
         ),
       ),
     );

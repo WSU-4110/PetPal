@@ -31,11 +31,19 @@ class _GroomLogsPageState extends State<GroomLogs> {
       final pets = context.read<AppState>().pets;
       if (pets.isNotEmpty) {
         // Try to find the pet with the given ID
-        final pet = pets.firstWhere(
-          (p) => p.id == widget.petId,
-          orElse: () => pets.first, // Fallback to first pet if not found
-        );
-
+        Pet pet;
+        if (widget.petId != null) {
+          try {
+            pet = pets.firstWhere((p) => p.id == widget.petId);
+          } catch (e) {
+            // If pet with widget.petId is not found, use the first pet
+            pet = pets.first;
+          }
+        } else {
+          // If no petId is provided, use the first pet
+          pet = pets.first;
+        }
+        
         if (mounted) {
           setState(() {
             selectedPet = pet;
@@ -48,6 +56,7 @@ class _GroomLogsPageState extends State<GroomLogs> {
         // No pets available
         if (mounted) {
           setState(() {
+            selectedPet = null;
             _isLoading = false;
           });
         }
@@ -56,9 +65,41 @@ class _GroomLogsPageState extends State<GroomLogs> {
       // Handle any errors
       if (mounted) {
         setState(() {
+          selectedPet = null;
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // Add this method to handle pet list updates
+  void _updateSelectedPet() {
+    final pets = context.read<AppState>().pets;
+    if (pets.isEmpty) {
+      setState(() {
+        selectedPet = null;
+      });
+      return;
+    }
+    
+    // Check if selectedPet is still in the pets list
+    if (selectedPet != null && !pets.any((p) => p.id == selectedPet!.id)) {
+      // If not, select the first pet
+      setState(() {
+        selectedPet = pets.first;
+      });
+      // Load logs for the newly selected pet
+      context.read<AppState>().loadGroomLog(selectedPet!.id!);
+    }
+  }
+
+  // Helper method to get pet name from ID
+  String _getPetName(int petId, AppState appState) {
+    try {
+      final pet = appState.pets.firstWhere((p) => p.id == petId);
+      return pet.name;
+    } catch (e) {
+      return 'Unknown Pet';
     }
   }
 
@@ -66,6 +107,11 @@ class _GroomLogsPageState extends State<GroomLogs> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final records = appState.groomLogs;
+
+    // Update selectedPet when pets list changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateSelectedPet();
+    });
 
     final bool isOwner = appState.currentUser?['role'] == 'owner';
 
@@ -96,7 +142,7 @@ class _GroomLogsPageState extends State<GroomLogs> {
             children: [
               if (isOwner)
                 // Only show dropdown if we have pets and a selected pet
-                if (!_isLoading && selectedPet != null)
+                if (!_isLoading && selectedPet != null && appState.pets.isNotEmpty)
                   Container(
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -126,7 +172,7 @@ class _GroomLogsPageState extends State<GroomLogs> {
                   ),
 
               // Groom Access Button
-              if (isOwner)
+              if (isOwner && selectedPet != null)
                 ElevatedButton(
                   onPressed: () async {
                     final groomers = await context.read<AppState>().getGroomers();
@@ -202,6 +248,8 @@ class _GroomLogsPageState extends State<GroomLogs> {
                     itemCount: records.length,
                     itemBuilder: (context, i) {
                       final record = records[i];
+                      final petName = _getPetName(record.petId, appState);
+                      
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         padding: const EdgeInsets.all(16),
@@ -216,54 +264,88 @@ class _GroomLogsPageState extends State<GroomLogs> {
                             ),
                           ],
                         ),
-                        child: ListTile(
-                          title: Text(
-                            "Title: ${record.type}\n",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Pet name badge at the top
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.pets, color: Colors.white, size: 16),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    petName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          subtitle: Text(
-                            "Description: ${record.description}\n\nMaintenance: ${record.maintenance}\n\nDate and Time: ${record.date}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                            const SizedBox(height: 12),
+                            // Main content
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                "Title: ${record.type}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  "Description: ${record.description}\n\nMaintenance: ${record.maintenance}\n\nDate and Time: ${record.date}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isOwner)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.white70),
+                                      onPressed: () async {
+                                        final result = await showDialog<GroomLog>(
+                                          context: context,
+                                          builder: (_) => EditGroomLogDialog(
+                                            groomLog: record,
+                                            pets: appState.pets,
+                                          ),
+                                        );
+                                        if (result != null) {
+                                          await context.read<AppState>().updateGroomLog(result);
+                                        }
+                                      },
+                                    ),
+                                  if (isOwner)
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () async {
+                                        await appState.deleteGroomLog(record.id!, record.petId);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Grooming Log deleted')),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (isOwner)
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.white70),
-                                  onPressed: () async {
-                                    final result = await showDialog<GroomLog>(
-                                      context: context,
-                                      builder: (_) => EditGroomLogDialog(
-                                        groomLog: record,
-                                        pets: appState.pets,
-                                      ),
-                                    );
-                                    if (result != null) {
-                                      await context.read<AppState>().updateGroomLog(result);
-                                    }
-                                  },
-                                ),
-                              if (isOwner)
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    await appState.deleteGroomLog(record.id!, record.petId);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Grooming Log deleted')),
-                                    );
-                                  },
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       );
                     },
@@ -273,34 +355,7 @@ class _GroomLogsPageState extends State<GroomLogs> {
           ),
         ),
       ),
-      floatingActionButton: selectedPet != null
-          ? Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.pinkAccent.withOpacity(0.5),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AddGroomLogDialog(petId: selectedPet!.id!),
-                  );
-                },
-                child: const Icon(Icons.add, size: 30, color: Colors.white),
-              ),
-            )
-          : null,
+      // FAB removed - handled by main.dart navigation
     );
   }
 }
