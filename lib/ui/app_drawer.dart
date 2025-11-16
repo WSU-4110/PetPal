@@ -132,7 +132,7 @@ class AppDrawer extends StatelessWidget {
           ),
 
           _DrawerItem(
-            icon: Icons.notifications,
+            icon: Icons.analytics,
             title: "Weekly Report",
             onTap: () {
               Navigator.pop(context);
