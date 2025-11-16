@@ -21,12 +21,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    final list = await _dbService.getAllNotifications();
+    final all = await _dbService.getAllNotifications();
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
+
     setState(() {
-      _notifications = list;
+      _notifications = all.where((n) {
+        final scheduled = n.scheduledAt;
+        return scheduled != null &&
+            scheduled.isBefore(todayEnd);
+      }).toList();
       _isLoading = false;
     });
   }
+
 
   Future<void> _deleteNotification(int id) async {
     await _dbService.deleteNotification(id);

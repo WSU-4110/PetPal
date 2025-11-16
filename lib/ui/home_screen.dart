@@ -281,8 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 12),
                         GestureDetector(
                           onTap: () {
-                            // clear unread count when opening
-                            appState.clearUnreadNotifications();
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (_) => const NotificationScreen()),

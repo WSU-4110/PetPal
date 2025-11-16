@@ -168,7 +168,7 @@ class DBService {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS notifications(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER,
         title TEXT NOT NULL,
         body TEXT,
         scheduledAt TEXT,
@@ -382,6 +382,15 @@ class DBService {
   Future<List<AppNotification>> getAllNotifications() async => (await database).query('notifications', orderBy: 'scheduledAt DESC').then((rows) => rows.map(AppNotification.fromMap).toList());
   Future<int> updateNotification(AppNotification n) async => (await database).update('notifications', n.toMap(), where: 'id = ?', whereArgs: [n.id]);
   Future<int> deleteNotification(int id) async => (await database).delete('notifications', where: 'id = ?', whereArgs: [id]);
+  Future<void> deleteNotificationsForReminder(int id) async {
+    final db = await database;
+    await db.delete('notifications',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+
 
   Future<void> close() async {
     if (_db != null) {

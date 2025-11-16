@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
   List<MedicalRecord> medicalRecords = [];
   List<ExerciseLog> exerciseLogs = [];
   List<GroomLog> groomLogs = [];
+  List<AppNotification> notifications = [];
 
   Map<String, dynamic>? currentUser;
 
@@ -191,12 +192,13 @@ class AppState extends ChangeNotifier {
   Future<void> addReminder(Reminder r) async {
     await _db.insertReminder(r);
     await _db.insertNotification(AppNotification(
+      id: r.id,
       title: r.title,
       body: 'Reminder for ${r.category}',
       scheduledAt: r.scheduledAt,
     ));
     reminders = await _db.getAllReminders();
-    _unreadNotificationsCount++;
+    //_unreadNotificationsCount++;
     notifyListeners();
   }
 
@@ -213,6 +215,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> deleteReminder(int id) async {
     await _db.deleteReminder(id);
+    await _db.deleteNotification(id);
     reminders = await _db.getAllReminders();
     notifyListeners();
   }
@@ -356,18 +359,21 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------- Notifications ----------------
-  int _unreadNotificationsCount = 0;
-  int get unreadNotificationsCount => _unreadNotificationsCount;
+  int get unreadNotificationsCount {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
 
-  void incrementUnreadNotifications() {
-    _unreadNotificationsCount++;
-    notifyListeners();
+    return notifications.where((n) =>
+    n.scheduledAt != null &&
+        n.scheduledAt!.isBefore(todayEnd)
+    ).length;
   }
 
-  void clearUnreadNotifications() {
-    _unreadNotificationsCount = 0;
-    notifyListeners();
+  Future<void> deleteNotification(int id) async {
+    await _db.deleteNotification(id);
   }
+
 
   List<String> getTips({int max = 6}) {
     final List<String> tips = [

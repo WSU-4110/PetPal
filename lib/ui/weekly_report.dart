@@ -4,6 +4,8 @@ import '../state/app_state.dart';
 import '../models/reminder.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import 'package:intl/intl.dart';
+import '../models/pet.dart';
 
 class WeeklyReportScreen extends StatelessWidget {
   const WeeklyReportScreen({super.key});
@@ -34,24 +36,73 @@ class WeeklyReportScreen extends StatelessWidget {
       return date.isAfter(startOfWeek) && date.isBefore(endOfWeek.add(const Duration(days: 1)));
     }).toList();
 
+    String weekRangeText(DateTime start, DateTime end) {
+      final fmt = DateFormat('MMM dd, yyyy');
+      return '${fmt.format(start)} – ${fmt.format(end)}';
+    }
+
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weekly Report'),
+        title: const Text('Weekly Report',
+          style: TextStyle(
+        ),
+        ),
+
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+
+      body: Container(
+    decoration: const BoxDecoration(
+    gradient: LinearGradient(
+        colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    ),
+    ),
+    padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Reminders'),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Week of ${weekRangeText(startOfWeek, endOfWeek)}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            _buildSectionTitle('Tasks This Week'),
             _buildCard(
-              child: Column(
+              child:
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Total reminders: ${weeklyReminders.length}'),
-                  Text('Completed: ${weeklyReminders.where((r) => r.done).length}'),
-                  Text('Pending: ${weeklyReminders.where((r) => !r.done).length}'),
+                  Text('Total reminders: ${weeklyReminders.length}',
+                style: const TextStyle(
+                fontSize: 18,
+                color: Colors.white),
+                  ),
+                  Text('Completed: ${weeklyReminders.where((r) => r.done).length}',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white),
+                  ),
+                  Text('Pending: ${weeklyReminders.where((r) => !r.done).length}',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white),
+                  ),
+
                 ],
               ),
             ),
@@ -62,9 +113,17 @@ class WeeklyReportScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sessions: ${weeklyExercise.length}'),
+                  Text('Sessions: ${weeklyExercise.length}',
+                style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white),
+              ),
                   if (weeklyExercise.isNotEmpty)
-                    Text('Last activity: ${weeklyExercise.first.activity}'),
+                    Text('Last activity: ${weeklyExercise.first.activity}',
+        style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white),
+      ),
                 ],
               ),
             ),
@@ -75,21 +134,22 @@ class WeeklyReportScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sessions: ${weeklyGrooming.length}'),
+                  Text('Sessions: ${weeklyGrooming.length}',
+                style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white),
+              ),
                   if (weeklyGrooming.isNotEmpty)
-                    Text('Last type: ${weeklyGrooming.first.type}'),
+                    Text('Last type: ${weeklyGrooming.first.type}',
+        style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white),
+      ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            _buildSectionTitle('Highlights'),
-            _buildCard(
-              child: const Text(
-                'Highlight Placeholder',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
           ],
         ),
       ),
@@ -102,6 +162,7 @@ class WeeklyReportScreen extends StatelessWidget {
       style: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
     );
   }
@@ -111,17 +172,18 @@ class WeeklyReportScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: child,
     );
   }
+
 }

@@ -142,6 +142,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                                 onPressed: () async {
                                   final messenger = ScaffoldMessenger.of(context);
                                   await appState.deleteReminder(r.id!);
+                                  await appState.deleteNotification(r.id!);
                                   if (!mounted) return;
                                   messenger.showSnackBar(
                                     const SnackBar(content: Text('Reminder deleted')),
