@@ -126,7 +126,7 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                   ),
                 ),
 
-                // Vet Access Button
+                // Trainer Access Button
                     if (isOwner)
                     ElevatedButton(
                       onPressed: () async {
@@ -156,7 +156,7 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                           );
                         }
                       },
-                      child: const Text("Grant Vet Access"),
+                      child: const Text("Grant Trainer Access"),
                     ),
               // Loading indicator
               if (_isLoading)
