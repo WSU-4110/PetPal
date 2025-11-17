@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/reminder.dart';
-import 'add_reminder_dialog.dart';
 import 'edit_reminder_dialog.dart';
 import 'package:intl/intl.dart';
 
@@ -20,23 +19,23 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   // Group recurring reminders by their core properties
   List<Map<String, dynamic>> _groupReminders(List<Reminder> reminders) {
     final Map<String, List<Reminder>> grouped = {};
-    
+
     for (var reminder in reminders) {
       // Create a unique key based on pet, title, and category
       final key = '${reminder.petId}_${reminder.title}_${reminder.category}';
-      
+
       if (!grouped.containsKey(key)) {
         grouped[key] = [];
       }
       grouped[key]!.add(reminder);
     }
-    
+
     // Convert to display format
     final List<Map<String, dynamic>> result = [];
     grouped.forEach((key, reminderList) {
       // Sort by date to get the earliest one
       reminderList.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      
+
       result.add({
         'reminder': reminderList.first, // Show the earliest occurrence
         'count': reminderList.length,
@@ -44,14 +43,14 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
         'isRecurring': reminderList.length > 1,
       });
     });
-    
+
     // Sort by scheduled date
-    result.sort((a, b) => 
+    result.sort((a, b) =>
       (a['reminder'] as Reminder).scheduledAt.compareTo(
         (b['reminder'] as Reminder).scheduledAt
       )
     );
-    
+
     return result;
   }
 
@@ -104,16 +103,16 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                     final int count = group['count'] as int;
                     final bool isRecurring = group['isRecurring'] as bool;
                     final List<Reminder> allReminders = group['allReminders'] as List<Reminder>;
-                    
+
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
+                        color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -160,7 +159,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                                           vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.25),
+                                          color: Colors.white.withValues(alpha: 0.25),
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Row(
@@ -236,6 +235,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                                   } else {
                                     final messenger = ScaffoldMessenger.of(context);
                                     await appState.deleteReminder(r.id!);
+                                    await appState.deleteNotification(r.id!);
                                     if (!mounted) return;
                                     messenger.showSnackBar(
                                       const SnackBar(content: Text('Reminder deleted')),
@@ -313,10 +313,10 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   void _showRecurringDetails(BuildContext context, List<Reminder> reminders, AppState appState) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         child: Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.of(dialogContext).size.height * 0.7,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -326,8 +326,8 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                      Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                      Theme.of(dialogContext).colorScheme.primary.withValues(alpha: 0.8),
+                      Theme.of(dialogContext).colorScheme.primary.withValues(alpha: 0.6),
                     ],
                   ),
                   borderRadius: const BorderRadius.only(
@@ -353,8 +353,8 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                           ),
                           Text(
                             '${reminders.length} occurrences',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontSize: 14,
                             ),
                           ),
@@ -362,7 +362,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       icon: const Icon(Icons.close, color: Colors.white),
                     ),
                   ],
@@ -373,17 +373,17 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                   shrinkWrap: true,
                   padding: const EdgeInsets.all(16),
                   itemCount: reminders.length,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (builderContext, index) {
                     final reminder = reminders[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                          backgroundColor: Theme.of(builderContext).colorScheme.primary.withValues(alpha: 0.2),
                           child: Text(
                             '${index + 1}',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
+                              color: Theme.of(builderContext).colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -393,8 +393,10 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                           icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                           onPressed: () async {
                             await appState.deleteReminder(reminder.id!);
-                            if (context.mounted) {
-                              Navigator.pop(context);
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
+                            if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Reminder deleted')),
                               );
@@ -416,17 +418,17 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   void _showDeleteRecurringDialog(BuildContext context, List<Reminder> reminders, AppState appState) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Recurring Reminders'),
         content: Text('Do you want to delete all ${reminders.length} recurring reminders?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               final messenger = ScaffoldMessenger.of(context);
               for (var reminder in reminders) {
                 await appState.deleteReminder(reminder.id!);

@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import 'dart:developer'; // Using dart:developer for logging
 
 
 class TrainerHomeScreen extends StatefulWidget {
   const TrainerHomeScreen({super.key});
-
   @override
   State<TrainerHomeScreen> createState() => _TrainerHomeScreenState();
 }
@@ -23,30 +23,37 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
   }
 
   Future<void> _loadAppointments() async {
+    if (!mounted) return;
+
     final appState = Provider.of<AppState>(context, listen: false);
+
     try {
-      // Use user['id'] instead of currentUserId
       final userId = appState.user?['id'] as int?;
+
       if (userId != null) {
-        // Load all pets first to get their training appointments
         await appState.loadPet();
         final allPets = appState.pets;
-        
-        // Collect all training appointments from all pets
+
         List<Map<String, dynamic>> allTrainingAppointments = [];
-        
+
         for (final pet in allPets) {
           try {
-            final petAppointments = await appState.db.getTrainingAppointmentsForPet(pet.id!);
-            if (petAppointments != null && petAppointments.isNotEmpty) {
+            if (!mounted) return;
+            // Assuming the return type of getTrainingAppointmentsForPet is now non-nullable List<Map<...>>.
+            // If it returns null, the method signature in AppState/db needs to be checked.
+            // For the sake of fixing the lint, we treat it as non-nullable here.
+            final petAppointments =
+                await appState.db.getTrainingAppointmentsForPet(pet.id!);
+
+            // FIX: Removed unnecessary null check on petAppointments
+            if (petAppointments.isNotEmpty) {
               allTrainingAppointments.addAll(petAppointments);
             }
           } catch (e) {
-            print('Error loading training appointments for pet ${pet.id}: $e');
+            log('Error loading training appointments for pet ${pet.id}: $e');
           }
         }
-        
-        // Filter appointments for this trainer
+
         final trainerAppointments = allTrainingAppointments.where((a) {
           final trainerId = a['trainerId'] ?? a['trainer_id'] ?? a['trainer'];
           if (trainerId is int) {
@@ -56,16 +63,22 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
           }
           return false;
         }).toList();
-        
+
         if (mounted) {
           setState(() {
             _appointments = trainerAppointments;
             _isLoading = false;
           });
         }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      print('Error loading trainer appointments: $e');
+      log('Error loading trainer appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -83,9 +96,10 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final upcomingCount = _appointments.where((a) => a['status'] == 'upcoming').length;
-    final completedCount = _appointments.where((a) => a['status'] == 'completed').length;
+    final upcomingCount =
+        _appointments.where((a) => a['status'] == 'upcoming').length;
+    final completedCount =
+        _appointments.where((a) => a['status'] == 'completed').length;
 
 return Scaffold(
   backgroundColor: const Color(0xFFF5F7FA),
@@ -122,8 +136,9 @@ return Scaffold(
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
     final appState = Provider.of<AppState>(context);
-    final trainerName = '${appState.user?['firstName'] ?? ''} ${appState.user?['lastName'] ?? ''}'.trim();
-
+    final trainerName =
+        '${appState.user?['firstName'] ?? ''} ${appState.user?['lastName'] ?? ''}'
+            .trim();
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -174,11 +189,12 @@ return Scaffold(
     );
   }
 
-  Widget _buildStatCard(String label, String count, IconData icon, Color color, Color bgColor) {
+  Widget _buildStatCard(String label, String count, IconData icon, Color color,
+      Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withAlpha((0.2 * 255).round()),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -231,7 +247,7 @@ return Scaffold(
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFFB892F7).withOpacity(0.2),
+      selectedColor: const Color(0xFFFF9F43).withAlpha((0.2 * 255).round()),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -280,14 +296,22 @@ return Scaffold(
   }
 
   Widget _buildAppointmentsList() {
-    // Sort appointments by date
-    final sortedAppointments = List<Map<String, dynamic>>.from(_filteredAppointments)
-      ..sort((a, b) {
-        final aDate = DateTime.parse(a['dateTime']);
-        final bDate = DateTime.parse(b['dateTime']);
-        return aDate.compareTo(bDate);
-      });
+    final sortedAppointments =
+        List<Map<String, dynamic>>.from(_filteredAppointments)
+          ..sort((a, b) {
+            final aDateStr = a['dateTime'] as String?;
+            final bDateStr = b['dateTime'] as String?;
 
+            if (aDateStr == null || bDateStr == null) return 0;
+
+            try {
+              final aDate = DateTime.parse(aDateStr);
+              final bDate = DateTime.parse(bDateStr);
+              return aDate.compareTo(bDate);
+            } catch (e) {
+              return 0;
+            }
+          });
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: sortedAppointments.length,
@@ -300,10 +324,17 @@ return Scaffold(
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     final appState = Provider.of<AppState>(context, listen: false);
     final isUpcoming = appointment['status'] == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
-    final dateTime = DateTime.parse(appointment['dateTime']);
-    
-    // Get pet name from app state
+    final statusColor = isUpcoming ? const Color(0xFFFF9F43) : Colors.grey;
+    final dateTimeString = appointment['dateTime'] as String?;
+
+    DateTime dateTime;
+    try {
+      dateTime = DateTime.parse(dateTimeString ?? '');
+    } catch (e) {
+      dateTime = DateTime.now(); // Fallback
+      log('Error parsing dateTime: $dateTimeString. Error: $e');
+    }
+
     final petId = appointment['petId'] as int?;
     String petName = 'Unknown';
     if (petId != null) {
@@ -319,7 +350,7 @@ return Scaffold(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -332,9 +363,10 @@ return Scaffold(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -361,7 +393,8 @@ return Scaffold(
                       value: 'complete',
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, size: 18, color: Colors.green),
+                          Icon(Icons.check_circle,
+                              size: 18, color: Colors.green),
                           SizedBox(width: 8),
                           Text('Mark Complete'),
                         ],
@@ -387,7 +420,7 @@ return Scaffold(
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -436,7 +469,8 @@ return Scaffold(
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.calendar_today, size: 16, color: Color(0xFF9CA3AF)),
+              const Icon(Icons.calendar_today,
+                  size: 16, color: Color(0xFF9CA3AF)),
               const SizedBox(width: 8),
               Text(
                 _formatDate(dateTime),
@@ -465,31 +499,30 @@ return Scaffold(
   void _completeAppointment(Map<String, dynamic> appointment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Complete Training Session'),
         content: const Text('Mark this training session as completed?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              
+              Navigator.pop(dialogContext);
+
+              if (!mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
-              
+
               try {
-                // Create a map of the appointment with updated status
-                final updatedAppointment = Map<String, dynamic>.from(appointment);
+                final updatedAppointment =
+                    Map<String, dynamic>.from(appointment);
                 updatedAppointment['status'] = 'completed';
-                
-                // Update the appointment in the database
+
                 await appState.db.updateTrainingAppointment(updatedAppointment);
-                
-                // Reload appointments
+
                 _loadAppointments();
-                
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -519,27 +552,28 @@ return Scaffold(
   void _cancelAppointment(Map<String, dynamic> appointment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Training Session'),
-        content: const Text('Are you sure you want to cancel this training session?'),
+        content:
+            const Text('Are you sure you want to cancel this training session?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('No'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              
+              Navigator.pop(dialogContext);
+
+              if (!mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
-              
+
               try {
-                // Delete the appointment from the database
-                await appState.deleteTrainingAppointment(appointment['id'].toString());
-                
-                // Reload appointments
+                await appState.deleteTrainingAppointment(
+                    appointment['id'].toString());
+
                 _loadAppointments();
-                
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Training session cancelled')),
@@ -564,7 +598,20 @@ return Scaffold(
   }
 
   String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 

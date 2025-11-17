@@ -9,6 +9,7 @@ import 'owner_home_screen.dart';
 import 'vet_home_screen.dart';
 import 'groomer_home_screen.dart';
 import 'trainer_home_screen.dart';
+import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    
+
     // Show different home screen based on user role
     if (appState.isVet) {
       return const VetHomeScreen();

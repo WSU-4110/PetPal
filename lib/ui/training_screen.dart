@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../state/app_state.dart';
+import 'dart:developer' as developer; // FIX: Added import for logging
 
 class TrainingScreen extends StatefulWidget {
   final Pet pet;
@@ -24,6 +25,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   Future<void> _loadTrainingAppointments() async {
+    // Check mounted state before using context after an asynchronous operation
+    if (!mounted) return;
+
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       await appState.loadTrainingAppointmentsForPet(widget.pet.id!);
@@ -36,7 +40,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
         });
       }
     } catch (e) {
-      print('Error loading training appointments: $e');
+      // FIX: Replaced print with developer.log
+      developer.log('Error loading training appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -145,7 +150,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFB892F7).withOpacity(0.3),
+              // FIX: Replaced withOpacity with withAlpha
+              color: const Color(0xFFFF9F43).withAlpha((0.3 * 255).round()),
               width: 2,
             ),
           ),
@@ -181,9 +187,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
       builder: (context) => BookTrainingSheet(
         pet: widget.pet,
         onBooked: (appointment) {
-          setState(() {
-            _appointments.add(appointment);
-          });
+          // No need to check mounted here as it's within the main State build context
+          // but we reload all data for robustness, which contains its own mounted check.
+          _loadTrainingAppointments();
         },
       ),
     );
@@ -202,7 +208,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.black.withAlpha((0.05 * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -217,7 +224,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  // FIX: Replaced withOpacity with withAlpha
+                  color: statusColor.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -270,7 +278,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB892F7).withOpacity(0.1),
+                  // FIX: Replaced withOpacity with withAlpha
+                  color: const Color(0xFFFF9F43).withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -348,32 +357,37 @@ class _TrainingScreenState extends State<TrainingScreen> {
   void _cancelAppointment(Map<String, dynamic> appointment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Training Session'),
         content: const Text('Are you sure you want to cancel this training session?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('No'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              // Close dialog immediately to prevent context error on next access
+              Navigator.pop(dialogContext);
+
+              // FIX: Check mounted BEFORE Provider.of across async gap
+              if (!context.mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
                 await appState.deleteTrainingAppointment(appointment['id'].toString());
                 
+                // Reload after deletion
+                await _loadTrainingAppointments();
+                
+                // Check mounted BEFORE using ScaffoldMessenger
                 if (mounted) {
-                  Navigator.pop(context);
-                  _loadTrainingAppointments();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Training session cancelled')),
                   );
                 }
               } catch (e) {
                 if (mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error cancelling training session: $e')),
                   );
@@ -454,6 +468,9 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
   }
 
   Future<void> _loadTrainers() async {
+    // Check mounted at the start of async function
+    if (!mounted) return;
+
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       final trainers = await appState.getTrainers();
@@ -680,10 +697,12 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFB892F7).withOpacity(0.1),
+              // FIX: Replaced withOpacity with withAlpha
+              color: const Color(0xFFFF9F43).withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFB892F7).withOpacity(0.3),
+                // FIX: Replaced withOpacity with withAlpha
+                color: const Color(0xFFFF9F43).withAlpha((0.3 * 255).round()),
               ),
             ),
             child: const Row(
@@ -807,6 +826,9 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
   }
 
   Future<void> _bookTraining() async {
+    // Check mounted state before initial UI access, especially for SnackBar
+    if (!mounted) return;
+
     if (_selectedTrainerId == null ||
         _selectedFacility == null ||
         _selectedType == null ||
@@ -854,12 +876,14 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
         'status': 'upcoming',
       };
 
-      // Add the appointment to the database
+      // Check mounted BEFORE calling Provider.of across async gap
+      if (!mounted) return;
       final appState = Provider.of<AppState>(context, listen: false);
       await appState.addTrainingAppointment(appointment);
 
       widget.onBooked(appointment);
 
+      // Check mounted BEFORE dismissing the bottom sheet
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
