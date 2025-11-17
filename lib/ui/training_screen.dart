@@ -71,7 +71,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFFFF9F43)),
+            icon: const Icon(Icons.add, color: Color(0xFFB892F7)),
             onPressed: _showBookTrainingDialog,
           ),
         ],
@@ -124,7 +124,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
           ElevatedButton.icon(
             onPressed: _showBookTrainingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9F43),
+              backgroundColor: const Color(0xFFB892F7),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -160,7 +160,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFFFF9F43),
+                color: Color(0xFFB892F7),
                 size: 28,
               ),
               SizedBox(width: 12),
@@ -169,7 +169,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFFF9F43),
+                  color: Color(0xFFB892F7),
                 ),
               ),
             ],
@@ -197,7 +197,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     final isUpcoming = appointment['status'] == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFFFF9F43) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
     final dateTime = DateTime.parse(appointment['dateTime']);
 
     return Container(
@@ -284,7 +284,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 ),
                 child: const Icon(
                   Icons.fitness_center,
-                  color: Color(0xFFFF9F43),
+                  color: Color(0xFFB892F7),
                   size: 28,
                 ),
               ),
@@ -572,7 +572,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFFF9F43)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFB892F7)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -604,7 +604,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFFFF9F43)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFFB892F7)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -632,7 +632,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _bookTraining,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9F43),
+                    backgroundColor: const Color(0xFFB892F7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -707,12 +707,12 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.warning, color: Color(0xFFFF9F43)),
+                Icon(Icons.warning, color: Color(0xFFB892F7)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'No trainers available',
-                    style: TextStyle(color: Color(0xFFFF9F43)),
+                    style: TextStyle(color: Color(0xFFB892F7)),
                   ),
                 ),
               ],

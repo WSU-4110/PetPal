@@ -164,7 +164,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
           ElevatedButton.icon(
             onPressed: _showBookGroomingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4ECDC4),
+              backgroundColor: const Color(0xFFB892F7),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -190,7 +190,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF4ECDC4).withOpacity(0.3),
+              color: const Color(0xFFB892F7).withOpacity(0.3),
               width: 2,
             ),
           ),
@@ -199,7 +199,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFF4ECDC4),
+                color: Color(0xFFB892F7),
                 size: 28,
               ),
               SizedBox(width: 12),
@@ -208,7 +208,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF4ECDC4),
+                  color: Color(0xFFB892F7),
                 ),
               ),
             ],
@@ -314,12 +314,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4ECDC4).withOpacity(0.1),
+                  color: const Color(0xFFB892F7).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.cut,
-                  color: Color(0xFF4ECDC4),
+                  color: Color(0xFFB892F7),
                   size: 28,
                 ),
               ),
@@ -591,7 +591,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4ECDC4)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFB892F7)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -621,7 +621,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFF4ECDC4)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFFB892F7)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -645,7 +645,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _bookGrooming,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4ECDC4),
+                    backgroundColor: const Color(0xFFB892F7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

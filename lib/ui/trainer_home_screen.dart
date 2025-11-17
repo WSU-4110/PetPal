@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'dart:developer'; // Using dart:developer for logging
 
+
 class TrainerHomeScreen extends StatefulWidget {
   const TrainerHomeScreen({super.key});
   @override
@@ -100,34 +101,37 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     final completedCount =
         _appointments.where((a) => a['status'] == 'completed').length;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
-        backgroundColor: const Color(0xFFFF9F43),
-        elevation: 0,
-        title: const Text(
-          'Trainer Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+return Scaffold(
+  backgroundColor: const Color(0xFFF5F7FA),
+  appBar: AppBar(
+    automaticallyImplyLeading: true, // <-- set to true so menu button appears
+    backgroundColor: const Color(0xFFB892F7),
+    elevation: 0,
+    title: const Text(
+      'Trainer Dashboard',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(upcomingCount, completedCount),
-                _buildFilterChips(),
-                Expanded(
-                  child: _filteredAppointments.isEmpty
-                      ? _buildEmptyState()
-                      : _buildAppointmentsList(),
-                ),
-              ],
+    ),
+  ),
+
+
+  body: _isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : Column(
+          children: [
+            _buildHeader(upcomingCount, completedCount),
+            _buildFilterChips(),
+            Expanded(
+              child: _filteredAppointments.isEmpty
+                  ? _buildEmptyState()
+                  : _buildAppointmentsList(),
             ),
-    );
+          ],
+        ),
+);
+
   }
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
@@ -138,7 +142,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFFFF9F43),
+        color: Color(0xFFB892F7),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -165,7 +169,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
                   upcomingCount.toString(),
                   Icons.schedule,
                   Colors.white,
-                  const Color(0xFFFF9F43),
+                  const Color(0xFFB892F7),
                 ),
               ),
               const SizedBox(width: 12),
@@ -175,7 +179,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
                   completedCount.toString(),
                   Icons.check_circle,
                   Colors.white70,
-                  const Color(0xFFFF9F43),
+                  const Color(0xFFB892F7),
                 ),
               ),
             ],
@@ -245,13 +249,13 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
       backgroundColor: Colors.white,
       selectedColor: const Color(0xFFFF9F43).withAlpha((0.2 * 255).round()),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFFFF9F43) : const Color(0xFF6B7280),
+        color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? const Color(0xFFFF9F43) : Colors.grey[300]!,
+          color: isSelected ? const Color(0xFFB892F7) : Colors.grey[300]!,
         ),
       ),
     );

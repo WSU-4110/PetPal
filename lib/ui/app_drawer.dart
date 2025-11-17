@@ -10,7 +10,9 @@ import '../ui/weekly_report.dart';
 import 'login_page.dart';
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  final bool showExtraOptions; // True for Owner, false for others
+
+  const AppDrawer({super.key, this.showExtraOptions = true});
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +47,9 @@ class AppDrawer extends StatelessWidget {
 
                   if (appState.profileImagePath?.isNotEmpty ?? false) {
                     final path = appState.profileImagePath!;
-                    if (path.startsWith('http')) {
-                      avatarImage = NetworkImage(path);
-                    } else {
-                      avatarImage = FileImage(File(path));
-                    }
+                    avatarImage = path.startsWith('http')
+                        ? NetworkImage(path)
+                        : FileImage(File(path));
                   } else if (user != null && (user['avatar'] ?? '').toString().isNotEmpty) {
                     final path = user['avatar'].toString();
                     avatarImage = path.startsWith('http')
@@ -81,10 +81,10 @@ class AppDrawer extends StatelessWidget {
                           children: [
                             Text(
                               user != null
-                                      ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim().isEmpty
-                                          ? "Your Name"
-                                          : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
-                                      : "Your Name",
+                                  ? "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}".trim().isEmpty
+                                      ? "Your Name"
+                                      : "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
+                                  : "Your Name",
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -116,21 +116,37 @@ class AppDrawer extends StatelessWidget {
           const SizedBox(height: 10),
 
           // -----------------------
-          // SEARCH BUTTON REMOVED
+          // Owner-specific extra options
           // -----------------------
+          if (showExtraOptions) ...[
+            // You can add Search/Filter button here if needed
+            _DrawerItem(
+              icon: Icons.calendar_today,
+              title: 'Calendar',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                );
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.help_outline,
+              title: "Help",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HelpScreen()),
+                );
+              },
+            ),
+          ],
 
-          _DrawerItem(
-            icon: Icons.calendar_today,
-            title: 'Calendar',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              );
-            },
-          ),
-
+          // -----------------------
+          // Always present for all roles
+          // -----------------------
           _DrawerItem(
             icon: Icons.analytics,
             title: "Weekly Report",
@@ -139,18 +155,6 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
-              );
-            },
-          ),
-
-          _DrawerItem(
-            icon: Icons.help_outline,
-            title: "Help",
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HelpScreen()),
               );
             },
           ),
