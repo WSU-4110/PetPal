@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 
-
 class GroomerAppointment {
   final String id;
   final String groomerName;
@@ -49,8 +48,8 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   Future<void> _loadAppointments() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      // Use user['id'] instead of currentUserId
-      final groomerId = appState.user?['id'] as int?;
+      // Use currentUser['id'] (consistent with the rest of the file)
+      final groomerId = appState.currentUser?['id'] as int?;
       if (groomerId != null) {
         // Load all pets to get their grooming appointments
         await appState.loadPet();
@@ -61,7 +60,8 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
         for (final pet in allPets) {
           try {
-            final petAppointments = await appState.db.getGroomingAppointmentsForPet(pet.id!);
+            final petAppointments =
+                await appState.db.getGroomingAppointmentsForPet(pet.id!);
             allGroomingAppointments.addAll(petAppointments);
           } catch (e) {
             print('Error loading grooming appointments for pet ${pet.id}: $e');
@@ -69,21 +69,31 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         }
 
         // Filter for this groomer
-        final groomerAppointments = allGroomingAppointments.where((a) => a['groomerId'] == groomerId).toList();
+        final groomerAppointments = allGroomingAppointments
+            .where((a) => a['groomerId'] == groomerId)
+            .toList();
 
         if (mounted) {
           setState(() {
-            _appointments = groomerAppointments.map((a) => GroomerAppointment(
-                  id: a['id'].toString(),
-                  groomerName: a['groomerName'] ?? 'Unknown Groomer',
-                  salon: a['salon'] ?? 'Unknown Salon',
-                  dateTime: DateTime.parse(a['dateTime']),
-                  type: a['type'] ?? 'Unknown Type',
-                  status: a['status'] ?? 'upcoming',
-                  groomerId: a['groomerId'] as int?,
-                  petName: a['petName'] as String?,
-                  petId: a['petId'] as int?,
-                )).toList();
+            _appointments = groomerAppointments
+                .map((a) => GroomerAppointment(
+                      id: a['id'].toString(),
+                      groomerName: a['groomerName'] ?? 'Unknown Groomer',
+                      salon: a['salon'] ?? 'Unknown Salon',
+                      dateTime: DateTime.parse(a['dateTime']),
+                      type: a['type'] ?? 'Unknown Type',
+                      status: a['status'] ?? 'upcoming',
+                      groomerId: a['groomerId'] as int?,
+                      petName: a['petName'] as String?,
+                      petId: a['petId'] as int?,
+                    ))
+                .toList();
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
             _isLoading = false;
           });
         }
@@ -108,13 +118,16 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final upcomingCount = _appointments.where((a) => a.status == 'upcoming').length;
-    final completedCount = _appointments.where((a) => a.status == 'completed').length;
+    final upcomingCount =
+        _appointments.where((a) => a.status == 'upcoming').length;
+    final completedCount =
+        _appointments.where((a) => a.status == 'completed').length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
-        backgroundColor: const Color(0xFF4ECDC4),
+        automaticallyImplyLeading: true, // Removes the back button
+        backgroundColor: const Color(0xFFB892F7),
         elevation: 0,
         title: const Text(
           'Groomer Dashboard',
@@ -123,44 +136,36 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        // Removed the logout IconButton from actions
       ),
-    ),
-    actions: [
-      IconButton(
-        icon: const Icon(Icons.logout, color: Colors.white),
-        onPressed: () {
-          appState.logout();
-          Navigator.pushReplacementNamed(context, '/login');
-        },
-      ),
-    ],
-  ),
- body: _isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : Column(
-          children: [
-            _buildHeader(upcomingCount, completedCount),
-            _buildFilterChips(),
-            Expanded(
-              child: _filteredAppointments.isEmpty
-                  ? _buildEmptyState()
-                  : _buildAppointmentsList(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildHeader(upcomingCount, completedCount),
+                _buildFilterChips(),
+                Expanded(
+                  child: _filteredAppointments.isEmpty
+                      ? _buildEmptyState()
+                      : _buildAppointmentsList(),
+                ),
+              ],
             ),
-          ],
-        ),
-);
-
-
+    );
   }
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
     final appState = Provider.of<AppState>(context);
-    final groomerName = '${appState.currentUser?['firstName'] ?? ''} ${appState.currentUser?['lastName'] ?? ''}'.trim();
+    final groomerName =
+        '${appState.currentUser?['firstName'] ?? ''} ${appState.currentUser?['lastName'] ?? ''}'
+            .trim();
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFFB892F7),
+        gradient: LinearGradient(
+          colors: [Color(0xFFB892F7), Color(0xFFB892F7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -207,11 +212,12 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String count, IconData icon, Color color, Color bgColor) {
+  Widget _buildStatCard(
+      String label, String count, IconData icon, Color color, Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -264,7 +270,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFFB892F7).withOpacity(0.2),
+      selectedColor: const Color(0xFFB892F7).withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -332,7 +338,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
     // Get pet name from the app state if not already available
     String petName = appointment.petName ?? 'Unknown';
-    if (petName == 'Unknown' && appointment.petId != null) {
+    if ((petName == 'Unknown' || petName.isEmpty) && appointment.petId != null) {
       final pet = appState.getPetById(appointment.petId);
       petName = pet?.name ?? 'Unknown';
     }
@@ -344,7 +350,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,9 +363,10 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -412,7 +419,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -551,7 +558,8 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this grooming appointment?'),
+        content:
+            const Text('Are you sure you want to cancel this grooming appointment?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -590,7 +598,20 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 

@@ -130,10 +130,18 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                     if (isOwner)
                     ElevatedButton(
                       onPressed: () async {
-                        final trainers = await context.read<AppState>().getTrainers();
+                        // FIX: Store context-dependent objects before async gap
+                        final buildContext = context;
+                        final appStateRead = context.read<AppState>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        
+                        final trainers = await appStateRead.getTrainers();
+
+                        // FIX: Check mounted before using context
+                        if (!mounted) return;
 
                         final selectedTrainer = await showDialog<Map<String, dynamic>>(
-                          context: context,
+                          context: buildContext,
                           builder: (cont) {
                             return SimpleDialog(
                               title: const Text("Select Trainer"),
@@ -149,9 +157,13 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                           },
                         );
 
-                        if (selectedTrainer != null) {
-                          await context.read<AppState>().grantAccess(selectedPet!.id!, selectedTrainer['id']);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                        if (selectedTrainer != null && selectedPet != null) {
+                          await appStateRead.grantAccess(selectedPet!.id!, selectedTrainer['id']);
+                          
+                          // FIX: Check mounted before showing snackbar
+                          if (!mounted) return;
+                          
+                          messenger.showSnackBar(
                             SnackBar(content: Text("Granted access to ${selectedTrainer['firstName']}")),
                           );
                         }
@@ -241,6 +253,9 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.white70),
                                 onPressed: () async {
+                                  // FIX: Store context-dependent objects before async gap
+                                  final appStateRead = context.read<AppState>();
+                                  
                                   final result = await showDialog<ExerciseLog>(
                                     context: context,
                                     builder: (_) => EditExerciseLogDialog(
@@ -248,8 +263,9 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                                       pets: appState.pets,
                                     ),
                                   );
+                                  
                                   if (result != null) {
-                                    await context.read<AppState>().updateExerciseLog(result);
+                                    await appStateRead.updateExerciseLog(result);
                                   }
                                 },
                               ),
@@ -257,8 +273,15 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () async {
+                                  // FIX: Store messenger before async gap
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  
                                   await appState.deleteExerciseLog(record.id!, record.petId);
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  
+                                  // FIX: Check mounted before showing snackbar
+                                  if (!mounted) return;
+                                  
+                                  messenger.showSnackBar(
                                     const SnackBar(content: Text('Exercise Log deleted')),
                                   );
                                 },

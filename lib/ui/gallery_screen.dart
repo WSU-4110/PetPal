@@ -37,6 +37,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    final int alpha05 = (0.05 * 255).round();
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: _galleryItems.isEmpty
@@ -52,7 +55,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               ),
               itemCount: _galleryItems.length,
               itemBuilder: (context, index) {
-                return _buildGalleryCard(_galleryItems[index]);
+                return _buildGalleryCard(_galleryItems[index], alpha05);
               },
             ),
       // Removed the floatingActionButton
@@ -106,7 +109,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
-  Widget _buildGalleryCard(GalleryItem item) {
+  Widget _buildGalleryCard(GalleryItem item, int alpha05) {
+    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    final int alpha50 = (0.5 * 255).round();
+    
     return GestureDetector(
       onTap: () => _showPhotoDetail(item),
       child: Container(
@@ -115,7 +121,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              // FIX: Replaced withOpacity with withAlpha
+              color: Colors.black.withAlpha(alpha05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -140,6 +147,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           ? Image.network(
                               item.imageUrl,
                               fit: BoxFit.cover,
+                              // FIX: Replaced __ and ___ with single _
                               errorBuilder: (_, __, ___) => Container(
                                 color: Colors.grey[300],
                                 child: const Icon(
@@ -152,6 +160,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           : Image.file(
                               File(item.imageUrl),
                               fit: BoxFit.cover,
+                              // FIX: Replaced __ and ___ with single _
                               errorBuilder: (_, __, ___) => Container(
                                 color: Colors.grey[300],
                                 child: const Icon(
@@ -169,7 +178,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         icon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            // FIX: Replaced withOpacity with withAlpha
+                            color: Colors.black.withAlpha(alpha50),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -269,6 +279,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         ? Image.network(
                             item.imageUrl,
                             fit: BoxFit.cover,
+                            // FIX: Replaced __ and ___ with single _
                             errorBuilder: (_, __, ___) => Container(
                               height: 300,
                               color: Colors.grey[300],
@@ -278,6 +289,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         : Image.file(
                             File(item.imageUrl),
                             fit: BoxFit.cover,
+                            // FIX: Replaced __ and ___ with single _
                             errorBuilder: (_, __, ___) => Container(
                               height: 300,
                               color: Colors.grey[300],
@@ -333,6 +345,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   void _showAddPhotoDialog() {
     final captionController = TextEditingController();
     String? pickedPath;
+
+    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    final int alpha30 = (0.3 * 255).round();
 
     showModalBottomSheet(
       context: context,
@@ -396,7 +411,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFF6C63FF).withOpacity(0.3),
+                        // FIX: Replaced withOpacity with withAlpha
+                        color: const Color(0xFF6C63FF).withAlpha(alpha30),
                         width: 2,
                       ),
                     ),

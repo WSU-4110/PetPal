@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:petpal/ui/add_groom_log_dialog.dart';
 import 'package:petpal/ui/edit_groom_log_dialog.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -30,17 +29,13 @@ class _GroomLogsPageState extends State<GroomLogs> {
     try {
       final pets = context.read<AppState>().pets;
       if (pets.isNotEmpty) {
+        // FIX: Removed unnecessary null check - widget.petId is always non-null (required int)
         // Try to find the pet with the given ID
         Pet pet;
-        if (widget.petId != null) {
-          try {
-            pet = pets.firstWhere((p) => p.id == widget.petId);
-          } catch (e) {
-            // If pet with widget.petId is not found, use the first pet
-            pet = pets.first;
-          }
-        } else {
-          // If no petId is provided, use the first pet
+        try {
+          pet = pets.firstWhere((p) => p.id == widget.petId);
+        } catch (e) {
+          // If pet with widget.petId is not found, use the first pet
           pet = pets.first;
         }
         
@@ -115,6 +110,10 @@ class _GroomLogsPageState extends State<GroomLogs> {
 
     final bool isOwner = appState.currentUser?['role'] == 'owner';
 
+    // FIX: Calculate alpha values for deprecated withOpacity fixes
+    final int alpha20 = (0.2 * 255).round();
+    final int alpha90 = (0.9 * 255).round();
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -147,12 +146,14 @@ class _GroomLogsPageState extends State<GroomLogs> {
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      // FIX: Replaced withOpacity with withAlpha
+                      color: Colors.white.withAlpha(alpha20),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButton<Pet>(
                       value: selectedPet,
-                      dropdownColor: Colors.white.withOpacity(0.9),
+                      // FIX: Replaced withOpacity with withAlpha
+                      dropdownColor: Colors.white.withAlpha(alpha90),
                       items: appState.pets
                           .map((p) => DropdownMenuItem(
                                 value: p,
@@ -175,10 +176,18 @@ class _GroomLogsPageState extends State<GroomLogs> {
               if (isOwner && selectedPet != null)
                 ElevatedButton(
                   onPressed: () async {
-                    final groomers = await context.read<AppState>().getGroomers();
+                    // FIX: Store context-dependent objects before async gap
+                    final buildContext = context;
+                    final appStateRead = context.read<AppState>();
+                    final messenger = ScaffoldMessenger.of(context);
+                    
+                    final groomers = await appStateRead.getGroomers();
+
+                    // FIX: Check mounted before using context
+                    if (!mounted) return;
 
                     final selectedGroomer = await showDialog<Map<String, dynamic>>(
-                      context: context,
+                      context: buildContext,
                       builder: (cont) {
                         return SimpleDialog(
                           title: const Text("Select Groomer"),
@@ -193,9 +202,13 @@ class _GroomLogsPageState extends State<GroomLogs> {
                       },
                     );
 
-                    if (selectedGroomer != null) {
-                      await context.read<AppState>().grantAccess(selectedPet!.id!, selectedGroomer['id']);
-                      ScaffoldMessenger.of(context).showSnackBar(
+                    if (selectedGroomer != null && selectedPet != null) {
+                      await appStateRead.grantAccess(selectedPet!.id!, selectedGroomer['id']);
+                      
+                      // FIX: Check mounted before showing snackbar
+                      if (!mounted) return;
+                      
+                      messenger.showSnackBar(
                         SnackBar(content: Text("Granted access to ${selectedGroomer['firstName']}")),
                       );
                     }
@@ -250,15 +263,22 @@ class _GroomLogsPageState extends State<GroomLogs> {
                       final record = records[i];
                       final petName = _getPetName(record.petId, appState);
                       
+                      // FIX: Calculate alpha values for deprecated withOpacity fixes
+                      final int alpha15 = (0.15 * 255).round();
+                      final int alpha30 = (0.3 * 255).round();
+                      final int alpha25 = (0.25 * 255).round();
+                      
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          // FIX: Replaced withOpacity with withAlpha
+                          color: Colors.white.withAlpha(alpha15),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.purpleAccent.withOpacity(0.3),
+                              // FIX: Replaced withOpacity with withAlpha
+                              color: Colors.purpleAccent.withAlpha(alpha30),
                               blurRadius: 10,
                               offset: const Offset(0, 6),
                             ),
@@ -271,7 +291,8 @@ class _GroomLogsPageState extends State<GroomLogs> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                // FIX: Replaced withOpacity with withAlpha
+                                color: Colors.white.withAlpha(alpha25),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -320,6 +341,9 @@ class _GroomLogsPageState extends State<GroomLogs> {
                                     IconButton(
                                       icon: const Icon(Icons.edit, color: Colors.white70),
                                       onPressed: () async {
+                                        // FIX: Store context-dependent objects before async gap
+                                        final appStateRead = context.read<AppState>();
+                                        
                                         final result = await showDialog<GroomLog>(
                                           context: context,
                                           builder: (_) => EditGroomLogDialog(
@@ -327,8 +351,9 @@ class _GroomLogsPageState extends State<GroomLogs> {
                                             pets: appState.pets,
                                           ),
                                         );
+                                        
                                         if (result != null) {
-                                          await context.read<AppState>().updateGroomLog(result);
+                                          await appStateRead.updateGroomLog(result);
                                         }
                                       },
                                     ),
@@ -336,8 +361,15 @@ class _GroomLogsPageState extends State<GroomLogs> {
                                     IconButton(
                                       icon: const Icon(Icons.delete, color: Colors.red),
                                       onPressed: () async {
+                                        // FIX: Store messenger before async gap
+                                        final messenger = ScaffoldMessenger.of(context);
+                                        
                                         await appState.deleteGroomLog(record.id!, record.petId);
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        
+                                        // FIX: Check mounted before showing snackbar
+                                        if (!mounted) return;
+                                        
+                                        messenger.showSnackBar(
                                           const SnackBar(content: Text('Grooming Log deleted')),
                                         );
                                       },

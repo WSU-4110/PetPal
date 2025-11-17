@@ -71,6 +71,12 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha80 = (0.8 * 255).round();
+    final int alpha60 = (0.6 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+    final int alpha90 = (0.9 * 255).round();
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -88,8 +94,10 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.primary.withOpacity(0.6),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha80),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha60),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -107,7 +115,8 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          // FIX: Replaced withOpacity with withAlpha
+                          color: Colors.white.withAlpha(alpha20),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -137,7 +146,8 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
                   Text(
                     'Update reminder for ${selectedPet.name}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      // FIX: Replaced withOpacity with withAlpha
+                      color: Colors.white.withAlpha(alpha90),
                       fontSize: 14,
                     ),
                   ),
@@ -263,6 +273,9 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
     required IconData icon,
     required Widget child,
   }) {
+    // FIX: Removed unused local variable alpha05, calculating inline
+    final int alpha05 = (0.05 * 255).round();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -271,7 +284,8 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -322,6 +336,9 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
       'Grooming': Colors.blue,
       'Playtime': Colors.pink,
     };
+    
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha20 = (0.2 * 255).round();
 
     return Wrap(
       spacing: 8,
@@ -336,7 +353,8 @@ class _EditReminderDialogState extends State<EditReminderDialog> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? color.withOpacity(0.2) : Colors.grey[100],
+              // FIX: Replaced withOpacity with withAlpha
+              color: isSelected ? color.withAlpha(alpha20) : Colors.grey[100],
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected ? color : Colors.transparent,

@@ -233,9 +233,14 @@ class _DrawerItemState extends State<_DrawerItem> with SingleTickerProviderState
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    
+    // FIX: Calculate alpha values for deprecated withOpacity fixes
+    final int alpha10 = (0.1 * 255).round();
+    
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
-      end: widget.isLogout ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+      // FIX: Replaced withOpacity with withAlpha
+      end: widget.isLogout ? Colors.red.withAlpha(alpha10) : Colors.blue.withAlpha(alpha10),
     ).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
@@ -249,6 +254,9 @@ class _DrawerItemState extends State<_DrawerItem> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
+    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    final int alpha10 = (0.1 * 255).round();
+    
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
@@ -271,9 +279,10 @@ class _DrawerItemState extends State<_DrawerItem> with SingleTickerProviderState
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
+                    // FIX: Replaced withOpacity with withAlpha
                     color: widget.isLogout
-                        ? Colors.red.withOpacity(0.1)
-                        : Theme.of(context).primaryColor.withOpacity(0.1),
+                        ? Colors.red.withAlpha(alpha10)
+                        : Theme.of(context).primaryColor.withAlpha(alpha10),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

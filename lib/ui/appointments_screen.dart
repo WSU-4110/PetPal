@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
-import '../models/appointment.dart';
 import '../state/app_state.dart';
 
 enum AppointmentType { vet, grooming, training }
@@ -205,6 +204,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         : appointment.appointmentType == AppointmentType.grooming
             ? Icons.cut
             : Icons.fitness_center;
+    
+    // FIX: Calculate alpha values for deprecated withOpacity fixes
+    final int alpha05 = (0.05 * 255).round();
+    final int alpha10 = (0.1 * 255).round();
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -213,7 +217,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -228,7 +233,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  // FIX: Replaced withOpacity with withAlpha
+                  color: statusColor.withAlpha(alpha10),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -281,7 +287,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  // FIX: Replaced withOpacity with withAlpha
+                  color: statusColor.withAlpha(alpha10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -369,9 +376,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              
+              // FIX: Store context and messenger before async gap
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
               final appState = Provider.of<AppState>(context, listen: false);
+              
+              navigator.pop();
               
               try {
                 if (appointment.appointmentType == AppointmentType.vet) {
@@ -383,13 +393,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 }
                 
                 // Refresh the appointments list
+                // FIX: Check mounted before calling methods that use context
+                if (!mounted) return;
+                
                 _loadAllAppointments();
                 
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Appointment cancelled')),
                 );
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                // FIX: Check mounted before showing error
+                if (!mounted) return;
+                
+                messenger.showSnackBar(
                   SnackBar(content: Text('Error cancelling appointment: $e')),
                 );
               }
@@ -421,4 +437,3 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return '${hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} $period';
   }
 }
-

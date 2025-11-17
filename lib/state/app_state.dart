@@ -1,5 +1,6 @@
 // lib/state/app_state.dart
 import 'dart:math';
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -224,7 +225,7 @@ class AppState extends ChangeNotifier {
       appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
       notifyListeners();
     } catch (e) {
-      print('Error adding appointment: $e');
+      developer.log('Error adding appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -234,7 +235,7 @@ class AppState extends ChangeNotifier {
       appointments = await _db.getAllAppointments();
       notifyListeners();
     } catch (e) {
-      print('Error loading appointments: $e');
+      developer.log('Error loading appointments: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -248,7 +249,7 @@ class AppState extends ChangeNotifier {
       appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
       notifyListeners();
     } catch (e) {
-      print('Error loading appointments for pet: $e');
+      developer.log('Error loading appointments for pet: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -261,7 +262,7 @@ class AppState extends ChangeNotifier {
       appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
       notifyListeners();
     } catch (e) {
-      print('Error loading appointments for vet: $e');
+      developer.log('Error loading appointments for vet: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -276,7 +277,7 @@ class AppState extends ChangeNotifier {
         return a.dateTime.isAfter(now) && a.status == 'upcoming';
       }).toList();
     } catch (e) {
-      print('Error getting upcoming appointments: $e');
+      developer.log('Error getting upcoming appointments: $e', name: 'AppState');
       return [];
     }
   }
@@ -290,7 +291,7 @@ class AppState extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('Error updating appointment: $e');
+      developer.log('Error updating appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -301,7 +302,7 @@ class AppState extends ChangeNotifier {
       appointments.removeWhere((a) => a.id == id);
       notifyListeners();
     } catch (e) {
-      print('Error deleting appointment: $e');
+      developer.log('Error deleting appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -316,7 +317,7 @@ class AppState extends ChangeNotifier {
       await _db.insertGroomingAppointment(appointment);
       await loadGroomingAppointmentsForPet(appointment['petId']);
     } catch (e) {
-      print('Error adding grooming appointment: $e');
+      developer.log('Error adding grooming appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -326,7 +327,7 @@ class AppState extends ChangeNotifier {
       groomingAppointments = await _db.getGroomingAppointmentsForPet(petId);
       notifyListeners();
     } catch (e) {
-      print('Error loading grooming appointments for pet: $e');
+      developer.log('Error loading grooming appointments for pet: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -347,7 +348,7 @@ class AppState extends ChangeNotifier {
       groomingAppointments.removeWhere((a) => a['id'].toString() == id);
       notifyListeners();
     } catch (e) {
-      print('Error deleting grooming appointment: $e');
+      developer.log('Error deleting grooming appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -358,7 +359,7 @@ class AppState extends ChangeNotifier {
       await _db.insertTrainingAppointment(appointment);
       await loadTrainingAppointmentsForPet(appointment['petId']);
     } catch (e) {
-      print('Error adding training appointment: $e');
+      developer.log('Error adding training appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -368,7 +369,7 @@ class AppState extends ChangeNotifier {
       trainingAppointments = await _db.getTrainingAppointmentsForPet(petId);
       notifyListeners();
     } catch (e) {
-      print('Error loading training appointments for pet: $e');
+      developer.log('Error loading training appointments for pet: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -390,11 +391,11 @@ class AppState extends ChangeNotifier {
       for (final pid in petIds) {
         try {
           final list = await _db.getTrainingAppointmentsForPet(pid);
-          if (list != null && list.isNotEmpty) {
+          if (list.isNotEmpty) {
             collected.addAll(List<Map<String, dynamic>>.from(list));
           }
         } catch (e) {
-          print('Error loading training appointments for pet $pid: $e');
+          developer.log('Error loading training appointments for pet $pid: $e', name: 'AppState');
         }
       }
       final filtered = collected.where((a) {
@@ -411,7 +412,7 @@ class AppState extends ChangeNotifier {
       trainingAppointments = filtered;
       notifyListeners();
     } catch (e) {
-      print('Error loading training appointments for trainer $trainerId: $e');
+      developer.log('Error loading training appointments for trainer $trainerId: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -432,7 +433,7 @@ class AppState extends ChangeNotifier {
       trainingAppointments.removeWhere((a) => a['id'].toString() == id);
       notifyListeners();
     } catch (e) {
-      print('Error deleting training appointment: $e');
+      developer.log('Error deleting training appointment: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -486,7 +487,7 @@ class AppState extends ChangeNotifier {
       }
       return healthInfo;
     } catch (e) {
-      print('Error getting pet health info: $e');
+      developer.log('Error getting pet health info: $e', name: 'AppState');
       return null;
     }
   }
@@ -497,7 +498,7 @@ class AppState extends ChangeNotifier {
       _petHealthInfo[petId] = healthInfo;
       notifyListeners();
     } catch (e) {
-      print('Error updating pet health info: $e');
+      developer.log('Error updating pet health info: $e', name: 'AppState');
       rethrow;
     }
   }
@@ -575,7 +576,7 @@ class AppState extends ChangeNotifier {
   // Pet Access
   Future<void> grantAccess(int petId, int userId) async {
     if (petId <= 0 || userId <= 0) {
-      print('Error: petId or userId is invalid: $petId, $userId');
+      developer.log('Error: petId or userId is invalid: $petId, $userId', name: 'AppState');
       return;
     }
     try {
@@ -583,14 +584,14 @@ class AppState extends ChangeNotifier {
       await fetchPetAccess(petId);
       notifyListeners();
     } catch (e) {
-      print('Error granting access: $e');
+      developer.log('Error granting access: $e', name: 'AppState');
       notifyListeners();
     }
   }
 
   Future<void> revokeAccess(int petId, int userId) async {
     if (petId <= 0 || userId <= 0) {
-      print('Error: petId or userId is invalid: $petId, $userId');
+      developer.log('Error: petId or userId is invalid: $petId, $userId', name: 'AppState');
       return;
     }
     try {
@@ -598,7 +599,7 @@ class AppState extends ChangeNotifier {
       await fetchPetAccess(petId);
       notifyListeners();
     } catch (e) {
-      print('Error revoking access: $e');
+      developer.log('Error revoking access: $e', name: 'AppState');
       notifyListeners();
     }
   }
@@ -606,10 +607,10 @@ class AppState extends ChangeNotifier {
   Future<void> fetchPetAccess(int petId) async {
     try {
       final rows = await _db.getPetAccess(petId);
-      petAccessMap[petId] = rows.where((r) => r.userId != null).map((r) => r.userId).toList();
+      petAccessMap[petId] = rows.map((r) => r.userId).toList();
       notifyListeners();
     } catch (e) {
-      print('Error fetching pet access: $e');
+      developer.log('Error fetching pet access: $e', name: 'AppState');
       petAccessMap[petId] = [];
       notifyListeners();
     }

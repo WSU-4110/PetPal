@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'dart:developer'; // Using dart:developer for logging
 
-
 class TrainerHomeScreen extends StatefulWidget {
   const TrainerHomeScreen({super.key});
   @override
@@ -39,9 +38,9 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
         for (final pet in allPets) {
           try {
             if (!mounted) return;
-            // Assuming the return type of getTrainingAppointmentsForPet is now non-nullable List<Map<...>>.
+            // Assuming return type of getTrainingAppointmentsForPet is now non-nullable List<Map<...>>.
             // If it returns null, the method signature in AppState/db needs to be checked.
-            // For the sake of fixing the lint, we treat it as non-nullable here.
+            // For the sake of fixing lint, we treat it as non-nullable here.
             final petAppointments =
                 await appState.db.getTrainingAppointmentsForPet(pet.id!);
 
@@ -101,37 +100,34 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     final completedCount =
         _appointments.where((a) => a['status'] == 'completed').length;
 
-return Scaffold(
-  backgroundColor: const Color(0xFFF5F7FA),
-  appBar: AppBar(
-    automaticallyImplyLeading: true, // <-- set to true so menu button appears
-    backgroundColor: const Color(0xFFB892F7),
-    elevation: 0,
-    title: const Text(
-      'Trainer Dashboard',
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-
-
-  body: _isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : Column(
-          children: [
-            _buildHeader(upcomingCount, completedCount),
-            _buildFilterChips(),
-            Expanded(
-              child: _filteredAppointments.isEmpty
-                  ? _buildEmptyState()
-                  : _buildAppointmentsList(),
-            ),
-          ],
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        automaticallyImplyLeading: true, // <-- set to true so menu button appears
+        backgroundColor: const Color(0xFFB892F7),
+        elevation: 0,
+        title: const Text(
+          'Trainer Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-);
-
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildHeader(upcomingCount, completedCount),
+                _buildFilterChips(),
+                Expanded(
+                  child: _filteredAppointments.isEmpty
+                      ? _buildEmptyState()
+                      : _buildAppointmentsList(),
+                ),
+              ],
+            ),
+    );
   }
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
@@ -142,7 +138,11 @@ return Scaffold(
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFFB892F7),
+        gradient: LinearGradient(
+          colors: [Color(0xFFB892F7), Color(0xFFB892F7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -194,7 +194,7 @@ return Scaffold(
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha((0.2 * 255).round()),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -247,7 +247,7 @@ return Scaffold(
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFFFF9F43).withAlpha((0.2 * 255).round()),
+      selectedColor: const Color(0xFFB892F7).withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -324,7 +324,7 @@ return Scaffold(
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     final appState = Provider.of<AppState>(context, listen: false);
     final isUpcoming = appointment['status'] == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFFFF9F43) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
     final dateTimeString = appointment['dateTime'] as String?;
 
     DateTime dateTime;
@@ -350,7 +350,7 @@ return Scaffold(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((0.05 * 255).round()),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -366,7 +366,7 @@ return Scaffold(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withAlpha((0.1 * 255).round()),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -420,7 +420,7 @@ return Scaffold(
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withAlpha((0.1 * 255).round()),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

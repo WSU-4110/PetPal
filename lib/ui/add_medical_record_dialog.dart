@@ -75,6 +75,13 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha80 = (0.8 * 255).round();
+    final int alpha60 = (0.6 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+    final int alpha90 = (0.9 * 255).round();
+    // final int alpha05 = (0.05 * 255).round(); // FIX: Removed unused variable
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -92,8 +99,10 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.primary.withOpacity(0.6),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha80),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha60),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -111,10 +120,11 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          // FIX: Replaced withOpacity with withAlpha
+                          color: Colors.white.withAlpha(alpha20),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.medical_services,
                           color: Colors.white,
                           size: 24,
@@ -141,7 +151,8 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                   Text(
                     'Record a medical appointment for your pet',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      // FIX: Replaced withOpacity with withAlpha
+                      color: Colors.white.withAlpha(alpha90),
                       fontSize: 14,
                     ),
                   ),
@@ -278,12 +289,13 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
                             petId: widget.petId,
                             title: _titleController.text,
                             description: _descController.text,
-                            date: _selectedDate, // Fixed: Use DateTime instead of String
+                            date: _selectedDate, 
                             vetName: _vetController.text,
                           );
                           
                           // Store navigator before async operation
                           final navigator = Navigator.of(context);
+                          // Use read for access inside async function
                           await context.read<AppState>().addMedicalRecord(record);
                           if (mounted) {
                             navigator.pop();
@@ -321,6 +333,9 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
     required IconData icon,
     required Widget child,
   }) {
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha05 = (0.05 * 255).round();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -329,7 +344,8 @@ class _AddMedicalRecordDialogState extends State<AddMedicalRecordDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

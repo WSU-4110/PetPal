@@ -7,8 +7,7 @@ import '../models/pet.dart';
 import '../models/reminder.dart';
 // import '../models/appointment.dart'; // FIX: Removed unused import
 import 'pet_details_screen.dart';
-import 'appointments_screen.dart';
-import 'notification_screen.dart';
+// import 'appointments_screen.dart'; // FIX: Removed unused import
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -44,7 +43,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   List<String> _safeGetTips(AppState appState) {
     try {
       // FIX: Removed dead code/dead null-aware expression. The function 
-      // is expected to return List<String>? based on the original logic.
+      // is expected to return List<String>? based on original logic.
       final tips = appState.getTips();
       return tips ?? <String>[];
     } catch (_) {
@@ -127,7 +126,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         .toList();
     upcomingAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     
-    // Determine tip text to display (always render the box)
+    // Determine tip text to display (always render box)
     final String tipText = _tips.isNotEmpty
         ? _tips[_currentTipIndex]
         : 'Pet care tips will appear here.';
@@ -151,55 +150,22 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row header: greeting + notification icon
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hi $userName,',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                "Let's take a good care of your cutie pets!",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.notifications,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Row header: greeting only (removed notification icon)
+                    Text(
+                      'Hi $userName,',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Let's take a good care of your cutie pets!",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
                     const SizedBox(height: 8),
                   ],

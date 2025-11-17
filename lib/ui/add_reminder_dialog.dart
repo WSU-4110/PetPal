@@ -21,7 +21,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   bool isRecurring = false;
   String recurringInterval = 'Daily';
   int customDays = 1;
-  bool _isSaving = false; // Add this to prevent multiple saves
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -63,6 +63,12 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha80 = (0.8 * 255).round();
+    final int alpha60 = (0.6 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+    final int alpha90 = (0.9 * 255).round();
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -80,8 +86,8 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.primary.withOpacity(0.6),
+                    colorScheme.primary.withAlpha(alpha80),
+                    colorScheme.primary.withAlpha(alpha60),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -99,7 +105,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withAlpha(alpha20),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -129,7 +135,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
                   Text(
                     'Set up a reminder for your pet',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withAlpha(alpha90),
                       fontSize: 14,
                     ),
                   ),
@@ -262,6 +268,8 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     required IconData icon,
     required Widget child,
   }) {
+    final int alpha05 = (0.05 * 255).round();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -270,7 +278,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -304,13 +312,16 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   }
 
   Widget _buildPetSelector() {
+    final int alpha10 = (0.1 * 255).round();
+    final int alpha30 = (0.3 * 255).round();
+
     if (widget.pets.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withAlpha(alpha10),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: Colors.red.withAlpha(alpha30)),
         ),
         child: const Row(
           children: [
@@ -381,9 +392,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   }
 
   Widget _buildPetImage(Pet pet) {
-    // Check if the image is a network URL or an asset path
     if (pet.image != null && pet.image!.startsWith('http')) {
-      // Network image
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.network(
@@ -397,7 +406,6 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         ),
       );
     } else if (pet.image != null && pet.image!.startsWith('assets/')) {
-      // Asset image
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.asset(
@@ -411,7 +419,6 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         ),
       );
     } else {
-      // Default icon
       return Icon(Icons.pets, size: 18, color: Colors.grey[600]);
     }
   }
@@ -452,6 +459,8 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       'Grooming': Colors.blue,
       'Playtime': Colors.pink,
     };
+    
+    final int alpha20 = (0.2 * 255).round();
 
     return Wrap(
       spacing: 8,
@@ -466,7 +475,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? color.withOpacity(0.2) : Colors.grey[100],
+              color: isSelected ? color.withAlpha(alpha20) : Colors.grey[100],
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected ? color : Colors.transparent,
@@ -558,6 +567,10 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   }
 
   Widget _buildRecurringOptions() {
+    final int alpha10 = (0.1 * 255).round();
+    final int alpha30 = (0.3 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+
     return Column(
       children: [
         // Toggle switch for recurring
@@ -577,7 +590,8 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
               onChanged: (value) {
                 setState(() => isRecurring = value);
               },
-              activeColor: Theme.of(context).colorScheme.primary,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
+              activeTrackColor: Theme.of(context).colorScheme.primary.withAlpha(alpha30),
             ),
           ],
         ),
@@ -593,12 +607,12 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildIntervalChip('Daily', 'Every day'),
-              _buildIntervalChip('Every 2 Days', 'Every other day'),
-              _buildIntervalChip('Every 3 Days', 'Every 3 days'),
-              _buildIntervalChip('Weekly', 'Once a week'),
-              _buildIntervalChip('Bi-Weekly', 'Every 2 weeks'),
-              _buildIntervalChip('Monthly', 'Once a month'),
+              _buildIntervalChip('Daily', 'Every day', alpha20),
+              _buildIntervalChip('Every 2 Days', 'Every other day', alpha20),
+              _buildIntervalChip('Every 3 Days', 'Every 3 days', alpha20),
+              _buildIntervalChip('Weekly', 'Once a week', alpha20),
+              _buildIntervalChip('Bi-Weekly', 'Every 2 weeks', alpha20),
+              _buildIntervalChip('Monthly', 'Once a month', alpha20),
             ],
           ),
           
@@ -637,9 +651,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withAlpha(alpha10),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              border: Border.all(color: Colors.blue.withAlpha(alpha30)),
             ),
             child: Row(
               children: [
@@ -662,9 +676,9 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
     );
   }
 
-  Widget _buildIntervalChip(String interval, String description) {
+  Widget _buildIntervalChip(String interval, String description, int alpha20) {
     final isSelected = recurringInterval == interval;
-    
+
     return GestureDetector(
       onTap: () => setState(() => recurringInterval = interval),
       child: AnimatedContainer(
@@ -672,7 +686,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? Theme.of(context).colorScheme.primary.withOpacity(0.2) 
+              ? Theme.of(context).colorScheme.primary.withAlpha(alpha20) 
               : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -714,7 +728,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       return 'Select a date and time first';
     }
     
-    final time = '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}';
+    final time = DateFormat.jm().format(DateTime(0, 0, 0, selectedTime!.hour, selectedTime!.minute));
     
     switch (recurringInterval) {
       case 'Daily':
@@ -758,7 +772,6 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   }
 
   void _saveReminder() {
-    // Prevent multiple saves
     if (_isSaving) return;
 
     if (selectedPet == null ||
@@ -786,18 +799,18 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       selectedTime!.minute,
     );
 
-    // If recurring, create multiple reminders
     if (isRecurring) {
       final reminders = <Reminder>[];
       final daysInterval = _getDaysInterval();
       
-      // Limit to a reasonable number of reminders (e.g., 30 occurrences or 90 days max)
       final maxOccurrences = 30;
       int occurrences = 0;
 
-      for (int i = 0; occurrences < maxOccurrences && i < 365; i += daysInterval) {
+      for (int i = 0; occurrences < maxOccurrences; i += daysInterval) {
         final reminderDate = dt.add(Duration(days: i));
         
+        if (reminderDate.difference(dt).inDays > 365) break;
+
         reminders.add(Reminder(
           petId: selectedPet!.id!,
           title: titleController.text.trim(),
@@ -808,14 +821,12 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
         occurrences++;
       }
       
-      // Use a short delay to ensure the dialog closes properly
       Future.microtask(() {
         if (mounted) {
           Navigator.pop(context, reminders);
         }
       });
     } else {
-      // Single reminder
       final reminder = Reminder(
         petId: selectedPet!.id!,
         title: titleController.text.trim(),

@@ -14,6 +14,7 @@ import 'ui/add_reminder_dialog.dart';
 import 'ui/add_groom_log_dialog.dart';
 import 'ui/add_exercise_log_dialog.dart';
 import 'ui/search_screen.dart';
+import 'ui/notification_screen.dart'; // Add this import
 import 'dashboards/trainerdash.dart';
 import 'dashboards/groomdash.dart';
 import 'state/app_state.dart' as app_state;
@@ -33,7 +34,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    // Initialize with a delay to ensure the widget is fully built
+    // Initialize with a delay to ensure widget is fully built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -86,7 +87,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       _selectedIndex = index;
     });
     
-    // Only use the animation controller if it's initialized
+    // Only use animation controller if it's initialized
     if (_animationController != null) {
       _animationController!.forward().then((_) {
         _animationController!.reverse();
@@ -156,7 +157,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
           builder: (_) => AddReminderDialog(pets: appState.pets),
         ).then((result) {
           if (result != null) {
-            // Handle the result from the dialog
+            // Handle result from dialog
             if (result is List) {
               // Multiple reminders (recurring)
               for (final reminder in result) {
@@ -215,70 +216,76 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Let body go behind app bar and behind the bottom nav (so both overlay)
+      // Let body go behind app bar and behind bottom nav (so both overlay)
       extendBodyBehindAppBar: true,
       extendBody: true,
 
- appBar: AppBar(
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  leading: Builder(
-    builder: (context) => IconButton(
-      icon: const Icon(Icons.menu, color: Colors.white),
-      onPressed: () => Scaffold.of(context).openDrawer(),
-    ),
-  ),
-  title: Image.asset(
-    'assets/images/petlogo.png',
-    height: 60,
-    fit: BoxFit.contain,
-  ),
-  centerTitle: true,
-  actions: [
-    // Show search button only for owner
-    if (widget.role == 'owner')
-      IconButton(
-        icon: const Icon(Icons.search, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                const begin = Offset(0.0, -1.0);
-                const end = Offset.zero;
-                const curve = Curves.easeInOut;
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: Image.asset(
+          'assets/images/petlogo.png',
+          height: 60,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        actions: [
+          // Show search button only for owner
+          if (widget.role == 'owner')
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.0, -1.0);
+                      const end = Offset.zero;
+                      const curve = Curves.easeInOut;
 
-                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                var offsetAnimation = animation.drive(tween);
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                      var offsetAnimation = animation.drive(tween);
 
-                return SlideTransition(
-                  position: offsetAnimation,
-                  child: FadeTransition(
-                    opacity: animation,
-                    child: child,
+                      return SlideTransition(
+                        position: offsetAnimation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 400),
                   ),
                 );
               },
-              transitionDuration: const Duration(milliseconds: 400),
             ),
+          // Add notification button for all roles
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+
+      drawer: Builder(
+        builder: (context) {
+          return AppDrawer(
+            showExtraOptions: widget.role == 'owner', // Only owner sees calendar/help/search
           );
         },
       ),
-  ],
-),
-
-
-drawer: Builder(
-  builder: (context) {
-    return AppDrawer(
-      showExtraOptions: widget.role == 'owner', // Only owner sees calendar/help/search
-    );
-  },
-),
-
-
-
 
       /// Use an IndexedStack so each tab keeps its state and we can let pages render full-screen.
       body: IndexedStack(
@@ -314,7 +321,7 @@ drawer: Builder(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       /// Floating, rounded bottom nav "plate" (the oval). The BottomNavigationBar itself
-      /// is transparent so the plate looks clean with no white rectangle bleeding.
+      /// is transparent so plate looks clean with no white rectangle bleeding.
       bottomNavigationBar: _showBottomNav ? Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -332,12 +339,12 @@ drawer: Builder(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: Theme(
-            // Create a custom theme to adjust the text style and indicator
+            // Create a custom theme to adjust text style and indicator
             data: Theme.of(context).copyWith(
               textTheme: Theme.of(context).textTheme.copyWith(
                 bodySmall: const TextStyle(fontSize: 11), // Smaller font size for labels
               ),
-              // Remove the splash color and highlight color to disable the gray circle
+              // Remove splash color and highlight color to disable gray circle
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
             ),

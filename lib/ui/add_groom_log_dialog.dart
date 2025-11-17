@@ -114,8 +114,8 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.primary.withOpacity(0.6),
+                    colorScheme.primary.withValues(alpha: 0.8),
+                    colorScheme.primary.withValues(alpha: 0.6),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -133,7 +133,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -163,7 +163,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                   Text(
                     'Record a grooming session for your pet',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
                     ),
                   ),
@@ -314,11 +314,18 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                             maintenance: _maintenanceController.text,
                           );
                           
+                          // Capture context before async operation
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+                          final appState = context.read<AppState>();
+                          
                           try {
-                            await context.read<AppState>().addGroomLog(record);
-                            Navigator.pop(context);
+                            await appState.addGroomLog(record);
+                            if (!mounted) return;
+                            navigator.pop();
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            if (!mounted) return;
+                            messenger.showSnackBar(
                               SnackBar(content: Text('Error adding log: $e')),
                             );
                           } finally {
@@ -376,7 +383,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -414,9 +421,9 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: Colors.red.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
         ),
         child: const Row(
           children: [

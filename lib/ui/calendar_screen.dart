@@ -1,3 +1,4 @@
+// lib/ui/calendar_screen.dart
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/reminder.dart';
@@ -55,12 +56,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _addReminder() async {
+    // Context check needed because showDialog is an async gap
+    if (!mounted) return;
+    
     final pets = await _dbService.getPets();
+    
     if (!mounted) return;
     final newRem = await showDialog<Reminder>(
       context: context,
       builder: (_) => AddReminderDialog(pets: pets),
     );
+    
     if (newRem != null) {
       await _dbService.insertReminder(newRem);
       await _loadAllReminders();
@@ -69,6 +75,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate alpha for opacity fixes (0.9 * 255 = 230, 0.1 * 255 = 25, 0.18 * 255 = 46, 0.15 * 255 = 38, 0.8 * 255 = 204)
+    final int alpha90 = (0.9 * 255).round();
+    final int alpha10 = (0.1 * 255).round();
+    final int alpha18 = (0.18 * 255).round();
+    final int alpha15 = (0.15 * 255).round();
+    final int alpha80 = (0.8 * 255).round();
+
     if (_isLoading) {
       return Scaffold(
         extendBodyBehindAppBar: true,
@@ -129,7 +142,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.18),
+              // FIX: Replaced withOpacity with withAlpha
+              color: Colors.black.withAlpha(alpha18),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -157,11 +171,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  // FIX: Replaced withOpacity with withAlpha
+                  color: Colors.white.withAlpha(alpha90),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      // FIX: Replaced withOpacity with withAlpha
+                      color: Colors.black.withAlpha(alpha10),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -183,15 +199,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   },
                   onPageChanged: (focused) => _focusedDay = focused,
                   calendarStyle: CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: const Color(0xFFB892F7),
+                    todayDecoration: const BoxDecoration(
+                      color: Color(0xFFB892F7),
                       shape: BoxShape.circle,
                     ),
-                    selectedDecoration: BoxDecoration(
-                      color: const Color(0xFFFAC4F1),
+                    selectedDecoration: const BoxDecoration(
+                      color: Color(0xFFFAC4F1),
                       shape: BoxShape.circle,
                     ),
-                    markerDecoration: BoxDecoration(
+                    markerDecoration: const BoxDecoration(
                       color: Colors.pinkAccent,
                       shape: BoxShape.circle,
                     ),
@@ -224,8 +240,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: Text(
                           'Nothing planned for today',
                           style: TextStyle(
+                            // FIX: Replaced withOpacity with withAlpha
+                            color: Colors.white.withAlpha(alpha90),
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
                           ),
                         ),
                       );
@@ -238,7 +255,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            // FIX: Replaced withOpacity with withAlpha
+                            color: Colors.white.withAlpha(alpha15),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -279,7 +297,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     Text(
                                       '${r.category} @ ${TimeOfDay.fromDateTime(r.scheduledAt).format(context)}',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
+                                        // FIX: Replaced withOpacity with withAlpha
+                                        color: Colors.white.withAlpha(alpha80),
                                         fontSize: 14,
                                       ),
                                     ),

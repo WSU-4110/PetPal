@@ -82,6 +82,12 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
+    // Calculate alpha values for deprecated withOpacity fixes
+    final int alpha80 = (0.8 * 255).round();
+    final int alpha60 = (0.6 * 255).round();
+    final int alpha20 = (0.2 * 255).round();
+    final int alpha90 = (0.9 * 255).round();
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -99,8 +105,10 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.primary.withOpacity(0.6),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha80),
+                    // FIX: Replaced withOpacity with withAlpha
+                    colorScheme.primary.withAlpha(alpha60),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -118,10 +126,11 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          // FIX: Replaced withOpacity with withAlpha
+                          color: Colors.white.withAlpha(alpha20),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.medical_services,
                           color: Colors.white,
                           size: 24,
@@ -148,7 +157,8 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
                   Text(
                     'Update medical appointment for ${selectedPet.name}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      // FIX: Replaced withOpacity with withAlpha
+                      color: Colors.white.withAlpha(alpha90),
                       fontSize: 14,
                     ),
                   ),
@@ -333,6 +343,9 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
     required IconData icon,
     required Widget child,
   }) {
+    // FIX: Removed unused local variable alpha05, calculating inline
+    final int alpha05 = (0.05 * 255).round();
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -341,7 +354,8 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -391,7 +405,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
             Expanded(
               child: Text(
                 DateFormat('EEEE, MMM dd, yyyy').format(selectedDate),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                 ),
               ),
@@ -420,7 +434,7 @@ class _EditMedicalRecordDialogState extends State<EditMedicalRecordDialog> {
             Expanded(
               child: Text(
                 selectedTime.format(context),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                 ),
               ),
