@@ -80,37 +80,40 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
     final completedCount = _appointments.where((a) => a.status == 'completed').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
-        backgroundColor: const Color(0xFF6C63FF),
-        elevation: 0,
-        title: const Text(
-          'Vet Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+  backgroundColor: const Color(0xFFF5F7FA),
+  appBar: AppBar(
+    automaticallyImplyLeading: true, // show hamburger menu
+    backgroundColor: const Color(0xFFB892F7),
+    elevation: 0,
+    title: const Text(
+      'Vet Dashboard',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(upcomingCount, completedCount),
-                _buildTabs(),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildAppointmentsList(),
-                      _buildAccessiblePetsList(),
-                    ],
-                  ),
-                ),
-              ],
+    ),
+  ),
+
+
+  body: _isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : Column(
+          children: [
+            _buildHeader(upcomingCount, completedCount),
+            _buildTabs(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAppointmentsList(),
+                  _buildAccessiblePetsList(),
+                ],
+              ),
             ),
-    );
+          ],
+        ),
+);
+
   }
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
@@ -119,13 +122,18 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
 
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF6C63FF),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
+     decoration: const BoxDecoration(
+  gradient: LinearGradient(
+    colors: [Color(0xFFB892F7), Color(0xFFB892F7)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  borderRadius: BorderRadius.only(
+    bottomLeft: Radius.circular(30),
+    bottomRight: Radius.circular(30),
+  ),
+),
+
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +155,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                   upcomingCount.toString(),
                   Icons.schedule,
                   Colors.white,
-                  const Color(0xFF6C63FF),
+                  const Color(0xFFB892F7),
                 ),
               ),
               const SizedBox(width: 12),
@@ -157,7 +165,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                   completedCount.toString(),
                   Icons.check_circle,
                   Colors.white70,
-                  const Color(0xFF6C63FF),
+                  const Color(0xFFB892F7),
                 ),
               ),
             ],
@@ -206,9 +214,9 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFF6C63FF),
+        labelColor: const Color(0xFFB892F7),
         unselectedLabelColor: const Color(0xFF9CA3AF),
-        indicatorColor: const Color(0xFF6C63FF),
+        indicatorColor: const Color(0xFFB892F7),
         tabs: const [
           Tab(text: 'Appointments'),
           Tab(text: 'My Patients'),
@@ -243,15 +251,15 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF6C63FF).withOpacity(0.2),
+      selectedColor: const Color(0xFFB892F7).withOpacity(0.2),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFF6B7280),
+        color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[300]!,
+          color: isSelected ? const Color(0xFFB892F7) : Colors.grey[300]!,
         ),
       ),
     );
@@ -368,9 +376,9 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  color: const Color(0xFFB892F7).withOpacity(0.1),
                   border: Border.all(
-                    color: const Color(0xFF6C63FF),
+                    color: const Color(0xFFB892F7),
                     width: 2,
                   ),
                 ),
@@ -409,7 +417,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFF6C63FF)),
+                icon: const Icon(Icons.arrow_forward_ios, color: Color(0xFFB892F7)),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -428,7 +436,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
               _buildActionButton(
                 icon: Icons.medical_services,
                 label: 'Medical\nRecords',
-                color: const Color(0xFF6C63FF),
+                color: const Color(0xFFB892F7),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -454,7 +462,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
               _buildActionButton(
                 icon: Icons.add_circle,
                 label: 'Add\nRecord',
-                color: const Color(0xFFFFB74D),
+                color: const Color(0xFFB892F7),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -474,7 +482,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   Widget _buildPetAvatar(Pet pet) {
     final image = pet.image;
     if (image == null || image.isEmpty) {
-      return const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF));
+      return const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7));
     }
     if (image.startsWith('http')) {
       return ClipOval(
@@ -483,7 +491,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
           width: 60,
           height: 60,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF)),
+          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
         ),
       );
     }
@@ -493,7 +501,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFF6C63FF)),
+        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
       ),
     );
   }
@@ -534,7 +542,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   Widget _buildAppointmentCard(Appointment appointment) {
     final appState = Provider.of<AppState>(context);
     final isUpcoming = appointment.status == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFF6C63FF) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
     
     // Get pet name from app state
     final pet = appState.getPetById(appointment.petId);

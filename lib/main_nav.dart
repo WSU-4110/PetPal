@@ -219,55 +219,66 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       extendBodyBehindAppBar: true,
       extendBody: true,
 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        // Increased logo size (kept as you requested)
-        title: Image.asset(
-          'assets/images/petlogo.png',
-          height: 60,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                    const begin = Offset(0.0, -1.0);
-                    const end = Offset.zero;
-                    const curve = Curves.easeInOut;
-                    
-                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                    var offsetAnimation = animation.drive(tween);
-                    
-                    return SlideTransition(
-                      position: offsetAnimation,
-                      child: FadeTransition(
-                        opacity: animation,
-                        child: child,
-                      ),
-                    );
-                  },
-                  transitionDuration: const Duration(milliseconds: 400),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+ appBar: AppBar(
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  leading: Builder(
+    builder: (context) => IconButton(
+      icon: const Icon(Icons.menu, color: Colors.white),
+      onPressed: () => Scaffold.of(context).openDrawer(),
+    ),
+  ),
+  title: Image.asset(
+    'assets/images/petlogo.png',
+    height: 60,
+    fit: BoxFit.contain,
+  ),
+  centerTitle: true,
+  actions: [
+    // Show search button only for owner
+    if (widget.role == 'owner')
+      IconButton(
+        icon: const Icon(Icons.search, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                const begin = Offset(0.0, -1.0);
+                const end = Offset.zero;
+                const curve = Curves.easeInOut;
 
-      drawer: const AppDrawer(),
+                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                var offsetAnimation = animation.drive(tween);
+
+                return SlideTransition(
+                  position: offsetAnimation,
+                  child: FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  ),
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        },
+      ),
+  ],
+),
+
+
+drawer: Builder(
+  builder: (context) {
+    return AppDrawer(
+      showExtraOptions: widget.role == 'owner', // Only owner sees calendar/help/search
+    );
+  },
+),
+
+
+
 
       /// Use an IndexedStack so each tab keeps its state and we can let pages render full-screen.
       body: IndexedStack(

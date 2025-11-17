@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 
+
 class GroomerAppointment {
   final String id;
   final String groomerName;
@@ -110,42 +111,45 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     final upcomingCount = _appointments.where((a) => a.status == 'upcoming').length;
     final completedCount = _appointments.where((a) => a.status == 'completed').length;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
-        backgroundColor: const Color(0xFF4ECDC4),
-        elevation: 0,
-        title: const Text(
-          'Groomer Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              appState.logout();
-            },
-          ),
-        ],
+return Scaffold(
+  backgroundColor: const Color(0xFFF5F7FA),
+  appBar: AppBar(
+    automaticallyImplyLeading: true, // hamburger menu
+    backgroundColor: const Color(0xFFB892F7),
+    elevation: 0,
+    title: const Text(
+      'Groomer Dashboard',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(upcomingCount, completedCount),
-                _buildFilterChips(),
-                Expanded(
-                  child: _filteredAppointments.isEmpty
-                      ? _buildEmptyState()
-                      : _buildAppointmentsList(),
-                ),
-              ],
+    ),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.logout, color: Colors.white),
+        onPressed: () {
+          appState.logout();
+          Navigator.pushReplacementNamed(context, '/login');
+        },
+      ),
+    ],
+  ),
+ body: _isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : Column(
+          children: [
+            _buildHeader(upcomingCount, completedCount),
+            _buildFilterChips(),
+            Expanded(
+              child: _filteredAppointments.isEmpty
+                  ? _buildEmptyState()
+                  : _buildAppointmentsList(),
             ),
-    );
+          ],
+        ),
+);
+
+
   }
 
   Widget _buildHeader(int upcomingCount, int completedCount) {
@@ -155,7 +159,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Color(0xFF4ECDC4),
+        color: Color(0xFFB892F7),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -192,7 +196,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
                   completedCount.toString(),
                   Icons.check_circle,
                   Colors.white70,
-                  const Color(0xFF4ECDC4),
+                  const Color(0xFFB892F7),
                 ),
               ),
             ],
@@ -259,15 +263,15 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF4ECDC4).withOpacity(0.2),
+      selectedColor: const Color(0xFFB892F7).withOpacity(0.2),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF4ECDC4) : const Color(0xFF6B7280),
+        color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? const Color(0xFF4ECDC4) : Colors.grey[300]!,
+          color: isSelected ? const Color(0xFFB892F7) : Colors.grey[300]!,
         ),
       ),
     );
@@ -324,7 +328,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   Widget _buildAppointmentCard(GroomerAppointment appointment) {
     final appState = Provider.of<AppState>(context);
     final isUpcoming = appointment.status == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
     
     // Get pet name from the app state if not already available
     String petName = appointment.petName ?? 'Unknown';
