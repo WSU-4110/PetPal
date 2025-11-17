@@ -105,22 +105,23 @@ class _ExerciseLogsPageState extends State<ExerciseLogs> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: DropdownButton<Pet>(
-                    value: selectedPet,
+                  child: DropdownButton<int>(
+                    value: selectedPet?.id,
                     dropdownColor: Colors.white.withValues(alpha: 0.9),
                     items: appState.pets
-                        .map((p) => DropdownMenuItem(
-                              value: p,
+                        .map((p) => DropdownMenuItem<int>(
+                              value: p.id,
                               child: Text(
                                 p.name,
                                 style: const TextStyle(color: Color(0xFFB892F7)),
                               ),
                             ))
                         .toList(),
-                    onChanged: (p) {
-                      if (p != null) {
-                        setState(() => selectedPet = p);
-                        context.read<AppState>().loadExerciseLog(p.id!);
+                    onChanged: (id) {
+                      if (id != null) {
+                        final pet = appState.pets.firstWhere((p) => p.id == id);
+                        setState(() => selectedPet = pet);
+                        context.read<AppState>().loadExerciseLog(pet.id!);
                       }
                     },
                   ),

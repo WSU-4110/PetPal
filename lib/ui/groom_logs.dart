@@ -150,23 +150,24 @@ class _GroomLogsPageState extends State<GroomLogs> {
                       color: Colors.white.withAlpha(alpha20),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: DropdownButton<Pet>(
-                      value: selectedPet,
+                    child: DropdownButton<int>(
+                      value: selectedPet?.id,
                       // FIX: Replaced withOpacity with withAlpha
                       dropdownColor: Colors.white.withAlpha(alpha90),
                       items: appState.pets
-                          .map((p) => DropdownMenuItem(
-                                value: p,
+                          .map((p) => DropdownMenuItem<int>(
+                                value: p.id,
                                 child: Text(
                                   p.name,
                                   style: const TextStyle(color: Color(0xFFB892F7)),
                                 ),
                               ))
                           .toList(),
-                      onChanged: (p) {
-                        if (p != null) {
-                          setState(() => selectedPet = p);
-                          context.read<AppState>().loadGroomLog(p.id!);
+                      onChanged: (id) {
+                        if (id != null) {
+                          final pet = appState.pets.firstWhere((p) => p.id == id);
+                          setState(() => selectedPet = pet);
+                          context.read<AppState>().loadGroomLog(pet.id!);
                         }
                       },
                     ),
