@@ -496,20 +496,19 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
     final appState = Provider.of<AppState>(context, listen: false);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.pet != null ? 'Edit Pet' : 'Add Pet'),
-        elevation: 0,
-        flexibleSpace: Container(
-        decoration: const BoxDecoration(
-         gradient: LinearGradient(
-            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        title: Text(
+          widget.pet != null ? 'Edit Pet' : 'Add Pet',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
-      ),
-      backgroundColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
         width: double.infinity,

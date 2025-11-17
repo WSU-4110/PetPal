@@ -4,6 +4,7 @@ import '../state/app_state.dart';
 import '../models/appointment.dart';
 import '../models/pet.dart';
 import 'vet_pet_details_screen.dart';
+import 'dart:developer' as developer;
 
 class VetHomeScreen extends StatefulWidget {
   const VetHomeScreen({super.key});
@@ -57,7 +58,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         }
       }
     } catch (e) {
-      print('Error loading vet data: $e');
+      developer.log('Error loading vet data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -75,7 +76,6 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
     final upcomingCount = _appointments.where((a) => a.status == 'upcoming').length;
     final completedCount = _appointments.where((a) => a.status == 'completed').length;
 
@@ -171,7 +171,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -243,7 +243,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF6C63FF).withOpacity(0.2),
+      selectedColor: const Color(0xFF6C63FF).withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF6C63FF) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -352,7 +352,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -368,7 +368,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.1),
                   border: Border.all(
                     color: const Color(0xFF6C63FF),
                     width: 2,
@@ -509,7 +509,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -548,7 +548,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -563,7 +563,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -616,7 +616,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -694,18 +694,19 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   void _completeAppointment(Appointment appointment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Complete Appointment'),
         content: const Text('Mark this appointment as completed?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               
+              if (!mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
@@ -722,21 +723,25 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                 }
                 
                 // Notify listeners to update the UI
-                setState(() {});
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Appointment marked as completed'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                if (mounted) {
+                  setState(() {});
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Appointment marked as completed'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Complete', style: TextStyle(color: Colors.green)),
@@ -749,18 +754,19 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   void _cancelAppointment(Appointment appointment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Appointment'),
         content: const Text('Are you sure you want to cancel this appointment?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('No'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               
+              if (!mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
@@ -771,18 +777,22 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
                 _appointments.removeWhere((a) => a.id == appointment.id);
                 
                 // Notify listeners to update the UI
-                setState(() {});
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appointment cancelled')),
-                );
+                if (mounted) {
+                  setState(() {});
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Appointment cancelled')),
+                  );
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Yes', style: TextStyle(color: Colors.red)),

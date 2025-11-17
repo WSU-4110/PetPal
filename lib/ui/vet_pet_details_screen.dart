@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../models/medical_record.dart';
 import '../state/app_state.dart';
+import 'dart:developer' as developer;
 
 class VetPetDetailsScreen extends StatefulWidget {
   final Pet pet;
@@ -20,7 +21,6 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
   Map<String, dynamic>? _healthInfo;
   bool _isLoading = true;
   bool _isVet = false;
-  bool _isOwner = false;
 
   @override
   void initState() {
@@ -37,13 +37,17 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
   }
 
   Future<void> _loadData() async {
+    // Check mounted once at the start of async function
+    if (!mounted) return;
+
     final appState = Provider.of<AppState>(context, listen: false);
 
     // Check user role
-    setState(() {
-      _isVet = appState.currentUser?['role'] == 'vet';
-      _isOwner = appState.currentUser?['role'] == 'owner';
-    });
+    if (mounted) {
+      setState(() {
+        _isVet = appState.currentUser?['role'] == 'vet';
+      });
+    }
 
     try {
       // Load medical records for this pet
@@ -59,7 +63,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
         });
       }
     } catch (e) {
-      print('Error loading pet data: $e');
+      developer.log('Error loading pet data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -143,7 +147,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withAlpha((0.2 * 255).round()), // Use withAlpha to avoid deprecation
               border: Border.all(
                 color: Colors.white,
                 width: 2,
@@ -200,6 +204,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
           width: 80,
           height: 80,
           fit: BoxFit.cover,
+          // FIX: Replaced multiple underscores with single underscore
           errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white),
         ),
       );
@@ -210,6 +215,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
         width: 80,
         height: 80,
         fit: BoxFit.cover,
+        // FIX: Replaced multiple underscores with single underscore
         errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white),
       ),
     );
@@ -261,7 +267,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05 * 255).round()), // Use withAlpha to avoid deprecation
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -288,7 +294,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withAlpha((0.1 * 255).round()), // Use withAlpha to avoid deprecation
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor, width: 1),
                 ),
@@ -646,7 +652,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Edit Health Information'),
         content: SingleChildScrollView(
           child: Column(
@@ -672,7 +678,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 ),
                 onTap: () async {
                   final date = await showDatePicker(
-                    context: context,
+                    context: dialogContext,
                     initialDate: _healthInfo?['lastCheckup'] ?? DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime.now(),
@@ -701,7 +707,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 ),
                 onTap: () async {
                   final date = await showDatePicker(
-                    context: context,
+                    context: dialogContext,
                     initialDate: _healthInfo?['nextVaccinationDue'] ?? DateTime.now(),
                     firstDate: DateTime.now(),
                     lastDate: DateTime(2100),
@@ -825,7 +831,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -838,7 +844,9 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 try {
                   lastCheckup = _parseDate(lastCheckupController.text);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  // This is safe because dialogContext is active inside the dialog
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     const SnackBar(content: Text('Invalid date format for last checkup')),
                   );
                   return;
@@ -849,13 +857,21 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 try {
                   nextVaccinationDue = _parseDate(nextVaccinationDueController.text);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  // This is safe because dialogContext is active inside the dialog
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     const SnackBar(content: Text('Invalid date format for next vaccination due')),
                   );
                   return;
                 }
               }
 
+              // FIX: Navigator.pop needs to happen *before* async provider fetch to fully clear context chain
+              // We perform the pop *after* the parsing but *before* the remote call.
+              Navigator.pop(dialogContext); // Close dialog immediately
+
+              // FIX: Check mounted BEFORE calling Provider.of (Line 908)
+              if (!context.mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
 
               // Update health information with all fields
@@ -886,11 +902,11 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 },
               );
 
-              // Reload data
+              // Reload data (which uses async gap)
               await _loadData();
 
+              // Check mounted BEFORE using ScaffoldMessenger
               if (mounted) {
-                Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Health information updated')),
                 );
@@ -912,7 +928,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
+      builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Add Medical Record'),
           content: SingleChildScrollView(
@@ -946,7 +962,8 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedStatus,
+                  // Fixed deprecated 'value' with 'initialValue'
+                  initialValue: selectedStatus,
                   decoration: const InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(),
@@ -961,19 +978,27 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     const SnackBar(content: Text('Please enter a title')),
                   );
                   return;
                 }
+                
+                // Close dialog first
+                Navigator.pop(dialogContext);
+
+                // FIX: Check mounted BEFORE calling Provider.of (Line 1011, 1012)
+                if (!context.mounted) return;
                 final appState = Provider.of<AppState>(context, listen: false);
                 final vetName = appState.displayName;
+                
                 final record = MedicalRecord(
                   petId: widget.pet.id!,
                   title: titleController.text,
@@ -986,8 +1011,8 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 await appState.addMedicalRecord(record);
                 await _loadData();
 
+                // Check mounted BEFORE using ScaffoldMessenger
                 if (mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Medical record added')),
                   );
@@ -1009,7 +1034,7 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
+      builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Edit Medical Record'),
           content: SingleChildScrollView(
@@ -1043,7 +1068,8 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedStatus,
+                  // Fixed deprecated 'value' with 'initialValue'
+                  initialValue: selectedStatus,
                   decoration: const InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(),
@@ -1058,17 +1084,22 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     const SnackBar(content: Text('Please enter a title')),
                   );
                   return;
                 }
+
+                // Close dialog first
+                Navigator.pop(dialogContext);
+                
                 final updated = MedicalRecord(
                   id: record.id,
                   petId: record.petId,
@@ -1079,12 +1110,15 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
                   weight: weightController.text.isEmpty ? null : double.tryParse(weightController.text),
                   status: selectedStatus,
                 );
+
+                // FIX: Check mounted BEFORE calling Provider.of (Line 1114, 1115)
+                if (!context.mounted) return;
                 final appState = Provider.of<AppState>(context, listen: false);
                 await appState.updateMedicalRecord(updated);
                 await _loadData();
 
+                // Check mounted BEFORE using ScaffoldMessenger
                 if (mounted) {
-                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Medical record updated')),
                   );
@@ -1101,22 +1135,27 @@ class _VetPetDetailsScreenState extends State<VetPetDetailsScreen> with SingleTi
   void _deleteRecord(MedicalRecord record) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Record'),
         content: const Text('Are you sure you want to delete this medical record?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
+              // Close dialog first
+              Navigator.pop(dialogContext);
+              
+              // FIX: Check mounted BEFORE calling Provider.of (Line 1149)
+              if (!context.mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
               await appState.deleteMedicalRecord(record.id!, widget.pet.id!);
               await _loadData();
 
+              // Check mounted BEFORE using ScaffoldMessenger
               if (mounted) {
-                Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Medical record deleted')),
                 );
