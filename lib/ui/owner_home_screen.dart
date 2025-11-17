@@ -7,7 +7,8 @@ import '../models/pet.dart';
 import '../models/reminder.dart';
 // import '../models/appointment.dart'; // FIX: Removed unused import
 import 'pet_details_screen.dart';
-// import 'appointments_screen.dart'; // FIX: Removed unused import
+import 'appointments_screen.dart';
+import 'notification_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -178,17 +179,24 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            // FIX: Replaced withValues with withAlpha
-                            color: Colors.white.withAlpha((0.2 * 255).round()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.notifications,
-                            color: Colors.white,
-                            size: 24,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.notifications,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                           ),
                         ),
                       ],

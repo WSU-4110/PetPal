@@ -19,23 +19,23 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   // Group recurring reminders by their core properties
   List<Map<String, dynamic>> _groupReminders(List<Reminder> reminders) {
     final Map<String, List<Reminder>> grouped = {};
-    
+
     for (var reminder in reminders) {
       // Create a unique key based on pet, title, and category
       final key = '${reminder.petId}_${reminder.title}_${reminder.category}';
-      
+
       if (!grouped.containsKey(key)) {
         grouped[key] = [];
       }
       grouped[key]!.add(reminder);
     }
-    
+
     // Convert to display format
     final List<Map<String, dynamic>> result = [];
     grouped.forEach((key, reminderList) {
       // Sort by date to get the earliest one
       reminderList.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-      
+
       result.add({
         'reminder': reminderList.first, // Show the earliest occurrence
         'count': reminderList.length,
@@ -43,14 +43,14 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
         'isRecurring': reminderList.length > 1,
       });
     });
-    
+
     // Sort by scheduled date
-    result.sort((a, b) => 
+    result.sort((a, b) =>
       (a['reminder'] as Reminder).scheduledAt.compareTo(
         (b['reminder'] as Reminder).scheduledAt
       )
     );
-    
+
     return result;
   }
 
@@ -103,7 +103,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                     final int count = group['count'] as int;
                     final bool isRecurring = group['isRecurring'] as bool;
                     final List<Reminder> allReminders = group['allReminders'] as List<Reminder>;
-                    
+
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -235,6 +235,7 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                                   } else {
                                     final messenger = ScaffoldMessenger.of(context);
                                     await appState.deleteReminder(r.id!);
+                                    await appState.deleteNotification(r.id!);
                                     if (!mounted) return;
                                     messenger.showSnackBar(
                                       const SnackBar(content: Text('Reminder deleted')),

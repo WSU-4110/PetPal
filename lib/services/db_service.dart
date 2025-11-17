@@ -13,6 +13,7 @@ import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
 import '../models/pet_access.dart';
 import '../models/appointment.dart';
+import '../models/notification.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -30,6 +31,7 @@ class DBService {
   Future<Database> _initDB() async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, 'petpal.db');
+
     return await openDatabase(
       path,
       version: _dbVersion,
@@ -321,6 +323,16 @@ class DBService {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (pet_id) REFERENCES pets (id) ON DELETE CASCADE
+      );
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS notifications(
+        id INTEGER,
+        title TEXT NOT NULL,
+        body TEXT,
+        scheduledAt TEXT,
+        deliveredAt TEXT
       );
     ''');
 
@@ -894,6 +906,21 @@ class DBService {
       rethrow;
     }
   }
+
+  // ---------------- Notifications ----------------
+  Future<int> insertNotification(AppNotification n) async => (await database).insert('notifications', n.toMap());
+  Future<List<AppNotification>> getAllNotifications() async => (await database).query('notifications', orderBy: 'scheduledAt DESC').then((rows) => rows.map(AppNotification.fromMap).toList());
+  Future<int> updateNotification(AppNotification n) async => (await database).update('notifications', n.toMap(), where: 'id = ?', whereArgs: [n.id]);
+  Future<int> deleteNotification(int id) async => (await database).delete('notifications', where: 'id = ?', whereArgs: [id]);
+  Future<void> deleteNotificationsForReminder(int id) async {
+    final db = await database;
+    await db.delete('notifications',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+
 
   Future<void> close() async {
     if (_db != null) {

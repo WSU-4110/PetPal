@@ -9,6 +9,7 @@ import '../models/medical_record.dart';
 import '../models/appointment.dart';
 import '../models/exercise_log.dart';
 import '../models/groom_log.dart';
+import '../models/notification.dart';
 import '../services/db_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -25,6 +26,8 @@ class AppState extends ChangeNotifier {
   List<Appointment> appointments = [];
   List<Map<String, dynamic>> groomingAppointments = [];
   List<Map<String, dynamic>> trainingAppointments = [];
+  List<AppNotification> notifications = [];
+
   Map<String, dynamic>? currentUser;
   Map<int, List<int>> petAccessMap = {};
   final Map<int, Map<String, dynamic>> _petHealthInfo = {};
@@ -33,6 +36,7 @@ class AppState extends ChangeNotifier {
   bool _darkMode = false;
   String? _profileImagePath;
   String? _displayName;
+
   static const String _kDarkModeKey = 'petpal_dark_mode';
   static const String _kProfileImageKey = 'petpal_profile_image';
   static const String _kDisplayNameKey = 'petpal_display_name';
@@ -182,7 +186,14 @@ class AppState extends ChangeNotifier {
   // Reminders
   Future<void> addReminder(Reminder r) async {
     await _db.insertReminder(r);
+    await _db.insertNotification(AppNotification(
+      id: r.id,
+      title: r.title,
+      body: 'Reminder for ${r.category}',
+      scheduledAt: r.scheduledAt,
+    ));
     reminders = await _db.getAllReminders();
+    //_unreadNotificationsCount++;
     notifyListeners();
   }
 
@@ -199,6 +210,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> deleteReminder(int id) async {
     await _db.deleteReminder(id);
+    await _db.deleteNotification(id);
     reminders = await _db.getAllReminders();
     notifyListeners();
   }
@@ -676,12 +688,30 @@ class AppState extends ChangeNotifier {
     return p.image ?? Pet.imageFor(p.species, p.breed);
   }
 
+  // ---------------- Notifications ----------------
+  int get unreadNotificationsCount {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
+
+    return notifications.where((n) =>
+    n.scheduledAt != null &&
+        n.scheduledAt!.isBefore(todayEnd)
+    ).length;
+  }
+
+  Future<void> deleteNotification(int id) async {
+    await _db.deleteNotification(id);
+  }
+
+
   List<String> getTips({int max = 6}) {
     final List<String> tips = [
       'Make sure fresh water is always available.',
       'Schedule regular vet checkups — prevention beats cure.',
       'Use positive reinforcement during training.',
     ];
+
     final speciesSet = pets.map((p) => p.species.toLowerCase()).toSet();
     if (speciesSet.contains('cat')) {
       tips.addAll([
@@ -698,6 +728,7 @@ class AppState extends ChangeNotifier {
     if (speciesSet.contains('rabbit')) {
       tips.addAll(['Rabbits need chewing toys and safe space to hop.']);
     }
+
     tips.shuffle();
     return tips.take(max).toList();
   }

@@ -6,6 +6,7 @@ import '../state/app_state.dart';
 import '../ui/calendar_screen.dart';
 import '../ui/settings_screen.dart';
 import '../ui/help_screen.dart';
+import '../ui/weekly_report.dart';
 import 'login_page.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -131,9 +132,15 @@ class AppDrawer extends StatelessWidget {
           ),
 
           _DrawerItem(
-            icon: Icons.notifications,
-            title: "Notifications",
-            onTap: () => Navigator.pop(context),
+            icon: Icons.analytics,
+            title: "Weekly Report",
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
+              );
+            },
           ),
 
           _DrawerItem(

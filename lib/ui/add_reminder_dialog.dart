@@ -760,7 +760,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
   void _saveReminder() {
     // Prevent multiple saves
     if (_isSaving) return;
-    
+
     if (selectedPet == null ||
         titleController.text.trim().isEmpty ||
         selectedDate == null ||
@@ -794,7 +794,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
       // Limit to a reasonable number of reminders (e.g., 30 occurrences or 90 days max)
       final maxOccurrences = 30;
       int occurrences = 0;
-      
+
       for (int i = 0; occurrences < maxOccurrences && i < 365; i += daysInterval) {
         final reminderDate = dt.add(Duration(days: i));
         
@@ -804,7 +804,7 @@ class _AddReminderDialogState extends State<AddReminderDialog> {
           category: category,
           scheduledAt: reminderDate,
         ));
-        
+
         occurrences++;
       }
       
