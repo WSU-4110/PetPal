@@ -1,13 +1,10 @@
-// lib/ui/owner_home_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/pet.dart';
 import '../models/reminder.dart';
-// import '../models/appointment.dart'; // FIX: Removed unused import
 import 'pet_details_screen.dart';
-// import 'appointments_screen.dart'; // FIX: Removed unused import
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -27,25 +24,20 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void initState() {
     super.initState();
     
-    // It's safe to read provider with listen: false here
     _appState = Provider.of<AppState>(context, listen: false);
     _tips = _safeGetTips(_appState);
     _startTipRotation();
 
-    // Attach listener once to update tips when AppState notifies
     if (!_appStateListenerAttached) {
       _appState.addListener(_onAppStateChanged);
       _appStateListenerAttached = true;
     }
   }
 
-  // Helper to safely read tips from AppState
   List<String> _safeGetTips(AppState appState) {
     try {
-      // FIX: Removed dead code/dead null-aware expression. The function 
-      // is expected to return List<String>? based on original logic.
       final tips = appState.getTips();
-      return tips ?? <String>[];
+      return tips;
     } catch (_) {
       return <String>[];
     }
@@ -54,7 +46,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void _onAppStateChanged() {
     final newTips = _safeGetTips(_appState);
     if (!_listEquals(newTips, _tips)) {
-      if (!mounted) return; // Guard setState
+      if (!mounted) return;  
       setState(() {
         _tips = newTips;
         _currentTipIndex = 0;
@@ -106,7 +98,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     try {
       final user = appState.currentUser;
       if (user != null) {
-        // Safe access assuming currentUser is Map<String, dynamic>?
         userName = user['firstName'] ?? user['first_name'] ?? 'there';
       }
     } catch (_) {}
@@ -144,35 +135,37 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Row header: greeting only (removed notification icon)
-                    Text(
-                      'Hi $userName,',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+              // FIX: Wrapped the Padding in Center to ensure the greeting section is centered horizontally
+              Center( 
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Hi $userName,',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Let's take a good care of your cutie pets!",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Love. Care. Track.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
 
-              // Pet Cards or empty state - MODIFIED FOR CENTERING SINGLE PET
               if (pets.isEmpty)
                 Center(
                   child: Padding(
@@ -191,7 +184,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   ),
                 )
               else if (pets.length == 1)
-                // Center single pet card
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -199,7 +191,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   ),
                 )
               else
-                // Horizontal scroll for multiple pets
                 SizedBox(
                   height: 200,
                   child: ScrollConfiguration(
@@ -221,19 +212,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   ),
                 ),
 
-              // Tip box — always visible (shows placeholder when no tips available)
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
                   decoration: BoxDecoration(
-                    // FIX: Replaced withValues with withAlpha
                     color: Colors.white.withAlpha((0.15 * 255).round()),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        // FIX: Replaced withValues with withAlpha
                         color: Colors.black.withAlpha((0.08 * 255).round()),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
@@ -243,11 +231,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Lightbulb icon (as in screenshot)
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          // FIX: Replaced withValues with withAlpha
                           color: Colors.white.withAlpha((0.06 * 255).round()),
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -339,7 +325,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.check_circle_outline,
+                                const Icon(Icons.check_circle_outline,
                                     size: 40, color: Colors.white70),
                                 const SizedBox(width: 16),
                                 const Text(
@@ -462,8 +448,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           width: 80,
           height: 80,
           fit: BoxFit.cover,
-          // FIX: Replaced multiple underscores with single underscores
-          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
+          // FIX: Use explicit parameter names to avoid unnecessary underscore lints
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 40, color: Colors.white70),
         ),
       );
     }
@@ -473,8 +459,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         width: 80,
         height: 80,
         fit: BoxFit.cover,
-        // FIX: Replaced multiple underscores with single underscores
-        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 40, color: Colors.white70),
+        // FIX: Use explicit parameter names to avoid unnecessary underscore lints
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 40, color: Colors.white70),
       ),
     );
   }
@@ -758,7 +744,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.event_available, size: 40, color: Colors.white70),
+            const Icon(Icons.event_available, size: 40, color: Colors.white70),
             const SizedBox(width: 16),
             const Text(
               'No upcoming events',

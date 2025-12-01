@@ -7,8 +7,10 @@ import '../models/exercise_log.dart';
 import '../models/pet.dart';
 
 class AddExerciseLogDialog extends StatefulWidget {
+  final ExerciseLog? exerciseLog; // null for add, provided for edit
   final int? petId; // Make nullable
-  const AddExerciseLogDialog({super.key, this.petId});
+
+  const AddExerciseLogDialog({super.key, this.exerciseLog, this.petId});
 
   @override
   State<AddExerciseLogDialog> createState() => _AddExerciseLogDialogState();
@@ -29,16 +31,48 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
-    _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
-    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    
+    // Initialize for edit mode
+    if (widget.exerciseLog != null) {
+      _lengthController.text = widget.exerciseLog!.length;
+      _activityController.text = widget.exerciseLog!.activity;
+      _dateController.text = widget.exerciseLog!.date;
+      _observationController.text = widget.exerciseLog!.observations;
+      try {
+        // Assuming date format is consistent with saving mechanism
+        _selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.exerciseLog!.date);
+      } catch (err) {
+        _selectedDate = DateTime.now();
+      }
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+    } else {
+      // Initialize for add mode
+      _selectedDate = DateTime.now();
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+      _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    }
     
     // Load pets from app state
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final appState = Provider.of<AppState>(context, listen: false);
-      setState(() {
-        pets = appState.pets;
-        // Select the pet if provided, otherwise select the first pet
+      _loadPets();
+    });
+  }
+
+  void _loadPets() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    setState(() {
+      pets = appState.pets;
+      
+      // Set selected pet
+      if (widget.exerciseLog != null) {
+        // Edit mode: select the pet from the exercise log
+        try {
+          selectedPet = pets.firstWhere((p) => p.id == widget.exerciseLog!.petId);
+        } catch (e) {
+          selectedPet = pets.isNotEmpty ? pets.first : null;
+        }
+      } else {
+        // Add mode: select the pet if provided, otherwise select the first pet
         if (widget.petId != null) {
           try {
             selectedPet = pets.firstWhere((p) => p.id == widget.petId);
@@ -48,7 +82,7 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
         } else {
           selectedPet = pets.isNotEmpty ? pets.first : null;
         }
-      });
+      }
     });
   }
 
@@ -143,10 +177,10 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Add Exercise Log',
-                          style: TextStyle(
+                          widget.exerciseLog != null ? 'Edit Exercise Log' : 'Add Exercise Log',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -161,7 +195,9 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Record an exercise activity for your pet',
+                    widget.exerciseLog != null 
+                        ? 'Update exercise activity for ${selectedPet?.name ?? 'your pet'}'
+                        : 'Record an exercise activity for your pet',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
@@ -180,13 +216,14 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Pet selector card
-                      _buildFormCard(
-                        title: 'Select Pet',
-                        icon: Icons.pets,
-                        child: _buildPetSelector(),
-                      ),
-                      const SizedBox(height: 16),
+                      // Pet selector card - only show in add mode
+                      if (widget.exerciseLog == null)
+                        _buildFormCard(
+                          title: 'Select Pet',
+                          icon: Icons.pets,
+                          child: _buildPetSelector(),
+                        ),
+                      if (widget.exerciseLog == null) const SizedBox(height: 16),
 
                       // Activity input card
                       _buildFormCard(
@@ -308,6 +345,7 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                           setState(() => _isSaving = true);
                           
                           final record = ExerciseLog(
+                            id: widget.exerciseLog?.id, // Keep existing ID for edit
                             petId: selectedPet!.id!,
                             length: _lengthController.text,
                             activity: _activityController.text,
@@ -321,13 +359,20 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                           final appState = context.read<AppState>();
                           
                           try {
-                            await appState.addExerciseLog(record);
+                            if (widget.exerciseLog != null) {
+                              // Edit mode
+                              await appState.updateExerciseLog(record);
+                            } else {
+                              // Add mode
+                              await appState.addExerciseLog(record);
+                            }
+                            
                             if (!mounted) return;
                             navigator.pop();
                           } catch (e) {
                             if (!mounted) return;
                             messenger.showSnackBar(
-                              SnackBar(content: Text('Error adding log: $e')),
+                              SnackBar(content: Text('Error ${widget.exerciseLog != null ? 'updating' : 'adding'} log: $e')),
                             );
                           } finally {
                             if (mounted) {
@@ -354,9 +399,9 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Save Log',
-                              style: TextStyle(
+                          : Text(
+                              widget.exerciseLog != null ? 'Update Log' : 'Save Log',
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -578,7 +623,7 @@ class _AddExerciseLogDialogState extends State<AddExerciseLogDialog> {
             Expanded(
               child: Text(
                 _selectedTime.format(context),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                 ),
               ),

@@ -1,8 +1,7 @@
-// lib/ui/trainer_home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import 'dart:developer'; // Using dart:developer for logging
+import 'dart:developer'; 
 
 class TrainerHomeScreen extends StatefulWidget {
   const TrainerHomeScreen({super.key});
@@ -13,7 +12,7 @@ class TrainerHomeScreen extends StatefulWidget {
 class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
-  String _filterStatus = 'all'; // all, upcoming, completed
+  String _filterStatus = 'all'; 
 
   @override
   void initState() {
@@ -38,13 +37,9 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
         for (final pet in allPets) {
           try {
             if (!mounted) return;
-            // Assuming return type of getTrainingAppointmentsForPet is now non-nullable List<Map<...>>.
-            // If it returns null, the method signature in AppState/db needs to be checked.
-            // For the sake of fixing lint, we treat it as non-nullable here.
             final petAppointments =
                 await appState.db.getTrainingAppointmentsForPet(pet.id!);
 
-            // FIX: Removed unnecessary null check on petAppointments
             if (petAppointments.isNotEmpty) {
               allTrainingAppointments.addAll(petAppointments);
             }
@@ -103,7 +98,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        automaticallyImplyLeading: true, // <-- set to true so menu button appears
+        automaticallyImplyLeading: true, 
         backgroundColor: const Color(0xFFB892F7),
         elevation: 0,
         title: const Text(
@@ -331,7 +326,7 @@ class _TrainerHomeScreenState extends State<TrainerHomeScreen> {
     try {
       dateTime = DateTime.parse(dateTimeString ?? '');
     } catch (e) {
-      dateTime = DateTime.now(); // Fallback
+      dateTime = DateTime.now(); 
       log('Error parsing dateTime: $dateTimeString. Error: $e');
     }
 

@@ -1,9 +1,11 @@
 // lib/ui/gallery_screen.dart
 import 'dart:io';
-
+// import 'dart:convert'; // REMOVED UNUSED IMPORT
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../models/pet.dart';
+import '../state/app_state.dart'; // Import AppState
 
 class GalleryItem {
   final String id;
@@ -17,6 +19,24 @@ class GalleryItem {
     required this.caption,
     required this.date,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'imageUrl': imageUrl,
+      'caption': caption,
+      'date': date.toIso8601String(),
+    };
+  }
+
+  factory GalleryItem.fromMap(Map<String, dynamic> map) {
+    return GalleryItem(
+      id: map['id'] as String,
+      imageUrl: map['imageUrl'] as String,
+      caption: map['caption'] as String,
+      date: DateTime.parse(map['date'] as String),
+    );
+  }
 }
 
 class GalleryScreen extends StatefulWidget {
@@ -29,7 +49,6 @@ class GalleryScreen extends StatefulWidget {
 }
 
 class _GalleryScreenState extends State<GalleryScreen> {
-  final List<GalleryItem> _galleryItems = [];
   final ImagePicker _picker = ImagePicker();
 
   bool _isNetwork(String path) =>
@@ -37,28 +56,40 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    final appState = Provider.of<AppState>(context);
+    final petId = widget.pet.id!;
+    // Fetch items from AppState
+    final List<GalleryItem> galleryItems = appState.getGalleryItems(petId)
+        .map((map) => GalleryItem.fromMap(map))
+        .toList();
+
+    // Calculate alpha values for withAlpha usage
     final int alpha05 = (0.05 * 255).round();
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: _galleryItems.isEmpty
+      body: galleryItems.isEmpty
           ? _buildEmptyState()
           : GridView.builder(
               padding: const EdgeInsets.all(20),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 childAspectRatio: 0.85,
               ),
-              itemCount: _galleryItems.length,
+              itemCount: galleryItems.length,
               itemBuilder: (context, index) {
-                return _buildGalleryCard(_galleryItems[index], alpha05);
+                return _buildGalleryCard(galleryItems[index], alpha05);
               },
             ),
-      // Removed the floatingActionButton
+      floatingActionButton: galleryItems.isNotEmpty 
+          ? FloatingActionButton(
+              onPressed: _showAddPhotoDialog,
+              backgroundColor: const Color(0xFF6C63FF),
+              child: const Icon(Icons.add_a_photo, color: Colors.white),
+            ) 
+          : null, // FAB will be shown in the empty state or via scaffold FAB
     );
   }
 
@@ -110,9 +141,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   Widget _buildGalleryCard(GalleryItem item, int alpha05) {
-    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    // Calculate another alpha for semi-transparent menu background
     final int alpha50 = (0.5 * 255).round();
-    
+
     return GestureDetector(
       onTap: () => _showPhotoDetail(item),
       child: Container(
@@ -121,7 +152,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              // FIX: Replaced withOpacity with withAlpha
               color: Colors.black.withAlpha(alpha05),
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -147,8 +177,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           ? Image.network(
                               item.imageUrl,
                               fit: BoxFit.cover,
-                              // FIX: Replaced __ and ___ with single _
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder:
+                                  (BuildContext context, Object error, StackTrace? stackTrace) =>
+                                      Container(
                                 color: Colors.grey[300],
                                 child: const Icon(
                                   Icons.photo,
@@ -160,8 +191,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                           : Image.file(
                               File(item.imageUrl),
                               fit: BoxFit.cover,
-                              // FIX: Replaced __ and ___ with single _
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder:
+                                  (BuildContext context, Object error, StackTrace? stackTrace) =>
+                                      Container(
                                 color: Colors.grey[300],
                                 child: const Icon(
                                   Icons.photo,
@@ -178,7 +210,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         icon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            // FIX: Replaced withOpacity with withAlpha
                             color: Colors.black.withAlpha(alpha50),
                             shape: BoxShape.circle,
                           ),
@@ -279,8 +310,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         ? Image.network(
                             item.imageUrl,
                             fit: BoxFit.cover,
-                            // FIX: Replaced __ and ___ with single _
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder:
+                                (BuildContext context, Object error, StackTrace? stackTrace) =>
+                                    Container(
                               height: 300,
                               color: Colors.grey[300],
                               child: const Icon(Icons.photo, size: 80),
@@ -289,8 +321,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         : Image.file(
                             File(item.imageUrl),
                             fit: BoxFit.cover,
-                            // FIX: Replaced __ and ___ with single _
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder:
+                                (BuildContext context, Object error, StackTrace? stackTrace) =>
+                                    Container(
                               height: 300,
                               color: Colors.grey[300],
                               child: const Icon(Icons.photo, size: 80),
@@ -346,7 +379,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final captionController = TextEditingController();
     String? pickedPath;
 
-    // FIX: Calculate alpha value for deprecated withOpacity fixes
+    // Calculate alpha for border
     final int alpha30 = (0.3 * 255).round();
 
     showModalBottomSheet(
@@ -411,7 +444,6 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        // FIX: Replaced withOpacity with withAlpha
                         color: const Color(0xFF6C63FF).withAlpha(alpha30),
                         width: 2,
                       ),
@@ -463,25 +495,42 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (pickedPath == null) {
+                        // Safe to use context since it's before any async gap
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Please pick a photo')),
                         );
                         return;
                       }
-                      setState(() {
-                        _galleryItems.add(
-                          GalleryItem(
+
+                      // Capture AppState and Messenger before the pop and async gap
+                      final appState = Provider.of<AppState>(context, listen: false);
+                      final messenger = ScaffoldMessenger.of(context);
+                      final petId = widget.pet.id;
+
+                      // Create item map
+                      final item = GalleryItem(
                             id: DateTime.now().millisecondsSinceEpoch.toString(),
                             imageUrl: pickedPath!,
-                            caption: captionController.text.isEmpty ? 'No caption' : captionController.text,
+                            caption: captionController.text.isEmpty
+                                ? 'No caption'
+                                : captionController.text,
                             date: DateTime.now(),
-                          ),
-                        );
-                      });
+                      );
+
+                      // Close dialog
+                      if (!context.mounted) return;
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
+
+                      // Persist data via AppState
+                      if (petId != null) {
+                          await appState.addGalleryItem(petId, item.toMap());
+                      }
+                      
+                      // Check mounted before using captured messenger
+                      if (!mounted) return;
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Photo added successfully!'),
                           backgroundColor: Color(0xFF4ECDC4),
@@ -523,12 +572,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _galleryItems.remove(item);
-              });
+            onPressed: () async {
+              // Capture AppState and Messenger before the pop and async gap
+              final appState = Provider.of<AppState>(context, listen: false);
+              final messenger = ScaffoldMessenger.of(context);
+              final petId = widget.pet.id;
+
+              // Close dialog
+              if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
+
+              // Perform async delete
+              if (petId != null) {
+                await appState.deleteGalleryItem(petId, item.id);
+              }
+
+              // Check mounted before using captured messenger
+              if (!mounted) return;
+              messenger.showSnackBar(
                 const SnackBar(content: Text('Photo deleted')),
               );
             },
@@ -557,18 +618,24 @@ class _GalleryScreenState extends State<GalleryScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
-            onPressed: () {
-              setState(() {
-                final index = _galleryItems.indexOf(item);
-                _galleryItems[index] = GalleryItem(
-                  id: item.id,
-                  imageUrl: item.imageUrl,
-                  caption: captionController.text,
-                  date: item.date,
-                );
-              });
+            onPressed: () async {
+              // Capture AppState and Messenger before the pop and async gap
+              final appState = Provider.of<AppState>(context, listen: false);
+              final messenger = ScaffoldMessenger.of(context);
+              final petId = widget.pet.id;
+
+              // Close dialog
+              if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
+
+              // Perform async update
+              if (petId != null) {
+                await appState.updateGalleryItem(petId, item.id, captionController.text);
+              }
+              
+              // Check mounted before using captured messenger
+              if (!mounted) return;
+              messenger.showSnackBar(
                 const SnackBar(content: Text('Caption updated')),
               );
             },

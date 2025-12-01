@@ -1,4 +1,3 @@
-// lib/ui/pet_form_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +6,7 @@ import '../state/app_state.dart';
 import '../models/pet.dart';
 
 class PetFormScreen extends StatefulWidget {
-  final Pet? pet; // <-- optional for editing
+  final Pet? pet; 
 
   const PetFormScreen({super.key, this.pet});
 
@@ -20,12 +19,12 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
 
   // Form values
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController(); // changed to controller
+  final TextEditingController _genderController = TextEditingController(); 
   String? _species;
   String? _breed;
   String _customBreed = '';
   final TextEditingController _ageController = TextEditingController();
-  DateTime? _birthdate; // <-- new optional birthdate field
+  DateTime? _birthdate; 
 
   Map<String, List<String>> _breedOptions = {};
   List<String> _speciesOptions = [];
@@ -37,20 +36,16 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
   late Animation<double> _scaleAnimation;
   late Animation<double> _pulseAnimation;
   
-  // Flag to track if animations are initialized
   bool _animationsInitialized = false;
 
   @override
   void initState() {
     super.initState();
     
-    // Initialize animations immediately
     _initializeAnimations();
     
-    // Then load breeds
     _loadBreeds();
 
-    // Pre-fill values if editing
     if (widget.pet != null) {
       final p = widget.pet!;
       _nameController.text = p.name;
@@ -61,8 +56,7 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
       _ageController.text = p.age.toString();
       _birthdate = p.birthdate;
     } else {
-      // defaults for new pet
-      _genderController.text = ''; // empty so hint shows "Unknown"
+      _genderController.text = ''; 
       _ageController.text = '0';
     }
   }
@@ -99,11 +93,9 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
       ),
     );
     
-    // Start animations
     _imageAnimationController.forward();
     _pulseAnimationController.repeat(reverse: true);
     
-    // Mark as initialized
     setState(() {
       _animationsInitialized = true;
     });
@@ -208,7 +200,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
             scale: _scaleAnimation,
             child: GestureDetector(
               onTap: () {
-                // Add a pulse effect when tapped
                 _imageAnimationController.reset();
                 _imageAnimationController.forward();
               },
@@ -246,7 +237,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Background decoration
                     Positioned.fill(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
@@ -276,7 +266,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                       ),
                     ),
                     
-                    // Shimmer effect
                     Positioned.fill(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
@@ -302,7 +291,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                       ),
                     ),
                     
-                    // Pulse effect border
                     AnimatedBuilder(
                       animation: _pulseAnimation,
                       builder: (context, child) {
@@ -550,7 +538,7 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                       ),
                       const SizedBox(height: 16),
 
-                      // Gender - now a editable textbox with hint 'Unknown'
+                      // Gender 
                       TextFormField(
                         controller: _genderController,
                         decoration: InputDecoration(
@@ -572,7 +560,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                         ),
                         style: const TextStyle(color: Colors.white),
                         onSaved: (v) {},
-                        // no validator - optional
                       ),
                       const SizedBox(height: 16),
 
@@ -662,7 +649,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                               if (_birthdate != null)
                                 GestureDetector(
                                   onTap: () {
-                                    // clear birthdate
                                     setState(() => _birthdate = null);
                                   },
                                   child: const Icon(Icons.close, color: Colors.white70),
@@ -676,7 +662,6 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                       GestureDetector(
                         onTap: () async {
                           if (!_formKey.currentState!.validate()) return;
-                          // save values from controllers
                           final name = _nameController.text.trim();
                           final gender = _genderController.text.trim().isEmpty ? 'Unknown' : _genderController.text.trim();
                           final age = int.tryParse(_ageController.text.trim()) ?? 0;
@@ -687,24 +672,22 @@ class _PetFormScreenState extends State<PetFormScreen> with TickerProviderStateM
                           final imgPath = _imageFor(_species, finalBreed);
 
                           final petToSave = Pet(
-                            id: widget.pet?.id, // preserve ID if editing
+                            id: widget.pet?.id, 
                             name: name,
                             gender: gender,
                             species: _species ?? 'Other',
                             breed: finalBreed,
                             age: age,
                             image: imgPath,
-                            birthdate: _birthdate, // <-- save birthdate
+                            birthdate: _birthdate, 
                           );
 
                           if (widget.pet != null) {
-                            // Editing: return updated pet
                             if (!mounted) return;
                             if (context.mounted) {
                               Navigator.of(context).pop(petToSave);
                             }
                           } else {
-                            // Adding new
                             await appState.addPet(petToSave);
                             if (!mounted) return;
                             if (context.mounted) {

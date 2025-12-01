@@ -1,4 +1,3 @@
-// lib/ui/search_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _breed;
   int? _minAge;
   int? _maxAge;
-  String? _resourceCategory; // New filter for resource categories
+  String? _resourceCategory; 
   Map<String, List<String>> _breedOptions = {};
   List<String> _speciesOptions = [];
 
@@ -104,7 +103,6 @@ class _SearchScreenState extends State<SearchScreen> {
   };
 
   final Map<String, String> resourcesContent = {
-    // same as before...
   };
 
   @override
@@ -139,11 +137,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final petResults = pets.where((p) {
       if (q.isNotEmpty &&
-          !('${p.name} ${p.species} ${p.breed}'.toLowerCase().contains(q))) return false;
-      if ((_species ?? '').isNotEmpty && p.species.toLowerCase() != _species!.toLowerCase()) return false;
-      if ((_breed ?? '').isNotEmpty && _breed != 'Other' && p.breed.toLowerCase() != _breed!.toLowerCase()) return false;
-      if (_minAge != null && p.age < _minAge!) return false;
-      if (_maxAge != null && p.age > _maxAge!) return false;
+          !('${p.name} ${p.species} ${p.breed}'.toLowerCase().contains(q))) {
+        return false;
+      }
+      if ((_species ?? '').isNotEmpty && p.species.toLowerCase() != _species!.toLowerCase()) {
+        return false;
+      }
+      if ((_breed ?? '').isNotEmpty && _breed != 'Other' && p.breed.toLowerCase() != _breed!.toLowerCase()) {
+        return false;
+      }
+      if (_minAge != null && p.age < _minAge!) {
+        return false;
+      }
+      if (_maxAge != null && p.age > _maxAge!) {
+        return false;
+      }
       return true;
     }).toList();
 
@@ -153,7 +161,9 @@ class _SearchScreenState extends State<SearchScreen> {
     }).toList();
 
     final resourceResults = resources.where((r) {
-      if (!r.toLowerCase().contains(q)) return false;
+      if (!r.toLowerCase().contains(q)) {
+        return false;
+      }
       if (_resourceCategory != null && _resourceCategory!.isNotEmpty) {
         final category = resourceCategories[r];
         return category == _resourceCategory;
@@ -170,7 +180,9 @@ class _SearchScreenState extends State<SearchScreen> {
       try {
         final uri = Uri.parse(url);
         final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        if (!launched) _showResourceSheet(title);
+        if (!launched) {
+          _showResourceSheet(title);
+        }
       } catch (_) {
         _showResourceSheet(title);
       }
@@ -231,7 +243,9 @@ class _SearchScreenState extends State<SearchScreen> {
     ];
 
     List<String> breedList = [];
-    if (_species != null && _breedOptions.containsKey(_species)) breedList = List<String>.from(_breedOptions[_species]!);
+    if (_species != null && _breedOptions.containsKey(_species)) {
+      breedList = List<String>.from(_breedOptions[_species]!);
+    }
 
     final List<DropdownMenuItem<String?>> breedItems = <DropdownMenuItem<String?>>[
       const DropdownMenuItem<String?>(value: null, child: Text('Any')),
@@ -363,7 +377,6 @@ class _SearchScreenState extends State<SearchScreen> {
               title: Text('${item.title} • ${item.vetName}',
                   style: const TextStyle(color: Colors.white)),
               subtitle:
-                  // Fixed: Use null-aware operator to handle nullable description
                   Text(item.description ?? 'No description', style: const TextStyle(color: Colors.white70)),
             ),
           );
@@ -458,7 +471,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           fillColor: Colors.white.withValues(alpha: 0.12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        value: _species,
+                        initialValue: _species,
                         items: speciesItems,
                         onChanged: (v) => setState(() {
                           _species = v;
@@ -475,7 +488,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           fillColor: Colors.white.withValues(alpha: 0.12),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        value: _breed,
+                        initialValue: _breed,
                         items: breedItems,
                         onChanged: (v) => setState(() => _breed = v),
                       ),
@@ -493,7 +506,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.category),
                   ),
-                  value: _resourceCategory,
+                  initialValue: _resourceCategory,
                   items: categoryItems,
                   onChanged: (v) => setState(() => _resourceCategory = v),
                 ),

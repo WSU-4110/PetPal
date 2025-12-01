@@ -1,3 +1,4 @@
+// lib/ui/login_page.dart
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -95,6 +96,9 @@ class _LoginPageState extends State<LoginPage> {
     loginErrorPassword = null;
   }
 
+  // helper to convert 0.0-1.0 opacity into 0-255 alpha
+  int _alpha(double opacity) => (opacity * 255).round();
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
@@ -129,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.deepPurple.withOpacity(0.6),
+                          color: Colors.deepPurple.withAlpha(_alpha(0.6)),
                           blurRadius: 20,
                           spreadRadius: 8,
                         ),
@@ -147,11 +151,9 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 28),
 
                   // Register fields
-                  if (_isRegisterMode)
-                    _roundedTextField(controller: _firstNameController, label: "First Name", icon: Icons.person),
+                  if (_isRegisterMode) _roundedTextField(controller: _firstNameController, label: "First Name", icon: Icons.person),
                   if (_isRegisterMode) const SizedBox(height: 16),
-                  if (_isRegisterMode)
-                    _roundedTextField(controller: _lastNameController, label: "Last Name", icon: Icons.person_outline),
+                  if (_isRegisterMode) _roundedTextField(controller: _lastNameController, label: "Last Name", icon: Icons.person_outline),
                   if (_isRegisterMode) const SizedBox(height: 16),
 
                   if (_isRegisterMode)
@@ -160,28 +162,29 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.deepPurple.withOpacity(0.3),
+                            color: Colors.deepPurple.withAlpha(_alpha(0.3)),
                             blurRadius: 8,
                             spreadRadius: 1,
                           ),
                         ],
                       ),
                       child: DropdownButtonFormField<String>(
-                        value: _selectedPreference,
+                        initialValue: _selectedPreference,
                         decoration: _dropdownDecoration(label: "Tail Tag", icon: Icons.pets),
                         dropdownColor: Colors.purple[100],
                         items: _preferences.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
                         onChanged: (value) {
                           setState(() {
                             _selectedPreference = value;
-                            if (value != "Custom") _customCaptionController.clear();
+                            if (value != "Custom") {
+                              _customCaptionController.clear();
+                            }
                           });
                         },
                         validator: (value) => value == null || value.isEmpty ? "Select a preference" : null,
                       ),
                     ),
-                  if (_isRegisterMode && _selectedPreference == "Custom")
-                    const SizedBox(height: 12),
+                  if (_isRegisterMode && _selectedPreference == "Custom") const SizedBox(height: 12),
                   if (_isRegisterMode && _selectedPreference == "Custom")
                     _roundedTextField(controller: _customCaptionController, label: "Enter your own caption", icon: Icons.edit, maxLength: 50),
                   if (_isRegisterMode) const SizedBox(height: 16),
@@ -189,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Role selection
                   if (_isRegisterMode)
                     DropdownButtonFormField<String>(
-                      value: _selectedRole,
+                      initialValue: _selectedRole,
                       decoration: _dropdownDecoration(label: "Role", icon: Icons.badge),
                       dropdownColor: Colors.purple[100],
                       items: const [
@@ -199,7 +202,9 @@ class _LoginPageState extends State<LoginPage> {
                         DropdownMenuItem(value: "groomer", child: Text("Groomer")),
                       ],
                       onChanged: (value) {
-                        if (value != null) setState(() => _selectedRole = value);
+                        if (value != null) {
+                          setState(() => _selectedRole = value);
+                        }
                       },
                       validator: (value) => value == null || value.isEmpty ? "Select a role" : null,
                     ),
@@ -207,8 +212,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Email
                   _roundedTextField(controller: _emailController, label: "Email", icon: Icons.email),
-                  if (loginErrorEmail != null)
-                    Text(loginErrorEmail!, style: const TextStyle(color: Colors.red)),
+                  if (loginErrorEmail != null) Text(loginErrorEmail!, style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 16),
 
                   // Password
@@ -222,11 +226,12 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                     onChanged: (value) {
-                      if (_isRegisterMode) _passwordChecksNotifier.value = appState.passwordChecks(value);
+                      if (_isRegisterMode) {
+                        _passwordChecksNotifier.value = appState.passwordChecks(value);
+                      }
                     },
                   ),
-                  if (loginErrorPassword != null)
-                    Text(loginErrorPassword!, style: const TextStyle(color: Colors.red)),
+                  if (loginErrorPassword != null) Text(loginErrorPassword!, style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 12),
 
                   // Password strength indicator
@@ -237,9 +242,13 @@ class _LoginPageState extends State<LoginPage> {
                         if (_passwordController.text.isEmpty) return const SizedBox();
                         double progressValue = checks.where((c) => c).length / checks.length;
                         Color progressColor;
-                        if (checks.where((c) => c).length <= 2) progressColor = Colors.redAccent;
-                        else if (checks.where((c) => c).length <= 4) progressColor = Colors.orangeAccent;
-                        else progressColor = Colors.greenAccent;
+                        if (checks.where((c) => c).length <= 2) {
+                          progressColor = Colors.redAccent;
+                        } else if (checks.where((c) => c).length <= 4) {
+                          progressColor = Colors.orangeAccent;
+                        } else {
+                          progressColor = Colors.greenAccent;
+                        }
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +288,10 @@ class _LoginPageState extends State<LoginPage> {
                         onTapCancel: () => _buttonPressedNotifier.value = false,
                         onTap: () async {
                           if (_formKey.currentState!.validate()) {
-                            setState(() { loginErrorEmail = null; loginErrorPassword = null; });
+                            setState(() {
+                              loginErrorEmail = null;
+                              loginErrorPassword = null;
+                            });
                             try {
                               final navigator = Navigator.of(context);
                               Map<String, dynamic>? user;
@@ -313,8 +325,12 @@ class _LoginPageState extends State<LoginPage> {
                             } catch (e) {
                               final err = e.toString().toLowerCase();
                               setState(() {
-                                if (err.contains("invalid email")) loginErrorEmail = "Please enter a valid email";
-                                if (err.contains("invalid password")) loginErrorPassword = "Incorrect password";
+                                if (err.contains("invalid email")) {
+                                  loginErrorEmail = "Please enter a valid email";
+                                }
+                                if (err.contains("invalid password")) {
+                                  loginErrorPassword = "Incorrect password";
+                                }
                               });
                             }
                           }
@@ -329,7 +345,7 @@ class _LoginPageState extends State<LoginPage> {
                             gradient: const LinearGradient(
                               colors: [Color.fromRGBO(184, 146, 247, 1), Color.fromRGBO(250, 196, 241, 1)],
                             ),
-                            boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.4), blurRadius: 12, spreadRadius: 2)],
+                            boxShadow: [BoxShadow(color: Colors.deepPurple.withAlpha(_alpha(0.4)), blurRadius: 12, spreadRadius: 2)],
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(_isRegisterMode ? "Register" : "Login", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
@@ -348,9 +364,13 @@ class _LoginPageState extends State<LoginPage> {
                           TextSpan(
                             text: _isRegisterMode ? "Login" : "Register",
                             style: const TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
-                            recognizer: TapGestureRecognizer()..onTap = () {
-                              setState(() { _isRegisterMode = !_isRegisterMode; _resetErrorsAndFields(); });
-                            },
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                setState(() {
+                                  _isRegisterMode = !_isRegisterMode;
+                                  _resetErrorsAndFields();
+                                });
+                              },
                           ),
                         ],
                       ),
@@ -388,7 +408,7 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 8, spreadRadius: 1, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.deepPurple.withAlpha(_alpha(0.3)), blurRadius: 8, spreadRadius: 1, offset: const Offset(0, 2))],
       ),
       child: TextFormField(
         controller: controller,

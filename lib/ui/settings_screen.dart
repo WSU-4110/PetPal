@@ -1,4 +1,3 @@
-// lib/ui/settings_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +25,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // It's safe to use context in initState for Provider.of when listen: false
     final appState = Provider.of<AppState>(context, listen: false);
     _nameController = TextEditingController(text: appState.displayName);
   }
@@ -45,39 +43,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
         maxHeight: 1024,
         imageQuality: 85,
       );
-
       if (picked == null) return;
 
-      // Check mounted before using context to access provider
       if (!mounted) return;
       final appState = Provider.of<AppState>(context, listen: false);
-
-      // Get the path and directly set it in AppState
+      
       final imagePath = picked.path;
-
-      // Set the profile image
       await appState.setProfileImage(imagePath);
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile image updated'))
-      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e'))
+        SnackBar(content: Text('Failed to pick image: $e')),
       );
     }
   }
 
   Widget _profileAvatar(AppState appState) {
+    // Alpha values conversion:
+    // 0.24 * 255 = 61.2 -> 61
+    // 0.12 * 255 = 30.6 -> 31
+    const int alpha24 = 61;
+    const int alpha12 = 31;
+    
     final path = appState.profileImagePath;
     Widget avatarChild;
     if (path == null || path.isEmpty) {
       avatarChild = const Icon(Icons.person, size: 46, color: Colors.white70);
     } else {
       ImageProvider? provider;
-
       try {
         if (path.startsWith('http')) {
           provider = NetworkImage(path);
@@ -106,10 +100,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     return Stack(
       children: [
+        // FIX: Use withAlpha(61)
         CircleAvatar(
           radius: 46,
-          // FIX: Replaced withOpacity with withAlpha
-          backgroundColor: Colors.white.withAlpha((0.24 * 255).round()),
+          backgroundColor: Colors.white.withAlpha(alpha24), 
           child: avatarChild,
         ),
         Positioned(
@@ -121,9 +115,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(20),
               onTap: _showPickOptions,
               child: Container(
+                // FIX: Use withAlpha(31)
                 decoration: BoxDecoration(
-                  // FIX: Replaced withOpacity with withAlpha
-                  color: Colors.white.withAlpha((0.12 * 255).round()),
+                  color: Colors.white.withAlpha(alpha12), 
                   borderRadius: BorderRadius.circular(20),
                 ),
                 padding: const EdgeInsets.all(8),
@@ -137,6 +131,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showPickOptions() {
+    // Alpha values conversion:
+    // 0.08 * 255 = 20.4 -> 20
+    const int alpha08 = 20;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -154,11 +152,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  // FIX: Replaced withOpacity with withAlpha
-                  color: Colors.white.withAlpha((0.08 * 255).round()),
+                  // FIX: Use withAlpha(20)
+                  color: Colors.white.withAlpha(alpha08), 
                   borderRadius: BorderRadius.circular(16),
-                  // FIX: Replaced withOpacity with withAlpha
-                  border: Border.all(color: Colors.white.withAlpha((0.08 * 255).round())),
+                  // FIX: Use withAlpha(20)
+                  border: Border.all(color: Colors.white.withAlpha(alpha08)), 
                 ),
                 child: Column(
                   children: [
@@ -240,21 +238,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _removeProfileImage() async {
-    // Check mounted before accessing provider
     if (!mounted) return;
     final appState = Provider.of<AppState>(context, listen: false);
     await appState.setProfileImage(null);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile picture removed'))
-    );
   }
 
   void _showChangePasswordDialog() {
+    // Alpha values conversion:
+    // 0.2 * 255 = 51
+    // 0.9 * 255 = 229.5 -> 230
+    const int alpha20 = 51;
+    const int alpha90 = 230;
+
     final currentPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     bool changingPassword = false;
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -262,238 +262,242 @@ class _SettingsScreenState extends State<SettingsScreen> {
           builder: (context, setDialogState) {
             return Dialog(
               insetPadding: const EdgeInsets.all(16),
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.7,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.7,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFB892F7), Color(0xFFFAC4F1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
                         ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  // FIX: Replaced withOpacity with withAlpha
-                                  color: Colors.white.withAlpha((0.2 * 255).round()),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.lock_outline,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Text(
-                                  'Change Password',
-                                  style: TextStyle(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  // FIX: Use withAlpha(51)
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(alpha20), 
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.lock_outline,
                                     color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                    size: 24,
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                onPressed: () => Navigator.pop(dialogContext),
-                                icon: const Icon(Icons.close, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Update your account password',
-                            style: TextStyle(
-                              // FIX: Replaced withOpacity with withAlpha
-                              color: Colors.white.withAlpha((0.9 * 255).round()),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: currentPasswordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Current password',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Text(
+                                    'Change Password',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: newPasswordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'New password',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                                IconButton(
+                                  onPressed: () => Navigator.pop(dialogContext),
+                                  icon: const Icon(Icons.close, color: Colors.white),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Update your account password',
+                              // FIX: Use withAlpha(230)
+                              style: TextStyle(
+                                color: Colors.white.withAlpha(alpha90), 
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: confirmPasswordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Confirm new password',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                           ],
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(dialogContext),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              TextFormField(
+                                controller: currentPasswordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Current password',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                                  ),
                                 ),
                               ),
-                              child: const Text('Cancel'),
-                            ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: newPasswordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'New password',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: confirmPasswordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Confirm new password',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: changingPassword
-                                  ? null
-                                  : () async {
-                                      // Context check inside Dialog, before async gap
-                                      if (!dialogContext.mounted) return;
-                                      
-                                      if (currentPasswordController.text.isEmpty ||
-                                          newPasswordController.text.isEmpty ||
-                                          confirmPasswordController.text.isEmpty) {
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          const SnackBar(content: Text('Please fill all password fields')));
-                                        return;
-                                      }
-                                      if (newPasswordController.text != confirmPasswordController.text) {
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          const SnackBar(content: Text('New passwords do not match')));
-                                        return;
-                                      }
-                                      
-                                      setDialogState(() => changingPassword = true);
-
-                                      // Check mounted before accessing provider/context
-                                      if (!context.mounted) return; 
-                                      final appState = Provider.of<AppState>(context, listen: false);
-                                      final email = appState.currentUser?['email'] as String?;
-
-                                      if (email == null) {
-                                        if (!dialogContext.mounted) return;
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          const SnackBar(content: Text('User information not available')));
-                                        setDialogState(() => changingPassword = false);
-                                        return;
-                                      }
-                                      
-                                      try {
-                                        final dbService = appState.db;
-                                        final user = await dbService.getUserByEmail(email);
-                                        
-                                        // Context check before showing error SnackBar
-                                        if (!dialogContext.mounted) return;
-                                        
-                                        if (user == null ||
-                                            !dbService.verifyPassword(currentPasswordController.text, user['password'])) {
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(dialogContext),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton(
+                                onPressed: changingPassword
+                                    ? null
+                                    : () async {
+                                        if (currentPasswordController.text.isEmpty ||
+                                            newPasswordController.text.isEmpty ||
+                                            confirmPasswordController.text.isEmpty) {
+                                          if (!dialogContext.mounted) return;
                                           ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                            const SnackBar(content: Text('Current password is incorrect')));
-                                          setDialogState(() => changingPassword = false);
+                                            const SnackBar(content: Text('Please fill all password fields')),
+                                          );
+                                          return;
+                                        }
+                                        if (newPasswordController.text != confirmPasswordController.text) {
+                                          if (!dialogContext.mounted) return;
+                                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                            const SnackBar(content: Text('New passwords do not match')),
+                                          );
                                           return;
                                         }
 
-                                        await dbService.updateUserPassword(user['id'], newPasswordController.text);
-                                        
-                                        // Context check before pop and success SnackBar
-                                        if (!dialogContext.mounted) return;
-                                        Navigator.pop(dialogContext);
-
-                                        // Ensure main context is still mounted after dialog pop
                                         if (!mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Password changed successfully')));
-                                          
-                                      } catch (e) {
-                                        if (!dialogContext.mounted) return;
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          SnackBar(content: Text('Failed to change password: $e')));
-                                      } finally {
-                                        if (dialogContext.mounted) {
-                                          setDialogState(() => changingPassword = false);
+                                        final appState = Provider.of<AppState>(context, listen: false);
+                                        final email = appState.currentUser?['email'] as String?;
+                                        final dbService = appState.db;
+                                        final dialogMessenger = ScaffoldMessenger.of(dialogContext);
+                                        final mainMessenger = ScaffoldMessenger.of(context);
+
+                                        if (email == null) {
+                                          if (!dialogContext.mounted) return;
+                                          dialogMessenger.showSnackBar(
+                                            const SnackBar(content: Text('User information not available')),
+                                          );
+                                          return;
                                         }
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB892F7),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+
+                                        setDialogState(() => changingPassword = true);
+
+                                        try {
+                                          final user = await dbService.getUserByEmail(email);
+
+                                          if (!dialogContext.mounted) return;
+
+                                          if (user == null ||
+                                              !dbService.verifyPassword(currentPasswordController.text, user['password'])) {
+                                            if (!dialogContext.mounted) return;
+                                            dialogMessenger.showSnackBar(
+                                              const SnackBar(content: Text('Current password is incorrect')),
+                                            );
+                                            setDialogState(() => changingPassword = false);
+                                            return;
+                                          }
+
+                                          await dbService.updateUserPassword(user['id'], newPasswordController.text);
+
+                                          if (!dialogContext.mounted) return;
+                                          Navigator.pop(dialogContext);
+
+                                          if (!mounted) return;
+                                          mainMessenger.showSnackBar(
+                                            const SnackBar(content: Text('Password changed successfully')),
+                                          );
+                                        } catch (e) {
+                                          if (!dialogContext.mounted) return;
+                                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                            SnackBar(content: Text('Failed to change password: $e')),
+                                          );
+                                        } finally {
+                                          if (dialogContext.mounted) {
+                                            setDialogState(() => changingPassword = false);
+                                          }
+                                        }
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFB892F7),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
+                                child: changingPassword
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Change Password'),
                               ),
-                              child: changingPassword
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text('Change Password'),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -504,8 +508,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDeleteAccountDialog() {
+    // Alpha values conversion:
+    // 0.2 * 255 = 51
+    // 0.9 * 255 = 229.5 -> 230
+    const int alpha20 = 51;
+    const int alpha90 = 230;
+
     final passwordController = TextEditingController();
     bool deletingAccount = false;
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -513,7 +524,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           builder: (context, setDialogState) {
             return Dialog(
               insetPadding: const EdgeInsets.all(16),
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -521,13 +532,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
                           colors: [Colors.red, Colors.redAccent],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: const BorderRadius.only(
+                        borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(16),
                           topRight: Radius.circular(16),
                         ),
@@ -539,9 +550,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(12),
+                                // FIX: Use withAlpha(51)
                                 decoration: BoxDecoration(
-                                  // FIX: Replaced withOpacity with withAlpha
-                                  color: Colors.white.withAlpha((0.2 * 255).round()),
+                                  color: Colors.white.withAlpha(alpha20), 
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -567,12 +578,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height:8),
+                          const SizedBox(height: 8),
                           Text(
                             'This action cannot be undone',
+                            // FIX: Use withAlpha(230)
                             style: TextStyle(
-                              // FIX: Replaced withOpacity with withAlpha
-                              color: Colors.white.withAlpha((0.9 * 255).round()),
+                              color: Colors.white.withAlpha(alpha90), 
                               fontSize: 14,
                             ),
                           ),
@@ -633,66 +644,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onPressed: deletingAccount
                                   ? null
                                   : () async {
-                                      // Context check inside Dialog, before async gap
-                                      if (!dialogContext.mounted) return;
-
                                       if (passwordController.text.isEmpty) {
+                                        if (!dialogContext.mounted) return;
                                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          const SnackBar(content: Text('Please enter your password')));
+                                          const SnackBar(content: Text('Please enter your password')),
+                                        );
                                         return;
                                       }
-                                      setDialogState(() => deletingAccount = true);
 
-                                      // Check mounted before accessing provider/context
-                                      if (!context.mounted) return;
+                                      if (!mounted) return;
                                       final appState = Provider.of<AppState>(context, listen: false);
                                       final email = appState.currentUser?['email'] as String?;
-                                      
+                                      final dbService = appState.db;
+                                      final dialogMessenger = ScaffoldMessenger.of(dialogContext);
+
                                       if (email == null) {
                                         if (!dialogContext.mounted) return;
-                                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          const SnackBar(content: Text('User information not available')));
-                                        setDialogState(() => deletingAccount = false);
+                                        dialogMessenger.showSnackBar(
+                                          const SnackBar(content: Text('User information not available')),
+                                        );
                                         return;
                                       }
-                                      
-                                      try {
-                                        final dbService = appState.db;
-                                        final user = await dbService.getUserByEmail(email);
 
-                                        // Context check before showing error SnackBar
+                                      setDialogState(() => deletingAccount = true);
+
+                                      try {
+                                        final user = await dbService.getUserByEmail(email);
                                         if (!dialogContext.mounted) return;
-                                        
+
                                         if (user == null ||
                                             !dbService.verifyPassword(passwordController.text, user['password'])) {
-                                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                            const SnackBar(content: Text('Password is incorrect')));
+                                          if (!dialogContext.mounted) return;
+                                          dialogMessenger.showSnackBar(
+                                            const SnackBar(content: Text('Password is incorrect')),
+                                          );
                                           setDialogState(() => deletingAccount = false);
                                           return;
                                         }
 
-                                        for (final pet in appState.pets) {
-                                          await dbService.deletePet(pet.id!);
+                                        final userId = user['id'];
+
+                                        // FIX: Iterate and delete pets for complete data removal
+                                        final petsToDelete = List.of(appState.pets);
+                                        for (final pet in petsToDelete) {
+                                          if (pet.id != null) {
+                                            await dbService.deletePet(pet.id!);
+                                          }
                                         }
-                                        await dbService.deleteUser(user['id']);
+                                        
+                                        // Then delete the User record
+                                        await dbService.deleteUser(userId);
                                         await appState.logout();
-                                        
-                                        // Context check before pop, navigation, and success SnackBar
+
                                         if (!dialogContext.mounted) return;
-                                        
-                                        // Note: Navigating after deleting the account will usually go to a login/home page
-                                        // The original code uses context here.
-                                        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                                        
-                                        // Ensure main context is still mounted (though usually redundant after nav)
-                                        if (!mounted) return; 
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Account deleted successfully')));
-                                          
+                                        Navigator.of(dialogContext).pushNamedAndRemoveUntil('/', (route) => false);
                                       } catch (e) {
                                         if (!dialogContext.mounted) return;
                                         ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                          SnackBar(content: Text('Failed to delete account: $e')));
+                                          SnackBar(content: Text('Failed to delete account: $e')),
+                                        );
                                       } finally {
                                         if (dialogContext.mounted) {
                                           setDialogState(() => deletingAccount = false);
@@ -734,6 +744,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Alpha values conversion:
+    // 0.04 * 255 = 10.2 -> 10
+    const int alpha04 = 10;
+
     final appState = Provider.of<AppState>(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -801,8 +815,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('PROFILE', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Card(
-                        // FIX: Replaced withOpacity with withAlpha
-                        color: Colors.white.withAlpha((0.04 * 255).round()),
+                        // FIX: Use withAlpha(10)
+                        color: Colors.white.withAlpha(alpha04), 
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Column(
@@ -823,11 +837,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ? null
                                         : () async {
                                             setState(() => _saving = true);
-                                            await appState.setDisplayName(_nameController.text);
-                                            setState(() => _saving = false);
                                             if (!mounted) return;
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Display name saved')));
+                                            final appState = Provider.of<AppState>(context, listen: false);
+                                            final messenger = ScaffoldMessenger.of(context);
+                                            await appState.setDisplayName(_nameController.text);
+                                            if (!mounted) return;
+                                            setState(() => _saving = false);
+                                            messenger.showSnackBar(
+                                              const SnackBar(content: Text('Display name saved')),
+                                            );
                                           },
                                     child: _saving
                                         ? const SizedBox(
@@ -836,7 +854,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             child: CircularProgressIndicator(strokeWidth: 2))
                                         : const Text('Save'),
                                   ),
-                                  const SizedBox(width:8),
+                                  const SizedBox(width: 8),
                                   TextButton(
                                     onPressed: () {
                                       _nameController.text = appState.displayName;
@@ -854,8 +872,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('NOTIFICATIONS', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Card(
-                        // FIX: Replaced withOpacity with withAlpha
-                        color: Colors.white.withAlpha((0.04 * 255).round()),
+                        // FIX: Use withAlpha(10)
+                        color: Colors.white.withAlpha(alpha04), 
                         child: Column(
                           children: [
                             SwitchListTile(
@@ -866,7 +884,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onChanged: (value) {
                                 setState(() => _notificationsEnabled = value);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'}'))
+                                  SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'}')),
                                 );
                               },
                             ),
@@ -905,8 +923,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('SECURITY', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Card(
-                        // FIX: Replaced withOpacity with withAlpha
-                        color: Colors.white.withAlpha((0.04 * 255).round()),
+                        // FIX: Use withAlpha(10)
+                        color: Colors.white.withAlpha(alpha04), 
                         child: Column(
                           children: [
                             ListTile(
@@ -924,8 +942,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('ABOUT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Card(
-                        // FIX: Replaced withOpacity with withAlpha
-                        color: Colors.white.withAlpha((0.04 * 255).round()),
+                        // FIX: Use withAlpha(10)
+                        color: Colors.white.withAlpha(alpha04), 
                         child: Column(
                           children: [
                             ListTile(
@@ -941,8 +959,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('ACCOUNT', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Card(
-                        // FIX: Replaced withOpacity with withAlpha
-                        color: Colors.white.withAlpha((0.04 * 255).round()),
+                        // FIX: Use withAlpha(10)
+                        color: Colors.white.withAlpha(alpha04), 
                         child: Column(
                           children: [
                             ListTile(

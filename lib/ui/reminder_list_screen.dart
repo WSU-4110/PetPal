@@ -1,4 +1,3 @@
-// lib/ui/reminder_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -252,7 +251,6 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                 ),
         ),
       ),
-      // FAB removed - handled by main.dart navigation
     );
   }
 
@@ -311,6 +309,9 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   }
 
   void _showRecurringDetails(BuildContext context, List<Reminder> reminders, AppState appState) {
+    // Capture messenger before showing dialog
+    final messenger = ScaffoldMessenger.of(context);
+    
     showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -392,15 +393,16 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                           onPressed: () async {
+                            final navigator = Navigator.of(dialogContext);
+                            
                             await appState.deleteReminder(reminder.id!);
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Reminder deleted')),
-                              );
-                            }
+                            
+                            if (!mounted) return;
+                            
+                            navigator.pop();
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Reminder deleted')),
+                            );
                           },
                         ),
                       ),
@@ -416,6 +418,9 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
   }
 
   void _showDeleteRecurringDialog(BuildContext context, List<Reminder> reminders, AppState appState) {
+    // Capture messenger before showing dialog
+    final messenger = ScaffoldMessenger.of(context);
+    
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -428,12 +433,16 @@ class _ReminderListScreenState extends State<ReminderListScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(dialogContext);
-              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(dialogContext);
+              
+              navigator.pop();
+              
               for (var reminder in reminders) {
                 await appState.deleteReminder(reminder.id!);
               }
+              
               if (!mounted) return;
+              
               messenger.showSnackBar(
                 SnackBar(content: Text('${reminders.length} reminders deleted')),
               );

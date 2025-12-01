@@ -1,4 +1,3 @@
-// ui/pet_list_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
@@ -125,7 +124,6 @@ class PetListScreen extends StatelessWidget {
                                     ),
                                   );
                                   
-                                  // FIX: Check context mounted state before using Provider.of
                                   if (!context.mounted) return;
 
                                   if (updatedPet != null) {
@@ -136,9 +134,6 @@ class PetListScreen extends StatelessWidget {
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () async {
-                                  // This use of Provider.of is fine because it's synchronous
-                                  // within an async function, but it's good practice to ensure
-                                  // the Pet is deleted via the AppState service.
                                   Provider.of<AppState>(context, listen: false).deletePet(pet.id!);
                                 },
                               ),
@@ -151,7 +146,6 @@ class PetListScreen extends StatelessWidget {
                 ),
         ),
       ),
-      // Remove the FAB from here since we're using a global FAB in MainNavigation
     );
   }
 

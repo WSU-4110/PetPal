@@ -4,6 +4,8 @@ import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert'; // Now explicitly required for JSON operations
+
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
@@ -32,6 +34,9 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? currentUser;
   Map<int, List<int>> petAccessMap = {};
   final Map<int, Map<String, dynamic>> _petHealthInfo = {};
+  
+  // Gallery data storage
+  final Map<int, List<Map<String, dynamic>>> _galleryData = {};
 
   // App settings
   bool _darkMode = false;
@@ -41,6 +46,7 @@ class AppState extends ChangeNotifier {
   static const String _kDarkModeKey = 'petpal_dark_mode';
   static const String _kProfileImageKey = 'petpal_profile_image';
   static const String _kDisplayNameKey = 'petpal_display_name';
+  static const String _kGalleryKeyPrefix = 'petpal_gallery_';
 
   Future<void> init() async {
     await _loadInitialData();
@@ -60,6 +66,18 @@ class AppState extends ChangeNotifier {
       _darkMode = prefs.getBool(_kDarkModeKey) ?? false;
       _profileImagePath = prefs.getString(_kProfileImageKey);
       _displayName = prefs.getString(_kDisplayNameKey);
+      
+      // Load Gallery Data for all pets
+      for (final pet in pets) {
+        if (pet.id == null) continue;
+        final key = '$_kGalleryKeyPrefix${pet.id}';
+        final jsonString = prefs.getString(key);
+        if (jsonString != null) {
+            final List<dynamic> decodedList = jsonDecode(jsonString);
+            _galleryData[pet.id!] = decodedList.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+      }
+
     } catch (_) {}
     notifyListeners();
   }
@@ -80,6 +98,15 @@ class AppState extends ChangeNotifier {
         await prefs.setString(key, value);
       }
     } catch (_) {}
+  }
+  
+  // Helper to save gallery data for a specific pet
+  Future<void> _saveGalleryData(int petId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '$_kGalleryKeyPrefix$petId';
+    final data = _galleryData[petId] ?? [];
+    final jsonString = jsonEncode(data);
+    await prefs.setString(key, jsonString);
   }
 
   bool get isDarkMode => _darkMode;
@@ -106,7 +133,13 @@ class AppState extends ChangeNotifier {
   Future<void> setProfileImage(String? path) async {
     _profileImagePath = path;
     await _saveString(_kProfileImageKey, path);
-    if (currentUser != null) currentUser!['profileImage'] = path;
+    
+    // FIX: Don't modify currentUser directly - it might be read-only
+    // Create a new mutable map instead
+    if (currentUser != null) {
+      currentUser = Map<String, dynamic>.from(currentUser!)..['profileImage'] = path;
+    }
+    
     notifyListeners();
   }
 
@@ -124,10 +157,11 @@ class AppState extends ChangeNotifier {
       if (byEmail == null) throw Exception("invalid email");
       throw Exception("invalid password");
     }
-    currentUser = user;
+    // Create a mutable copy of the user data
+    currentUser = Map<String, dynamic>.from(user);
     if (_profileImagePath != null) currentUser!['profileImage'] = _profileImagePath;
     notifyListeners();
-    return user;
+    return currentUser!;
   }
 
   Future<void> register(String firstName, String lastName, String email, String password, String preference, String role) async {
@@ -169,6 +203,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> deletePet(int id) async {
+    // Ensuring Pet deletion cleans up gallery data (SharedPreferences)
+    _galleryData.remove(id);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_kGalleryKeyPrefix$id');
+
     await _db.deletePet(id);
     pets = await _db.getPets();
     reminders = await _db.getAllReminders();
@@ -194,7 +233,6 @@ class AppState extends ChangeNotifier {
       scheduledAt: r.scheduledAt,
     ));
     reminders = await _db.getAllReminders();
-    //_unreadNotificationsCount++;
     notifyListeners();
   }
 
@@ -676,6 +714,35 @@ class AppState extends ChangeNotifier {
       return true;
     }).toList();
   }
+  
+  // Gallery Management
+  List<Map<String, dynamic>> getGalleryItems(int petId) {
+    return _galleryData[petId] ?? [];
+  }
+
+  Future<void> addGalleryItem(int petId, Map<String, dynamic> item) async {
+    _galleryData.putIfAbsent(petId, () => []).add(item);
+    await _saveGalleryData(petId);
+    notifyListeners();
+  }
+
+  Future<void> updateGalleryItem(int petId, String itemId, String newCaption) async {
+    final petGallery = _galleryData[petId];
+    if (petGallery != null) {
+        final index = petGallery.indexWhere((item) => item['id'] == itemId);
+        if (index != -1) {
+            petGallery[index]['caption'] = newCaption;
+            await _saveGalleryData(petId);
+            notifyListeners();
+        }
+    }
+  }
+
+  Future<void> deleteGalleryItem(int petId, String itemId) async {
+    _galleryData[petId]?.removeWhere((item) => item['id'] == itemId);
+    await _saveGalleryData(petId);
+    notifyListeners();
+  }
 
   // Home Visuals/Tips
   String getRandomPetImage() {
@@ -689,7 +756,7 @@ class AppState extends ChangeNotifier {
     return p.image ?? Pet.imageFor(p.species, p.breed);
   }
 
-  // ---------------- Notifications ----------------
+  // Notifications
   int get unreadNotificationsCount {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -704,7 +771,6 @@ class AppState extends ChangeNotifier {
   Future<void> deleteNotification(int id) async {
     await _db.deleteNotification(id);
   }
-
 
   List<String> getTips({int max = 6}) {
     final List<String> tips = [

@@ -1,15 +1,11 @@
 // lib/ui/home_screen.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import '../models/pet.dart';
-import '../models/reminder.dart';
 import 'owner_home_screen.dart';
 import 'vet_home_screen.dart';
 import 'groomer_home_screen.dart';
 import 'trainer_home_screen.dart';
-import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

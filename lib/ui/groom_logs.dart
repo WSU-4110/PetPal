@@ -1,9 +1,10 @@
+// ui/groom_logs.dart
 import 'package:flutter/material.dart';
-import 'package:petpal/ui/edit_groom_log_dialog.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/groom_log.dart';
 import '../models/pet.dart';
+import 'add_groom_log_dialog.dart'; // Unified dialog for add/edit
 
 class GroomLogs extends StatefulWidget {
   final int petId;
@@ -25,75 +26,55 @@ class _GroomLogsPageState extends State<GroomLogs> {
     _loadPetAndLogs();
   }
 
-  void _loadPetAndLogs() async {
+  Future<void> _loadPetAndLogs() async {
     try {
       final pets = context.read<AppState>().pets;
       if (pets.isNotEmpty) {
-        // FIX: Removed unnecessary null check - widget.petId is always non-null (required int)
-        // Try to find the pet with the given ID
-        Pet pet;
-        try {
-          pet = pets.firstWhere((p) => p.id == widget.petId);
-        } catch (e) {
-          // If pet with widget.petId is not found, use the first pet
-          pet = pets.first;
-        }
-        
-        if (mounted) {
-          setState(() {
-            selectedPet = pet;
-            _isLoading = false;
-          });
-          // Load grooming logs for the pet
-          await context.read<AppState>().loadGroomLog(pet.id!);
-        }
+        final pet = pets.firstWhere(
+          (p) => p.id == widget.petId,
+          orElse: () => pets.first,
+        );
+
+        if (!mounted) return;
+        setState(() {
+          selectedPet = pet;
+          _isLoading = false;
+        });
+
+        await context.read<AppState>().loadGroomLog(pet.id!);
       } else {
-        // No pets available
-        if (mounted) {
-          setState(() {
-            selectedPet = null;
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      // Handle any errors
-      if (mounted) {
+        if (!mounted) return;
         setState(() {
           selectedPet = null;
           _isLoading = false;
         });
       }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        selectedPet = null;
+        _isLoading = false;
+      });
     }
   }
 
-  // Add this method to handle pet list updates
   void _updateSelectedPet() {
     final pets = context.read<AppState>().pets;
     if (pets.isEmpty) {
-      setState(() {
-        selectedPet = null;
-      });
+      setState(() => selectedPet = null);
       return;
     }
-    
-    // Check if selectedPet is still in the pets list
+
     if (selectedPet != null && !pets.any((p) => p.id == selectedPet!.id)) {
-      // If not, select the first pet
-      setState(() {
-        selectedPet = pets.first;
-      });
-      // Load logs for the newly selected pet
+      setState(() => selectedPet = pets.first);
       context.read<AppState>().loadGroomLog(selectedPet!.id!);
     }
   }
 
-  // Helper method to get pet name from ID
   String _getPetName(int petId, AppState appState) {
     try {
-      final pet = appState.pets.firstWhere((p) => p.id == petId);
-      return pet.name;
-    } catch (e) {
+      return appState.pets.firstWhere((p) => p.id == petId).name;
+    } catch (_) {
       return 'Unknown Pet';
     }
   }
@@ -102,15 +83,10 @@ class _GroomLogsPageState extends State<GroomLogs> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final records = appState.groomLogs;
-
-    // Update selectedPet when pets list changes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateSelectedPet();
-    });
-
     final bool isOwner = appState.currentUser?['role'] == 'owner';
 
-    // FIX: Calculate alpha values for deprecated withOpacity fixes
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateSelectedPet());
+
     final int alpha20 = (0.2 * 255).round();
     final int alpha90 = (0.9 * 255).round();
 
@@ -139,94 +115,16 @@ class _GroomLogsPageState extends State<GroomLogs> {
         child: SafeArea(
           child: Column(
             children: [
-              if (isOwner)
-                // Only show dropdown if we have pets and a selected pet
-                if (!_isLoading && selectedPet != null && appState.pets.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      // FIX: Replaced withOpacity with withAlpha
-                      color: Colors.white.withAlpha(alpha20),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButton<int>(
-                      value: selectedPet?.id,
-                      // FIX: Replaced withOpacity with withAlpha
-                      dropdownColor: Colors.white.withAlpha(alpha90),
-                      items: appState.pets
-                          .map((p) => DropdownMenuItem<int>(
-                                value: p.id,
-                                child: Text(
-                                  p.name,
-                                  style: const TextStyle(color: Color(0xFFB892F7)),
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (id) {
-                        if (id != null) {
-                          final pet = appState.pets.firstWhere((p) => p.id == id);
-                          setState(() => selectedPet = pet);
-                          context.read<AppState>().loadGroomLog(pet.id!);
-                        }
-                      },
-                    ),
-                  ),
-
-              // Groom Access Button
+              if (isOwner && !_isLoading && selectedPet != null && appState.pets.isNotEmpty)
+                _buildPetDropdown(appState, alpha20, alpha90),
               if (isOwner && selectedPet != null)
-                ElevatedButton(
-                  onPressed: () async {
-                    // FIX: Store context-dependent objects before async gap
-                    final buildContext = context;
-                    final appStateRead = context.read<AppState>();
-                    final messenger = ScaffoldMessenger.of(context);
-                    
-                    final groomers = await appStateRead.getGroomers();
-
-                    // FIX: Check mounted before using context
-                    if (!mounted) return;
-
-                    final selectedGroomer = await showDialog<Map<String, dynamic>>(
-                      context: buildContext,
-                      builder: (cont) {
-                        return SimpleDialog(
-                          title: const Text("Select Groomer"),
-                          children: groomers.map((groomer) {
-                            final fullName = "${groomer['firstName']} ${groomer['lastName']}";
-                            return SimpleDialogOption(
-                              onPressed: () => Navigator.pop(cont, groomer),
-                              child: Text(fullName),
-                            );
-                          }).toList(),
-                        );
-                      },
-                    );
-
-                    if (selectedGroomer != null && selectedPet != null) {
-                      await appStateRead.grantAccess(selectedPet!.id!, selectedGroomer['id']);
-                      
-                      // FIX: Check mounted before showing snackbar
-                      if (!mounted) return;
-                      
-                      messenger.showSnackBar(
-                        SnackBar(content: Text("Granted access to ${selectedGroomer['firstName']}")),
-                      );
-                    }
-                  },
-                  child: const Text("Grant Groomer Access"),
-                ),
-
-              // Loading indicator
+                _buildGrantAccessButton(appState),
               if (_isLoading)
                 const Expanded(
                   child: Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(color: Colors.white),
                   ),
                 )
-              // No pets available
               else if (appState.pets.isEmpty)
                 const Expanded(
                   child: Center(
@@ -240,7 +138,6 @@ class _GroomLogsPageState extends State<GroomLogs> {
                     ),
                   ),
                 )
-              // No grooming logs
               else if (records.isEmpty)
                 const Expanded(
                   child: Center(
@@ -254,141 +151,190 @@ class _GroomLogsPageState extends State<GroomLogs> {
                     ),
                   ),
                 )
-              // Grooming logs list
               else
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: records.length,
-                    itemBuilder: (context, i) {
-                      final record = records[i];
-                      final petName = _getPetName(record.petId, appState);
-                      
-                      // FIX: Calculate alpha values for deprecated withOpacity fixes
-                      final int alpha15 = (0.15 * 255).round();
-                      final int alpha30 = (0.3 * 255).round();
-                      final int alpha25 = (0.25 * 255).round();
-                      
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          // FIX: Replaced withOpacity with withAlpha
-                          color: Colors.white.withAlpha(alpha15),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              // FIX: Replaced withOpacity with withAlpha
-                              color: Colors.purpleAccent.withAlpha(alpha30),
-                              blurRadius: 10,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Pet name badge at the top
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                // FIX: Replaced withOpacity with withAlpha
-                                color: Colors.white.withAlpha(alpha25),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.pets, color: Colors.white, size: 16),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    petName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Main content
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                "Title: ${record.type}",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  "Description: ${record.description}\n\nMaintenance: ${record.maintenance}\n\nDate and Time: ${record.date}",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isOwner)
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.white70),
-                                      onPressed: () async {
-                                        // FIX: Store context-dependent objects before async gap
-                                        final appStateRead = context.read<AppState>();
-                                        
-                                        final result = await showDialog<GroomLog>(
-                                          context: context,
-                                          builder: (_) => EditGroomLogDialog(
-                                            groomLog: record,
-                                            pets: appState.pets,
-                                          ),
-                                        );
-                                        
-                                        if (result != null) {
-                                          await appStateRead.updateGroomLog(result);
-                                        }
-                                      },
-                                    ),
-                                  if (isOwner)
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () async {
-                                        // FIX: Store messenger before async gap
-                                        final messenger = ScaffoldMessenger.of(context);
-                                        
-                                        await appState.deleteGroomLog(record.id!, record.petId);
-                                        
-                                        // FIX: Check mounted before showing snackbar
-                                        if (!mounted) return;
-                                        
-                                        messenger.showSnackBar(
-                                          const SnackBar(content: Text('Grooming Log deleted')),
-                                        );
-                                      },
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                    itemBuilder: (context, i) =>
+                        _buildGroomLogTile(context, records[i], isOwner, appState),
                   ),
                 ),
             ],
           ),
         ),
       ),
-      // FAB removed - handled by main.dart navigation
+    );
+  }
+
+  Widget _buildPetDropdown(AppState appState, int alpha20, int alpha90) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(alpha20),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButton<int>(
+        value: selectedPet?.id,
+        dropdownColor: Colors.white.withAlpha(alpha90),
+        items: appState.pets
+            .map((p) => DropdownMenuItem<int>(
+                  value: p.id,
+                  child: Text(p.name, style: const TextStyle(color: Color(0xFFB892F7))),
+                ))
+            .toList(),
+        onChanged: (id) async {
+          if (id != null) {
+            final pet = appState.pets.firstWhere((p) => p.id == id);
+            if (!mounted) return;
+            setState(() => selectedPet = pet);
+            await appState.loadGroomLog(pet.id!);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildGrantAccessButton(AppState appState) {
+    return ElevatedButton(
+      onPressed: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        final groomers = await appState.getGroomers();
+
+        if (!mounted) return;
+
+        final selectedGroomer = await showDialog<Map<String, dynamic>>(
+          context: context,
+          builder: (cont) => SimpleDialog(
+            title: const Text("Select Groomer"),
+            children: groomers
+                .map((g) => SimpleDialogOption(
+                      onPressed: () => Navigator.pop(cont, g),
+                      child: Text("${g['firstName']} ${g['lastName']}"),
+                    ))
+                .toList(),
+          ),
+        );
+
+        if (!mounted || selectedGroomer == null || selectedPet == null) return;
+
+        await appState.grantAccess(selectedPet!.id!, selectedGroomer['id']);
+
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text("Granted access to ${selectedGroomer['firstName']}")),
+        );
+      },
+      child: const Text("Grant Groomer Access"),
+    );
+  }
+
+  Widget _buildGroomLogTile(BuildContext context, GroomLog record, bool isOwner, AppState appState) {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final int alpha15 = (0.15 * 255).round();
+    final int alpha30 = (0.3 * 255).round();
+    final int alpha25 = (0.25 * 255).round();
+
+    final petName = _getPetName(record.petId, appState);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(alpha15),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purpleAccent.withAlpha(alpha30),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(alpha25),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.pets, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                Text(petName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              "Title: ${record.type}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                "Description: ${record.description}\n\nMaintenance: ${record.maintenance}\n\nDate and Time: ${record.date}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isOwner)
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white70),
+                    onPressed: () async {
+                      final appStateRead = context.read<AppState>();
+                      final result = await showDialog<GroomLog>(
+                        context: context,
+                        builder: (_) => AddGroomLogDialog(groomLog: record),
+                      );
+
+                      if (!mounted || result == null) return;
+                      await appStateRead.updateGroomLog(result);
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Grooming Log updated')),
+                      );
+                    },
+                  ),
+                if (isOwner)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      await appState.deleteGroomLog(record.id!, record.petId);
+                      if (!mounted) return;
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Grooming Log deleted')),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

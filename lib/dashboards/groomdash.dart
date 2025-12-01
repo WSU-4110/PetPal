@@ -21,6 +21,9 @@ class _GroomerDashboardState extends State<GroomerDashboard> {
     final groomerId = context.read<app_state.AppState>().currentUser?['id'] as int?;
 
     if (groomerId != null) {
+      // NOTE: loadAccessiblePets is often an async call, but context.read is synchronous.
+      // This is safe because it's called within initState and is immediately followed
+      // by a build/Consumer rebuild when the state is updated.
       context.read<app_state.AppState>().loadAccessiblePets(groomerId);
     }
 
@@ -28,6 +31,10 @@ class _GroomerDashboardState extends State<GroomerDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // Alpha calculation for deprecated color functions
+    final int alpha15 = (0.15 * 255).round();
+    final int alpha10 = (0.1 * 255).round();
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -57,8 +64,8 @@ class _GroomerDashboardState extends State<GroomerDashboard> {
               children: [
                 const SizedBox(height: 20), // Add space after app bar
                 // Center the instruction text
-                Center(
-                  child: const Text(
+                const Center(
+                  child: Text(
                     'Select a pet to view grooming records:',
                     style: TextStyle(
                       fontSize: 18,
@@ -112,11 +119,13 @@ class _GroomerDashboardState extends State<GroomerDashboard> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              // FIX: Replaced withOpacity with withAlpha
+                              color: Colors.white.withAlpha(alpha15),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  // FIX: Replaced withOpacity with withAlpha
+                                  color: Colors.black.withAlpha(alpha10),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),

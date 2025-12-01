@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import '../models/reminder.dart';
-import '../models/exercise_log.dart';
-import '../models/groom_log.dart';
 import 'package:intl/intl.dart';
-import '../models/pet.dart';
+
 
 class WeeklyReportScreen extends StatelessWidget {
   const WeeklyReportScreen({super.key});
@@ -55,7 +52,6 @@ class WeeklyReportScreen extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              // Custom AppBar
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -75,7 +71,7 @@ class WeeklyReportScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48), // Balance the back button
+                    const SizedBox(width: 48), 
                   ],
                 ),
               ),

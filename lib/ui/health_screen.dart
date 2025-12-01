@@ -23,6 +23,9 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
   // Health information fields - unified with vet home screen
   Map<String, dynamic>? _healthInfo;
 
+  /// Helper to convert a 0.0-1.0 opacity to 0-255 alpha value
+  int _alpha(double opacity) => (opacity * 255).round();
+
   @override
   void initState() {
     super.initState();
@@ -142,7 +145,7 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(_alpha(0.05)),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -363,7 +366,7 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(_alpha(0.05)),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -416,7 +419,7 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(_alpha(0.05)),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -457,7 +460,7 @@ class _HealthTabScreenState extends State<HealthTabScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withAlpha(_alpha(0.1)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor, width: 1),
                 ),

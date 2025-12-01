@@ -27,6 +27,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final todayStart = DateTime(now.year, now.month, now.day);
     final todayEnd = todayStart.add(const Duration(days: 1));
 
+    if (!mounted) return;
+
     setState(() {
       _notifications = all.where((n) {
         final scheduled = n.scheduledAt;
@@ -39,9 +41,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
 
   Future<void> _deleteNotification(int id) async {
+    // Capture messenger before async operations
+    final messenger = ScaffoldMessenger.of(context);
+    
     await _dbService.deleteNotification(id);
     await _loadNotifications();
-    ScaffoldMessenger.of(context).showSnackBar(
+    
+    if (!mounted) return;
+    
+    messenger.showSnackBar(
       const SnackBar(content: Text('Notification deleted')),
     );
   }

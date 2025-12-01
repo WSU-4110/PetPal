@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import 'dart:developer' as developer; // Used for logging
 
 class GroomerAppointment {
   final String id;
@@ -46,6 +47,9 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   }
 
   Future<void> _loadAppointments() async {
+    // Check mounted state early
+    if (!mounted) return;
+
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       // Use currentUser['id'] (consistent with the rest of the file)
@@ -57,14 +61,13 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
         // Collect all grooming appointments for all pets
         List<Map<String, dynamic>> allGroomingAppointments = [];
-
         for (final pet in allPets) {
           try {
             final petAppointments =
                 await appState.db.getGroomingAppointmentsForPet(pet.id!);
             allGroomingAppointments.addAll(petAppointments);
           } catch (e) {
-            print('Error loading grooming appointments for pet ${pet.id}: $e');
+            developer.log('Error loading grooming appointments for pet ${pet.id}: $e');
           }
         }
 
@@ -84,7 +87,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
                       type: a['type'] ?? 'Unknown Type',
                       status: a['status'] ?? 'upcoming',
                       groomerId: a['groomerId'] as int?,
-                      petName: a['petName'] as String?,
+                      petName: appState.getPetById(a['petId'] as int?)?.name, // Use appState to get pet name
                       petId: a['petId'] as int?,
                     ))
                 .toList();
@@ -99,7 +102,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         }
       }
     } catch (e) {
-      print('Error loading groomer appointments: $e');
+      developer.log('Error loading groomer appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -117,7 +120,9 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
+    // FIX: Removed unused local variable 'appState'
+    // final appState = Provider.of<AppState>(context); 
+    
     final upcomingCount =
         _appointments.where((a) => a.status == 'upcoming').length;
     final completedCount =
@@ -158,6 +163,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     final groomerName =
         '${appState.currentUser?['firstName'] ?? ''} ${appState.currentUser?['lastName'] ?? ''}'
             .trim();
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -214,10 +220,13 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
   Widget _buildStatCard(
       String label, String count, IconData icon, Color color, Color bgColor) {
+    // Calculate alpha for deprecated opacity fixes
+    final int alpha20 = (0.2 * 255).round();
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withAlpha(alpha20),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -261,6 +270,9 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _filterStatus == value;
+    // Calculate alpha for deprecated opacity fixes
+    final int alpha20 = (0.2 * 255).round();
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -270,7 +282,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFFB892F7).withValues(alpha: 0.2),
+      selectedColor: const Color(0xFFB892F7).withAlpha(alpha20),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFFB892F7) : const Color(0xFF6B7280),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -322,6 +334,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     // Sort appointments by date
     final sortedAppointments = List<GroomerAppointment>.from(_filteredAppointments)
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: sortedAppointments.length,
@@ -332,16 +345,22 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
   }
 
   Widget _buildAppointmentCard(GroomerAppointment appointment) {
-    final appState = Provider.of<AppState>(context);
     final isUpcoming = appointment.status == 'upcoming';
     final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
+    
+    // Alpha constants for card
+    final int alpha05 = (0.05 * 255).round();
+    final int alpha10 = (0.1 * 255).round();
 
     // Get pet name from the app state if not already available
     String petName = appointment.petName ?? 'Unknown';
     if ((petName == 'Unknown' || petName.isEmpty) && appointment.petId != null) {
+      // Accessing provider here is safe because it's synchronous read within build context
+      final appState = Provider.of<AppState>(context, listen: false);
       final pet = appState.getPetById(appointment.petId);
       petName = pet?.name ?? 'Unknown';
     }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -350,7 +369,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withAlpha(alpha05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -363,10 +382,9 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
+                  color: statusColor.withAlpha(alpha10),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -419,7 +437,7 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
+                  color: statusColor.withAlpha(alpha10),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -494,123 +512,124 @@ class _GroomerHomeScreenState extends State<GroomerHomeScreen> {
     );
   }
 
-  void _completeAppointment(GroomerAppointment appointment) {
-    showDialog(
+  Future<void> _completeAppointment(GroomerAppointment appointment) async {
+    // FIX: Show dialog using context and capture result
+    final shouldComplete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Complete Appointment'),
         content: const Text('Mark this grooming appointment as completed?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              final appState = Provider.of<AppState>(context, listen: false);
-
-              try {
-                // Create a map of the appointment with updated status
-                final updatedAppointment = {
-                  'id': appointment.id,
-                  'groomerId': appointment.groomerId,
-                  'groomerName': appointment.groomerName,
-                  'salon': appointment.salon,
-                  'dateTime': appointment.dateTime.toIso8601String(),
-                  'type': appointment.type,
-                  'status': 'completed',
-                  'petId': appointment.petId,
-                  'petName': appointment.petName,
-                };
-
-                // Update the appointment in the database
-                await appState.db.updateGroomingAppointment(updatedAppointment);
-
-                // Reload appointments
-                _loadAppointments();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Appointment marked as completed'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Complete', style: TextStyle(color: Colors.green)),
           ),
         ],
       ),
-    );
+    ) ?? false;
+
+    if (!shouldComplete) return;
+
+    // FIX: Retrieve AppState instance after dialog but before async gap
+    if (!mounted) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      // Create a map of the appointment with updated status
+      final updatedAppointment = {
+        'id': appointment.id,
+        'groomerId': appointment.groomerId,
+        'groomerName': appointment.groomerName,
+        'salon': appointment.salon,
+        'dateTime': appointment.dateTime.toIso8601String(),
+        'type': appointment.type,
+        'status': 'completed',
+        'petId': appointment.petId,
+        'petName': appointment.petName,
+      };
+
+      // Update the appointment in the database
+      await appState.db.updateGroomingAppointment(updatedAppointment);
+
+      // Reload appointments
+      await _loadAppointments();
+
+      // FIX: Check mounted before UI access (ScaffoldMessenger)
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment marked as completed'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _cancelAppointment(GroomerAppointment appointment) {
-    showDialog(
+  Future<void> _cancelAppointment(GroomerAppointment appointment) async {
+    // FIX: Show dialog using context and capture result
+    final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content:
-            const Text('Are you sure you want to cancel this grooming appointment?'),
+        content: const Text('Are you sure you want to cancel this grooming appointment?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('No'),
           ),
           TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              final appState = Provider.of<AppState>(context, listen: false);
-
-              try {
-                // Delete the appointment from the database
-                await appState.deleteGroomingAppointment(appointment.id);
-
-                // Reload appointments
-                _loadAppointments();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appointment cancelled')),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Yes', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
-    );
+    ) ?? false;
+
+    if (!shouldCancel) return;
+
+    // FIX: Retrieve AppState instance after dialog but before async gap
+    if (!mounted) return;
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      // Delete the appointment from the database
+      await appState.deleteGroomingAppointment(appointment.id);
+
+      // Reload appointments
+      await _loadAppointments();
+
+      // FIX: Check mounted before UI access (ScaffoldMessenger)
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment cancelled')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }

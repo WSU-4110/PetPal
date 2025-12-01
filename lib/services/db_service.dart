@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'dart:developer' as developer; // FIX: Import developer for logging
 import '../models/pet.dart';
 import '../models/reminder.dart';
 import '../models/medical_record.dart';
@@ -42,8 +43,8 @@ class DBService {
         await _createAllTables(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        print('Upgrading database from version $oldVersion to $newVersion');
-
+        developer.log('Upgrading database from version $oldVersion to $newVersion'); // FIX: Replaced print
+        
         // Create all tables to ensure any missing ones are added
         await _createAllTables(db);
 
@@ -123,32 +124,27 @@ class DBService {
       final columnNames = columns.map((c) => c['name'].toString()).toSet();
 
       // List of all expected columns
-      final expectedColumns = {
-        'id', 'pet_id', 'lastCheckup', 'vaccinationStatus', 'nextVaccinationDue',
-        'allergies', 'medications', 'notes', 'diet', 'weight', 'activityLevel',
-        'behavior', 'specialNeeds', 'created_at', 'updated_at'
-      };
+      const allFields = {
+          'lastCheckup', 'vaccinationStatus', 'nextVaccinationDue',
+          'allergies', 'medications', 'notes', 'diet', 'weight',
+          'activityLevel', 'behavior', 'specialNeeds'
+        };
 
-      // Find missing columns
-      final missingColumns = expectedColumns.difference(columnNames);
+      // Find missing columns by comparing expected fields with existing column names
+      final missingColumns = allFields.difference(columnNames);
 
       // Add missing columns
       for (final column in missingColumns) {
         try {
-          // Skip primary key and foreign key columns
-          if (column == 'id' || column == 'pet_id' || column == 'created_at' || column == 'updated_at') {
-            continue;
-          }
-
-          print('Adding missing column: $column');
+          developer.log('Adding missing column: $column'); // FIX: Replaced print
           await db.execute("ALTER TABLE pet_health_info ADD COLUMN $column TEXT;");
         } catch (e) {
-          print('Error adding column $column: $e');
+          developer.log('Error adding column $column: $e'); // FIX: Replaced print
           // Ignore errors for individual columns
         }
       }
     } catch (e) {
-      print('Error checking/adding columns to pet_health_info: $e');
+      developer.log('Error checking/adding columns to pet_health_info: $e'); // FIX: Replaced print
     }
   }
 
@@ -212,7 +208,7 @@ class DBService {
         description TEXT,
         date TEXT NOT NULL,
         vetName TEXT,
-        weight FLOAT,
+        weight REAL,
         status TEXT,
         FOREIGN KEY (petId) REFERENCES pets(id) ON DELETE CASCADE
       );
@@ -780,7 +776,7 @@ class DBService {
       }
       return null;
     } catch (e) {
-      print('Error getting pet health info: $e');
+      developer.log('Error getting pet health info: $e'); // FIX: Use developer.log
       return null;
     }
   }
@@ -788,29 +784,38 @@ class DBService {
   // Ensure pet_health_info table exists with all columns
   Future<void> _ensureHealthInfoTable(Database db) async {
     try {
-      // Create table with all columns
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS pet_health_info (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          pet_id INTEGER NOT NULL,
-          lastCheckup TEXT,
-          vaccinationStatus TEXT,
-          nextVaccinationDue TEXT,
-          allergies TEXT,
-          medications TEXT,
-          notes TEXT,
-          diet TEXT,
-          weight TEXT,
-          activityLevel TEXT,
-          behavior TEXT,
-          specialNeeds TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          FOREIGN KEY (pet_id) REFERENCES pets (id) ON DELETE CASCADE
-        )
-      ''');
+      // Check if the table exists
+      final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='pet_health_info';");
+      if (tables.isEmpty) {
+        // Table doesn't exist, create it with all columns
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS pet_health_info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pet_id INTEGER NOT NULL,
+            lastCheckup TEXT,
+            vaccinationStatus TEXT,
+            nextVaccinationDue TEXT,
+            allergies TEXT,
+            medications TEXT,
+            notes TEXT,
+            diet TEXT,
+            weight TEXT,
+            activityLevel TEXT,
+            behavior TEXT,
+            specialNeeds TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (pet_id) REFERENCES pets (id) ON DELETE CASCADE
+          )
+        ''');
+        return;
+      }
+      
+      // Table exists, check for missing columns using _addMissingHealthInfoColumns helper
+      await _addMissingHealthInfoColumns(db);
+
     } catch (e) {
-      print('Error creating pet_health_info table: $e');
+      developer.log('Error creating pet_health_info table: $e'); // FIX: Use developer.log
     }
   }
 
@@ -852,40 +857,23 @@ class DBService {
         'pet_id': petId,
         'updated_at': data['updated_at']
       };
+      
+      // List of all expected fields (to avoid repetition and potential errors)
+      const healthFields = [
+        'lastCheckup', 'vaccinationStatus', 'nextVaccinationDue',
+        'allergies', 'medications', 'notes', 'diet', 'weight',
+        'activityLevel', 'behavior', 'specialNeeds'
+      ];
 
-      // Add fields that exist in both the data and the table
-      if (columnNames.contains('lastCheckup') && data.containsKey('lastCheckup') && data['lastCheckup'] != null) {
-        updateData['lastCheckup'] = data['lastCheckup'];
-      }
-      if (columnNames.contains('vaccinationStatus') && data.containsKey('vaccinationStatus') && data['vaccinationStatus'] != null) {
-        updateData['vaccinationStatus'] = data['vaccinationStatus'];
-      }
-      if (columnNames.contains('nextVaccinationDue') && data.containsKey('nextVaccinationDue') && data['nextVaccinationDue'] != null) {
-        updateData['nextVaccinationDue'] = data['nextVaccinationDue'];
-      }
-      if (columnNames.contains('allergies') && data.containsKey('allergies') && data['allergies'] != null) {
-        updateData['allergies'] = data['allergies'];
-      }
-      if (columnNames.contains('medications') && data.containsKey('medications') && data['medications'] != null) {
-        updateData['medications'] = data['medications'];
-      }
-      if (columnNames.contains('notes') && data.containsKey('notes') && data['notes'] != null) {
-        updateData['notes'] = data['notes'];
-      }
-      if (columnNames.contains('diet') && data.containsKey('diet') && data['diet'] != null) {
-        updateData['diet'] = data['diet'];
-      }
-      if (columnNames.contains('weight') && data.containsKey('weight') && data['weight'] != null) {
-        updateData['weight'] = data['weight'];
-      }
-      if (columnNames.contains('activityLevel') && data.containsKey('activityLevel') && data['activityLevel'] != null) {
-        updateData['activityLevel'] = data['activityLevel'];
-      }
-      if (columnNames.contains('behavior') && data.containsKey('behavior') && data['behavior'] != null) {
-        updateData['behavior'] = data['behavior'];
-      }
-      if (columnNames.contains('specialNeeds') && data.containsKey('specialNeeds') && data['specialNeeds'] != null) {
-        updateData['specialNeeds'] = data['specialNeeds'];
+      for (final field in healthFields) {
+        if (columnNames.contains(field) && data.containsKey(field) && data[field] != null) {
+          updateData[field] = data[field];
+        } else if (columnNames.contains(field) && data.containsKey(field) && data[field] == null) {
+           // Explicitly set to null if provided as null in the map, otherwise SQLite might ignore it.
+           // However, SQLite UPDATE syntax often handles null fields implicitly if the key is present.
+           // Setting the key to null is safer if the table was created without NOT NULL constraints.
+           updateData[field] = null;
+        }
       }
 
       if (existing.isNotEmpty) {
@@ -902,7 +890,7 @@ class DBService {
         await db.insert('pet_health_info', updateData);
       }
     } catch (e) {
-      print('Error updating pet health info: $e');
+      developer.log('Error updating pet health info: $e'); // FIX: Use developer.log
       rethrow;
     }
   }

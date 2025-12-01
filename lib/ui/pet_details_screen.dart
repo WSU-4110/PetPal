@@ -25,8 +25,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
-    // Pre-load medical records when the screen initializes
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMedicalRecords();
     });
@@ -44,12 +43,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
     try {
       await appState.loadMedicalRecords(widget.pet.id!);
     } catch (e) {
-      // Handle error silently or show a snackbar
-      print('Error loading medical records: $e');
+      debugPrint('Error loading medical records: $e');
     }
   }
 
-  // Refresh UI/data when returning from other screens
   Future<void> _refreshData() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
@@ -57,9 +54,10 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
       await appState.loadGroomingAppointmentsForPet(widget.pet.id!);
       await appState.loadTrainingAppointmentsForPet(widget.pet.id!);
       await appState.loadMedicalRecords(widget.pet.id!);
+      if (!mounted) return;
       setState(() {});
     } catch (e) {
-      // ignore or handle
+      debugPrint('Error refreshing data: $e');
     }
   }
 
@@ -98,11 +96,8 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
             IconButton(
               icon: const Icon(Icons.add, color: Color(0xFF6C63FF)),
               onPressed: () {
-                // Switch to health tab and trigger add medical record
                 _tabController.animateTo(0);
-                // We'll use a notification to trigger the add dialog in the health tab
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  // This will be handled in the HealthTabScreen
                 });
               },
             ),
@@ -120,8 +115,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    // can't call methods on const, so use non-const Color
-                    color: Color(0xFF42A5F5).withOpacity(0.2),
+                    color: const Color(0xFF42A5F5).withAlpha((0.2 * 255).round()),
                     border: Border.all(
                       color: const Color(0xFF42A5F5),
                       width: 3,
@@ -293,7 +287,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 60, color: Color(0xFF42A5F5)),
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 60, color: Color(0xFF42A5F5)),
         ),
       );
     }
@@ -303,7 +297,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
         width: 120,
         height: 120,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 60, color: Color(0xFF42A5F5)),
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 60, color: Color(0xFF42A5F5)),
       ),
     );
   }
@@ -320,7 +314,7 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
         width: 100,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withAlpha((0.1 * 255).round()),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -344,7 +338,6 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> with SingleTickerPr
   }
 }
 
-// New BookAppointmentScreen to match pattern of other booking screens
 class BookAppointmentScreen extends StatefulWidget {
   final Pet pet;
 
@@ -368,7 +361,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       await appState.loadAppointmentsForPet(widget.pet.id!);
-      final appointments = appState.getAppointmentsForPetLocal(widget.pet.id!) ?? <Appointment>[];
+      final appointments = appState.getAppointmentsForPetLocal(widget.pet.id!);
       if (mounted) {
         setState(() {
           _appointments
@@ -378,6 +371,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         });
       }
     } catch (e) {
+      debugPrint('Error loading appointments: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -467,7 +461,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.3), width: 2),
+            border: Border.all(color: const Color(0xFF6C63FF).withAlpha((0.3 * 255).round()), width: 2),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -490,21 +484,20 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       builder: (context) => BookAppointmentSheet(
         pet: widget.pet,
         onBooked: (appointment) async {
+          final messenger = ScaffoldMessenger.of(context);
           final appState = Provider.of<AppState>(context, listen: false);
           try {
             await appState.addAppointment(appointment);
             await _loadAppointments();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Appointment booked successfully!'), backgroundColor: Colors.green),
-              );
-            }
+            if (!mounted) return;
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Appointment booked successfully!'), backgroundColor: Colors.green),
+            );
           } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error saving appointment: $e'), backgroundColor: Colors.red),
-              );
-            }
+            if (!mounted) return;
+            messenger.showSnackBar(
+              SnackBar(content: Text('Error saving appointment: $e'), backgroundColor: Colors.red),
+            );
           }
         },
       ),
@@ -521,13 +514,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.05 * 255).round()), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(color: statusColor.withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(20)),
             child: Text(isUpcoming ? 'Upcoming' : 'Completed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor))),
           if (isUpcoming)
             PopupMenuButton<String>(
@@ -549,7 +542,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         Row(children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: const Color(0xFF6C63FF).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: const Color(0xFF6C63FF).withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.medical_services, color: Color(0xFF6C63FF), size: 28),
           ),
           const SizedBox(width: 16),
@@ -579,28 +572,34 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
   }
 
-  void _cancelAppointment(Appointment appointment) async {
+  void _cancelAppointment(Appointment appointment) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Appointment'),
         content: const Text('Are you sure you want to cancel this appointment?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('No')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('No')),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final appState = Provider.of<AppState>(context, listen: false);
+              final navigator = Navigator.of(dialogContext);
+              final messenger = ScaffoldMessenger.of(dialogContext);
+              
+              navigator.pop();
+              
               try {
                 await appState.deleteAppointment(appointment.id!);
                 await _loadAppointments();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Appointment cancelled')));
-                }
+                
+                if (!mounted) return;
+                
+                messenger.showSnackBar(const SnackBar(content: Text('Appointment cancelled')));
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error cancelling appointment: $e')));
-                }
+                if (!mounted) return;
+                
+                messenger.showSnackBar(SnackBar(content: Text('Error cancelling appointment: $e')));
               }
             },
             child: const Text('Yes', style: TextStyle(color: Colors.red)),
@@ -681,6 +680,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
         });
       }
     } catch (e) {
+      debugPrint('Error loading vets: $e');
       if (mounted) setState(() => _loadingVets = false);
     }
   }
@@ -793,7 +793,7 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
       else if (_vets.isEmpty)
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: const Color(0xFF6C63FF).withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.3))),
+          decoration: BoxDecoration(color: const Color(0xFF6C63FF).withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF6C63FF).withAlpha((0.3 * 255).round()))),
           child: const Row(children: [Icon(Icons.warning, color: Color(0xFF6C63FF)), SizedBox(width: 8), Expanded(child: Text('No veterinarians available', style: TextStyle(color: Color(0xFF6C63FF))))]),
         )
       else
@@ -852,8 +852,10 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
   }
 
   Future<void> _bookAppointment() async {
+    final messenger = ScaffoldMessenger.of(context);
+    
     if (_selectedVetId == null || _selectedClinic == null || _selectedType == null || _selectedDate == null || _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields'), backgroundColor: Colors.red));
+      messenger.showSnackBar(const SnackBar(content: Text('Please fill all fields'), backgroundColor: Colors.red));
       return;
     }
 
@@ -880,12 +882,16 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
 
       widget.onBooked(appointment);
 
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-      }
+      if (!mounted) return;
+      
+      setState(() => _isSubmitting = false);
+      messenger.showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 }

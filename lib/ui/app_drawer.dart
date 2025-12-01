@@ -119,7 +119,6 @@ class AppDrawer extends StatelessWidget {
           // Owner-specific extra options
           // -----------------------
           if (showExtraOptions) ...[
-            // You can add Search/Filter button here if needed
             _DrawerItem(
               icon: Icons.calendar_today,
               title: 'Calendar',
@@ -128,6 +127,17 @@ class AppDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                );
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.analytics,
+              title: "Weekly Report",
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
                 );
               },
             ),
@@ -147,18 +157,6 @@ class AppDrawer extends StatelessWidget {
           // -----------------------
           // Always present for all roles
           // -----------------------
-          _DrawerItem(
-            icon: Icons.analytics,
-            title: "Weekly Report",
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
-              );
-            },
-          ),
-
           _DrawerItem(
             icon: Icons.settings,
             title: "Settings",
@@ -270,7 +268,7 @@ class _DrawerItemState extends State<_DrawerItem> with SingleTickerProviderState
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical:4),
               decoration: BoxDecoration(
                 color: _colorAnimation.value,
                 borderRadius: BorderRadius.circular(15),

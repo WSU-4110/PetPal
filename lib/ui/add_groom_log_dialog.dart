@@ -7,8 +7,10 @@ import '../models/groom_log.dart';
 import '../models/pet.dart';
 
 class AddGroomLogDialog extends StatefulWidget {
+  final GroomLog? groomLog; // null for add, provided for edit
   final int? petId; // Make nullable
-  const AddGroomLogDialog({super.key, this.petId});
+
+  const AddGroomLogDialog({super.key, this.groomLog, this.petId});
 
   @override
   State<AddGroomLogDialog> createState() => _AddGroomLogDialogState();
@@ -29,16 +31,48 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
-    _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
-    _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    
+    // Initialize for edit mode
+    if (widget.groomLog != null) {
+      _typeController.text = widget.groomLog!.type;
+      _descriptionController.text = widget.groomLog!.description;
+      _dateController.text = widget.groomLog!.date;
+      _maintenanceController.text = widget.groomLog!.maintenance;
+      try {
+        // Assuming date format is consistent with saving mechanism
+        _selectedDate = DateFormat('yyyy-MM-dd hh:mm').parse(widget.groomLog!.date);
+      } catch (err) {
+        _selectedDate = DateTime.now();
+      }
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+    } else {
+      // Initialize for add mode
+      _selectedDate = DateTime.now();
+      _selectedTime = TimeOfDay.fromDateTime(_selectedDate);
+      _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    }
     
     // Load pets from app state
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final appState = Provider.of<AppState>(context, listen: false);
-      setState(() {
-        pets = appState.pets;
-        // Select the pet if provided, otherwise select the first pet
+      _loadPets();
+    });
+  }
+
+  void _loadPets() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    setState(() {
+      pets = appState.pets;
+      
+      // Set selected pet
+      if (widget.groomLog != null) {
+        // Edit mode: select the pet from the groom log
+        try {
+          selectedPet = pets.firstWhere((p) => p.id == widget.groomLog!.petId);
+        } catch (e) {
+          selectedPet = pets.isNotEmpty ? pets.first : null;
+        }
+      } else {
+        // Add mode: select the pet if provided, otherwise select the first pet
         if (widget.petId != null) {
           try {
             selectedPet = pets.firstWhere((p) => p.id == widget.petId);
@@ -48,7 +82,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
         } else {
           selectedPet = pets.isNotEmpty ? pets.first : null;
         }
-      });
+      }
     });
   }
 
@@ -143,10 +177,10 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Add Grooming Log',
-                          style: TextStyle(
+                          widget.groomLog != null ? 'Edit Grooming Log' : 'Add Grooming Log',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -161,7 +195,9 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Record a grooming session for your pet',
+                    widget.groomLog != null 
+                        ? 'Update grooming session for ${selectedPet?.name ?? 'your pet'}'
+                        : 'Record a grooming session for your pet',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
@@ -180,13 +216,14 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Pet selector card
-                      _buildFormCard(
-                        title: 'Select Pet',
-                        icon: Icons.pets,
-                        child: _buildPetSelector(),
-                      ),
-                      const SizedBox(height: 16),
+                      // Pet selector card - only show in add mode
+                      if (widget.groomLog == null)
+                        _buildFormCard(
+                          title: 'Select Pet',
+                          icon: Icons.pets,
+                          child: _buildPetSelector(),
+                        ),
+                      if (widget.groomLog == null) const SizedBox(height: 16),
 
                       // Type input card
                       _buildFormCard(
@@ -307,6 +344,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                           setState(() => _isSaving = true);
                           
                           final record = GroomLog(
+                            id: widget.groomLog?.id, // Keep existing ID for edit
                             petId: selectedPet!.id!,
                             type: _typeController.text,
                             description: _descriptionController.text,
@@ -320,13 +358,20 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                           final appState = context.read<AppState>();
                           
                           try {
-                            await appState.addGroomLog(record);
+                            if (widget.groomLog != null) {
+                              // Edit mode
+                              await appState.updateGroomLog(record);
+                            } else {
+                              // Add mode
+                              await appState.addGroomLog(record);
+                            }
+                            
                             if (!mounted) return;
                             navigator.pop();
                           } catch (e) {
                             if (!mounted) return;
                             messenger.showSnackBar(
-                              SnackBar(content: Text('Error adding log: $e')),
+                              SnackBar(content: Text('Error ${widget.groomLog != null ? 'updating' : 'adding'} log: $e')),
                             );
                           } finally {
                             if (mounted) {
@@ -353,9 +398,9 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Save Log',
-                              style: TextStyle(
+                          : Text(
+                              widget.groomLog != null ? 'Update Log' : 'Save Log',
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -577,7 +622,7 @@ class _AddGroomLogDialogState extends State<AddGroomLogDialog> {
             Expanded(
               child: Text(
                 _selectedTime.format(context),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                 ),
               ),

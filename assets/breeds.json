@@ -21,6 +21,7 @@
     "Devon Rex",
     "Egyptian Mau",
     "Exotic Shorthair",
+    "Havana Brown",
     "Himalayan",
     "Japanese Bobtail",
     "Maine Coon",
@@ -195,6 +196,20 @@
     "Wire Fox Terrier",
     "Xoloitzcuintli",
     "Yorkshire Terrier",
+    "Other"
+  ],
+  "Bird": [
+    "Parakeet",
+    "Cockatiel",
+    "Parrot",
+    "Canary",
+    "Other"
+  ],
+  "Rabbit": [
+    "Holland Lop",
+    "Netherland Dwarf",
+    "Flemish Giant",
+    "Rex",
     "Other"
   ]
 }

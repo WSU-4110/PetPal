@@ -17,7 +17,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   List<Appointment> _appointments = [];
   List<Pet> _accessiblePets = [];
   bool _isLoading = true;
-  String _filterStatus = 'all'; // all, upcoming, completed
+  String _filterStatus = 'all'; 
   late TabController _tabController;
 
   @override
@@ -36,13 +36,11 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
   Future<void> _loadData() async {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      // Use user['id'] instead of currentUserId
       final vetId = appState.user?['id'];
       if (vetId != null) {
         // Load all appointments first
         await appState.loadAppointments();
         
-        // Filter appointments locally
         final appointments = appState.appointments.where((a) => a.vetId == vetId).toList();
         
         // Load accessible pets for this vet
@@ -82,7 +80,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
     return Scaffold(
   backgroundColor: const Color(0xFFF5F7FA),
   appBar: AppBar(
-    automaticallyImplyLeading: true, // show hamburger menu
+    automaticallyImplyLeading: true, 
     backgroundColor: const Color(0xFFB892F7),
     elevation: 0,
     title: const Text(
@@ -491,7 +489,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
           width: 60,
           height: 60,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
+          errorBuilder: (_, _, _) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
         ),
       );
     }
@@ -501,7 +499,7 @@ class _VetHomeScreenState extends State<VetHomeScreen> with SingleTickerProvider
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
+        errorBuilder: (_, _, _) => const Icon(Icons.pets, size: 30, color: Color(0xFFB892F7)),
       ),
     );
   }

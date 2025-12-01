@@ -14,7 +14,7 @@ import 'ui/add_reminder_dialog.dart';
 import 'ui/add_groom_log_dialog.dart';
 import 'ui/add_exercise_log_dialog.dart';
 import 'ui/search_screen.dart';
-import 'ui/notification_screen.dart'; // Add this import
+import 'ui/notification_screen.dart'; 
 import 'dashboards/trainerdash.dart';
 import 'dashboards/groomdash.dart';
 import 'state/app_state.dart' as app_state;
@@ -29,7 +29,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> with TickerProviderStateMixin {
   int _selectedIndex = 0;
-  AnimationController? _animationController; // Make it nullable
+  AnimationController? _animationController; 
 
   @override
   void initState() {
@@ -65,7 +65,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         ];
       case 'vet':
         return [
-          const VetHomeScreen(), // Only one screen for vets
+          const VetHomeScreen(), 
         ];
       case 'trainer':
         return [
@@ -110,7 +110,6 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
           BottomNavigationBarItem(
             icon: const Icon(Icons.alarm),
             label: 'Reminders',
-            // Use a smaller font size to prevent truncation
             tooltip: 'Reminders',
           ),
           BottomNavigationBarItem(
@@ -140,7 +139,6 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   }
 
   void _onFabPressed() {
-    // owner role has more tabs; adjust by index
     if (widget.role == 'owner') {
       if (_selectedIndex == 1) {
         // Pets tab -> open PetFormScreen
@@ -193,12 +191,9 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Determine if FAB should be shown based on role and selected index
   bool get _showFab {
-    // Don't show FAB on home screens for any role
     if (_selectedIndex == 0) return false;
     
-    // Only show FAB for owner role on specific tabs
     if (widget.role == 'owner') {
       return [1, 2, 3, 4].contains(_selectedIndex);
     }
@@ -206,9 +201,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     return false;
   }
 
-  // Determine if bottom nav should be shown
   bool get _showBottomNav {
-    // Don't show bottom nav for vet role
     if (widget.role == 'vet') return false;
     return true;
   }
@@ -216,7 +209,6 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Let body go behind app bar and behind bottom nav (so both overlay)
       extendBodyBehindAppBar: true,
       extendBody: true,
 
@@ -236,7 +228,6 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         ),
         centerTitle: true,
         actions: [
-          // Show search button only for owner
           if (widget.role == 'owner')
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),
@@ -266,7 +257,6 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
                 );
               },
             ),
-          // Add notification button for all roles
           IconButton(
             icon: const Icon(Icons.notifications, color: Colors.white),
             onPressed: () {
@@ -282,18 +272,16 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       drawer: Builder(
         builder: (context) {
           return AppDrawer(
-            showExtraOptions: widget.role == 'owner', // Only owner sees calendar/help/search
+            showExtraOptions: widget.role == 'owner', 
           );
         },
       ),
 
-      /// Use an IndexedStack so each tab keeps its state and we can let pages render full-screen.
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
 
-      /// Only show FAB when needed
       floatingActionButton: _showFab ? Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -304,14 +292,14 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.18),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
           ],
         ),
         child: FloatingActionButton(
-          heroTag: null, // Disable hero animation completely
+          heroTag: null, 
           backgroundColor: Colors.transparent,
           elevation: 0,
           onPressed: _onFabPressed,
@@ -320,17 +308,15 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       ) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-      /// Floating, rounded bottom nav "plate" (the oval). The BottomNavigationBar itself
-      /// is transparent so plate looks clean with no white rectangle bleeding.
       bottomNavigationBar: _showBottomNav ? Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -339,12 +325,10 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: Theme(
-            // Create a custom theme to adjust text style and indicator
             data: Theme.of(context).copyWith(
               textTheme: Theme.of(context).textTheme.copyWith(
-                bodySmall: const TextStyle(fontSize: 11), // Smaller font size for labels
+                bodySmall: const TextStyle(fontSize: 11), 
               ),
-              // Remove splash color and highlight color to disable gray circle
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent,
             ),
@@ -353,19 +337,19 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
               onTap: _onItemTapped,
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.transparent,
-              selectedItemColor: const Color(0xFFB892F7), // Purple color for selected item
+              selectedItemColor: const Color(0xFFB892F7), 
               unselectedItemColor: Colors.grey.shade600,
               showUnselectedLabels: true,
               elevation: 0,
-              selectedLabelStyle: const TextStyle(fontSize: 11), // Smaller font for selected
-              unselectedLabelStyle: const TextStyle(fontSize: 11), // Smaller font for unselected
-              // Add custom selected icon theme for smaller indicator
+              selectedLabelStyle: const TextStyle(fontSize: 11), 
+              unselectedLabelStyle: const TextStyle(fontSize: 11), 
+              
               selectedIconTheme: IconThemeData(
                 size: 26,
                 color: const Color(0xFFB892F7),
                 shadows: [
                   Shadow(
-                    color: const Color(0xFFB892F7).withOpacity(0.3),
+                    color: const Color(0xFFB892F7).withValues(alpha: 0.3),
                     blurRadius: 8,
                   ),
                 ],

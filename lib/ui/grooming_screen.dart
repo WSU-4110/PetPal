@@ -1,8 +1,8 @@
-// lib/ui/grooming_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../state/app_state.dart';
+import 'dart:developer' as developer;
 
 class GroomingAppointment {
   final String id;
@@ -32,7 +32,7 @@ class GroomingScreen extends StatefulWidget {
 }
 
 class _GroomingScreenState extends State<GroomingScreen> {
-  List<GroomingAppointment> _appointments = [];
+  final List<GroomingAppointment> _appointments = [];
   bool _isLoading = true;
 
   @override
@@ -80,8 +80,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
       }
     } catch (e) {
       // keep error output simple for debugging
-      // ignore: avoid_print
-      print('Error loading grooming appointments: $e');
+      developer.log('Error loading grooming appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -111,7 +110,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFF4ECDC4)),
+            icon: const Icon(Icons.add, color: Color(0xFF4ECDC4)), // Teal color for grooming
             onPressed: _showBookGroomingDialog,
           ),
         ],
@@ -164,7 +163,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
           ElevatedButton.icon(
             onPressed: _showBookGroomingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFB892F7),
+              backgroundColor: const Color(0xFF4ECDC4), // Teal color for grooming
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -190,7 +189,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFFB892F7).withOpacity(0.3),
+              color: const Color(0xFF4ECDC4).withValues(alpha: 0.3), // Teal color for grooming
               width: 2,
             ),
           ),
@@ -199,7 +198,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFFB892F7),
+                color: Color(0xFF4ECDC4), // Teal color for grooming
                 size: 28,
               ),
               SizedBox(width: 12),
@@ -208,7 +207,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFB892F7),
+                  color: Color(0xFF4ECDC4), // Teal color for grooming
                 ),
               ),
             ],
@@ -237,7 +236,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
 
   Widget _buildAppointmentCard(GroomingAppointment appointment) {
     final isUpcoming = appointment.status == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFF4ECDC4) : Colors.grey; // Teal color for grooming
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -246,7 +245,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -261,7 +260,7 @@ class _GroomingScreenState extends State<GroomingScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -314,12 +313,12 @@ class _GroomingScreenState extends State<GroomingScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB892F7).withOpacity(0.1),
+                  color: const Color(0xFF4ECDC4).withValues(alpha: 0.1), // Teal color for grooming
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.cut,
-                  color: Color(0xFFB892F7),
+                  color: Color(0xFF4ECDC4), // Teal color for grooming
                   size: 28,
                 ),
               ),
@@ -390,32 +389,37 @@ class _GroomingScreenState extends State<GroomingScreen> {
   }
 
   void _cancelAppointment(GroomingAppointment appointment) {
+    // Capture context-dependent objects before showing dialog
+    final appState = Provider.of<AppState>(context, listen: false);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancel Appointment'),
         content: const Text('Are you sure you want to cancel this grooming appointment?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('No'),
           ),
           TextButton(
             onPressed: () async {
-              final appState = Provider.of<AppState>(context, listen: false);
+              final navigator = Navigator.of(dialogContext);
+              final messenger = ScaffoldMessenger.of(dialogContext);
+              
               try {
                 await appState.deleteGroomingAppointment(appointment.id);
-                if (mounted) {
-                  Navigator.pop(context);
-                  _loadGroomingAppointments();
-                }
+                if (!mounted) return;
+                
+                navigator.pop();
+                _loadGroomingAppointments();
               } catch (e) {
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error cancelling appointment: $e')),
-                  );
-                }
+                if (!mounted) return;
+                
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Error cancelling appointment: $e')),
+                );
               }
             },
             child: const Text('Yes', style: TextStyle(color: Colors.red)),
@@ -591,7 +595,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFB892F7)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4ECDC4)), // Teal color for grooming
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -621,7 +625,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFFB892F7)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFF4ECDC4)), // Teal color for grooming
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -645,7 +649,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _bookGrooming,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB892F7),
+                    backgroundColor: const Color(0xFF4ECDC4), // Teal color for grooming
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -665,7 +669,7 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
                           'Book Grooming',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
-                ),
+              ),
               ),
             ],
           ),
@@ -706,10 +710,10 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.orange.withOpacity(0.3),
+                color: Colors.orange.withValues(alpha: 0.3),
               ),
             ),
             child: const Row(
@@ -833,12 +837,15 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
   }
 
   Future<void> _bookGrooming() async {
+    // Capture messenger before any async operations
+    final messenger = ScaffoldMessenger.of(context);
+    
     if (_selectedGroomerId == null ||
         _selectedSalon == null ||
         _selectedType == null ||
         _selectedDate == null ||
         _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Please fill all fields'),
           backgroundColor: Colors.red,
@@ -881,20 +888,20 @@ class _BookGroomingSheetState extends State<BookGroomingSheet> {
       final appState = Provider.of<AppState>(context, listen: false);
       await appState.addGroomingAppointment(appointment);
 
-      if (mounted) {
-        widget.onRefresh();
-        Navigator.pop(context);
-      }
+      if (!mounted) return;
+
+      widget.onRefresh();
+      Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      
+      setState(() => _isSubmitting = false);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

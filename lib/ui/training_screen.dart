@@ -1,9 +1,8 @@
-// lib/ui/training_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/pet.dart';
 import '../state/app_state.dart';
-import 'dart:developer' as developer; // FIX: Added import for logging
+import 'dart:developer' as developer;  
 
 class TrainingScreen extends StatefulWidget {
   final Pet pet;
@@ -25,7 +24,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   Future<void> _loadTrainingAppointments() async {
-    // Check mounted state before using context after an asynchronous operation
     if (!mounted) return;
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -40,7 +38,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
         });
       }
     } catch (e) {
-      // FIX: Replaced print with developer.log
       developer.log('Error loading training appointments: $e');
       if (mounted) {
         setState(() {
@@ -71,7 +68,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFFB892F7)),
+            icon: const Icon(Icons.add, color: Color(0xFFFF9F43)), 
             onPressed: _showBookTrainingDialog,
           ),
         ],
@@ -124,7 +121,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
           ElevatedButton.icon(
             onPressed: _showBookTrainingDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFB892F7),
+              backgroundColor: const Color(0xFFFF9F43),  
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -150,8 +147,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              // FIX: Replaced withOpacity with withAlpha
-              color: const Color(0xFFFF9F43).withAlpha((0.3 * 255).round()),
+              color: const Color(0xFFFF9F43).withValues(alpha: 0.3), 
               width: 2,
             ),
           ),
@@ -160,7 +156,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
             children: [
               Icon(
                 Icons.add_circle_outline,
-                color: Color(0xFFB892F7),
+                color: Color(0xFFFF9F43), 
                 size: 28,
               ),
               SizedBox(width: 12),
@@ -169,7 +165,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFB892F7),
+                  color: Color(0xFFFF9F43), 
                 ),
               ),
             ],
@@ -187,8 +183,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
       builder: (context) => BookTrainingSheet(
         pet: widget.pet,
         onBooked: (appointment) {
-          // No need to check mounted here as it's within the main State build context
-          // but we reload all data for robustness, which contains its own mounted check.
           _loadTrainingAppointments();
         },
       ),
@@ -197,7 +191,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
 
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     final isUpcoming = appointment['status'] == 'upcoming';
-    final statusColor = isUpcoming ? const Color(0xFFB892F7) : Colors.grey;
+    final statusColor = isUpcoming ? const Color(0xFFFF9F43) : Colors.grey; 
     final dateTime = DateTime.parse(appointment['dateTime']);
 
     return Container(
@@ -208,8 +202,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // FIX: Replaced withOpacity with withAlpha
-            color: Colors.black.withAlpha((0.05 * 255).round()),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -224,8 +217,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  // FIX: Replaced withOpacity with withAlpha
-                  color: statusColor.withAlpha((0.1 * 255).round()),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -278,13 +270,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  // FIX: Replaced withOpacity with withAlpha
-                  color: const Color(0xFFFF9F43).withAlpha((0.1 * 255).round()),
+                  color: const Color(0xFFFF9F43).withValues(alpha: 0.1), 
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.fitness_center,
-                  color: Color(0xFFB892F7),
+                  color: Color(0xFFFF9F43), 
                   size: 28,
                 ),
               ),
@@ -367,20 +358,16 @@ class _TrainingScreenState extends State<TrainingScreen> {
           ),
           TextButton(
             onPressed: () async {
-              // Close dialog immediately to prevent context error on next access
               Navigator.pop(dialogContext);
 
-              // FIX: Check mounted BEFORE Provider.of across async gap
               if (!context.mounted) return;
               final appState = Provider.of<AppState>(context, listen: false);
               
               try {
                 await appState.deleteTrainingAppointment(appointment['id'].toString());
                 
-                // Reload after deletion
                 await _loadTrainingAppointments();
                 
-                // Check mounted BEFORE using ScaffoldMessenger
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Training session cancelled')),
@@ -468,7 +455,6 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
   }
 
   Future<void> _loadTrainers() async {
-    // Check mounted at the start of async function
     if (!mounted) return;
 
     final appState = Provider.of<AppState>(context, listen: false);
@@ -572,7 +558,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFB892F7)),
+                            const Icon(Icons.calendar_today, size: 18, color: Color(0xFFFF9F43)),  
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -604,7 +590,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 18, color: Color(0xFFB892F7)),
+                            const Icon(Icons.access_time, size: 18, color: Color(0xFFFF9F43)), 
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -632,7 +618,7 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _bookTraining,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB892F7),
+                    backgroundColor: const Color(0xFFFF9F43), 
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -697,22 +683,20 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              // FIX: Replaced withOpacity with withAlpha
-              color: const Color(0xFFFF9F43).withAlpha((0.1 * 255).round()),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                // FIX: Replaced withOpacity with withAlpha
-                color: const Color(0xFFFF9F43).withAlpha((0.3 * 255).round()),
+                color: Colors.orange.withValues(alpha: 0.3),
               ),
             ),
             child: const Row(
               children: [
-                Icon(Icons.warning, color: Color(0xFFB892F7)),
+                Icon(Icons.warning, color: Colors.orange),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'No trainers available',
-                    style: TextStyle(color: Color(0xFFB892F7)),
+                    style: TextStyle(color: Colors.orange),
                   ),
                 ),
               ],
@@ -826,7 +810,6 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
   }
 
   Future<void> _bookTraining() async {
-    // Check mounted state before initial UI access, especially for SnackBar
     if (!mounted) return;
 
     if (_selectedTrainerId == null ||
@@ -876,14 +859,12 @@ class _BookTrainingSheetState extends State<BookTrainingSheet> {
         'status': 'upcoming',
       };
 
-      // Check mounted BEFORE calling Provider.of across async gap
       if (!mounted) return;
       final appState = Provider.of<AppState>(context, listen: false);
       await appState.addTrainingAppointment(appointment);
 
       widget.onBooked(appointment);
 
-      // Check mounted BEFORE dismissing the bottom sheet
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
