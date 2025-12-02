@@ -49,5 +49,5 @@ jobs:
             --lcov \
             --in=coverage \
             --out=coverage/lcov.info \
-            --packages=.packages \
+            --package . \
             --report-on=lib
