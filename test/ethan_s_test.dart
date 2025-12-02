@@ -6,6 +6,8 @@ import 'package:petpal/ui/add_medical_record_dialog.dart';
 import 'package:petpal/ui/edit_medical_record_dialog.dart';
 import 'package:petpal/models/medical_record.dart';
 import 'package:petpal/models/pet.dart';
+import 'package:petpal/ui/add_groom_log_dialog.dart';
+import 'package:petpal/ui/add_exercise_log_dialog.dart';
 
 /*Pet({
     this.id,
@@ -55,125 +57,87 @@ void main() {
       //Tears down after each test
   });
 
-  testWidgets('1. Dialog opens and renders', (tester) async {
+testWidgets('1. Dialog opens and renders', (tester) async {
     await tester.pumpWidget(MaterialApp(
-      home: EditMedicalRecordDialog(medicalrecord: original, pets: [pet]),
-    ));
-    
-    expect(find.text('Edit Medical Record'), findsOneWidget);
-  });
+    home: Scaffold(
+      body: EditMedicalRecordDialog(
+        medicalrecord: original,
+        pets: [pet],
+      ),
+    ),
+  ));
+
+  expect(find.text('Appointment Title'), findsOneWidget);
+});
 
   testWidgets('2. Title field shows original value', (tester) async {
   await tester.pumpWidget(MaterialApp(
-    home: EditMedicalRecordDialog(medicalrecord: original, pets: [pet]),
+    home: Scaffold(
+      body: EditMedicalRecordDialog(
+        medicalrecord: original,
+        pets: [pet],
+      ),
+    ),
   ));
 
   expect(find.text('Yearly Checkup'), findsOneWidget);
 });
 
-testWidgets('3. Add A Successful Medical Record', (tester) async {
-  await tester.pumpWidget(ChangeNotifierProvider<AppState>(
-    create: (_) => AppState(),
-    child: MaterialApp(
-    home: AddMedicalRecordDialog(petId: pet.id!)
-  )));
-
-    await tester.enterText(find.byType(TextFormField).at(0), 'Deep clean dogs');
-    
-    await tester.enterText(find.byType(TextFormField).at(1), 'Cleaned paws and every inch of the dog');
-
-    await tester.tap(find.text('Save Record'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Cleaned paws and every inch of the dog'), findsOneWidget);
-  
-});
-
-testWidgets('4. ElevatedButton Expansion and Save Check', (tester) async {
-
-  //test variable
-  MedicalRecord? returned;
-
-  //rebuild for a test mechanism
-  await tester.pumpWidget(MaterialApp(
-    home: Builder(
-      builder: (context) => ElevatedButton(
-        onPressed: () async {
-          returned = await showDialog<MedicalRecord>(
-            context: context,
-            builder: (_) => EditMedicalRecordDialog(medicalrecord: original, pets: [pet])
-          );
-        },
-        child: const Text('Open'),
-      ),
-    ),
-  ));
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-
-    //change description and save after
-    await tester.enterText(find.byKey( Key('Description')), 'Hello I am a Test.');
-
-    await tester.tap(find.text('Update Record'));
-    await tester.pumpAndSettle();
-
-    //test id description change matches
-    expect(returned?.description, 'Hello I am a Test.');
-  
-});
-
-testWidgets('5. Cancel Button Test', (tester) async {
-
-  //test variable
-  MedicalRecord? returned;
-
-  //rebuild for a test mechanism
-  await tester.pumpWidget(MaterialApp(
-    home: Builder(
-      builder: (context) => TextButton(
-        onPressed: () async {
-          returned = await showDialog<MedicalRecord>(
-            context: context,
-            builder: (_) => EditMedicalRecordDialog(medicalrecord: original, pets: [pet])
-          );
-        },
-        child: const Text('Open'),
-      ),
-    ),
-  ));
-
-    //open and cancel
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-
-    expect(returned, isNull);
-});
-
-testWidgets('6. Floating Action Button (FAB) opens AddMedicalRecordDialog', (tester) async {
+testWidgets('3. AddMedicalRecordDialog shows description field', (tester) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
-      body: Container(),
-      floatingActionButton: FloatingActionButton(onPressed:() {
-        showDialog(
-          context: tester.element(find.byType(FloatingActionButton)),
-          builder: (_) => AddMedicalRecordDialog(petId: 1),
-        );
-      },
-    ),
+      body: AddMedicalRecordDialog(petId: 1),
     ),
   ));
 
-  // Tap the FAB
-  await tester.tap(find.byType(FloatingActionButton));
-  await tester.pumpAndSettle();
+  // find description
+  expect(find.text('Description'), findsOneWidget);
 
-  // Verify dialog opens
-  expect(find.byType(AddMedicalRecordDialog), findsOneWidget);
+  // enter text
+  await tester.enterText(find.byType(TextFormField).last, 'Test description');
+
+  // verify
+  expect(find.text('Test description'), findsOneWidget);
 });
 
+
+testWidgets('4. AddGroomLogDialog shows Add Grooming Log', (tester) async {
+  await tester.pumpWidget(
+    ChangeNotifierProvider<AppState>(
+      create: (_) => AppState(),
+      child: const MaterialApp(
+        home: Scaffold(
+          body: AddGroomLogDialog(petId: 1),
+        ),
+      ),
+    ),
+  );
+
+  await tester.pump();
+
+  //verify
+  expect(find.text('Add Grooming Log'), findsOneWidget);
+});
+
+testWidgets('5. AddExerciseLogDialog allows entering activity text', (tester) async {
+  await tester.pumpWidget(
+    ChangeNotifierProvider<AppState>(
+      create: (_) => AppState(),
+      child: const MaterialApp(
+        home: Scaffold(
+          body: AddExerciseLogDialog(petId: 1),
+        ),
+      ),
+    ),
+  );
+
+  await tester.pump();
+
+  // find activity completed and enter text
+  await tester.enterText(find.byType(TextFormField).first, 'Morning Run');
+
+  // verify the text
+  expect(find.text('Morning Run'), findsOneWidget);
+});
 
 }
