@@ -2,6 +2,7 @@
 
 PetPal is a cross-platform Flutter application designed to help pet owners manage their pets' profiles, appointments, and activities. This repository contains the base Flutter project with backend structure and SQLite integration prepared for further development.
 
+![image alt](https://github.com/WSU-4110/PetPal/blob/9693d87b89620dd0548ea3a2ea38c571458e90d9/read.jpg)
 ---
 
 ## Features (Planned)
