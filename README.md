@@ -6,6 +6,15 @@ PetPal is a Flutter application for ios/Android designed to help pet owners mana
 
 ---
 
+## Meet the Team!
+**Zara Obioha** – Backend Development · Quality Assurance · Project Coordination  
+**Ethan Stoneman** – Full-Stack Development · System Integration  
+**Aidan Demps** – Backend Development  
+**Sumaiya Riya** – Frontend Development · UI/UX Implementation  
+**Maryam Kassem** – Frontend Support  
+
+---
+
 ## Features
 - Create and manage multiple pet profiles.  
 - Log detailed medical records, including medications, vet visits, and diagnoses.  
